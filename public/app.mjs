@@ -128,13 +128,13 @@ function board(own = false) {
     const status = own ? 'water' : state.enemyCells[c];
     const canClick = own ? editable : active && status === 'unknown';
     const label = own ? (ship ? `${typeName(ship.type)}${ownShots.includes(c) ? '，已中弹' : ''}` : ownShots.includes(c) ? '落空弹着点' : '空海域') : ({unknown:'未知海域',miss:'落空',hit:'已命中',sunk:'沉没残骸'}[status]);
-    return `<button class="cell ${status}${!own && aimed === c ? ' aim' : ''}" data-cell="${c}" data-board="${own ? 'own' : 'enemy'}" ${ship ? `data-ship="${ship.id}"` : ''} ${own && editable && ship ? 'draggable="true"' : ''} aria-label="${coord(c)} ${label}" ${canClick ? '' : 'disabled'}></button>`;
+    return `<button class="cell ${status}${!own && aimed === c ? ' aim' : ''}" data-cell="${c}" data-board="${own ? 'own' : 'enemy'}" ${ship ? `data-ship="${ship.id}"` : ''} draggable="false" aria-label="${coord(c)} ${label}" ${canClick ? '' : 'disabled'}></button>`;
   }).join('')}</div>${own ? `<div class="ship-layer">${ownShips.filter(s=>s.x !== null).map(s=>`<div class="ship-overlay${selectedShip === s.id ? ' selected' : ''}" style="left:${s.x*10}%;top:${s.y*10}%;width:${(s.vertical?1:s.length)*10}%;height:${(s.vertical?s.length:1)*10}%">${vessel(s,isSunk(state.own,s)?'wreck':'')}</div>`).join('')}</div><div class="own-effects">${Array.from({length:100},(_,c)=>{const s=ownShips.find(s=>cells(s).includes(c));return `<span class="effect ${!ownShots.includes(c)?'':s?(isSunk(state.own,s)?'sunk':'hit'):'miss'}"></span>`}).join('')}</div>` : ''}${!own && prep ? `<div class="fog-overlay">${icon('lock')}<b>未知海域</b><small>交战后，通过炮击揭开海雾</small></div>` : ''}</div></div><div class="board-bottom"><span>${own ? prep ? '部署进度' : '存活舰船' : '侦察进度'} <b>${own ? prep ? `${deployed} / 10` : `${10-sunk} / 10` : `${totalShots} / 100`}</b></span><span>${own ? prep ? '边界内可自由相邻放置' : `遭受 ${totalShots} 次炮击` : '每回合一枚炮弹'}</span></div></section>`;
 }
 function dock() {
   const editable = !state.own.confirmed;
   const selected = state.own.ships.find(s => s.id === selectedShip);
-  return `<section class="dock" aria-label="待部署舰队"><div class="dock-heading"><strong>舰队船坞 <span style="font:9px var(--mono);color:#526d84;margin-left:5px">FLEET DOCK</span></strong><div class="dock-tools"><button class="text-button" data-action="auto" ${editable?'':'disabled'}>${icon('shuffle')}${state.own.ships.some(s=>s.x===null)?'随机补齐':'重新随机'}</button><button class="text-button" data-action="clear" ${editable?'':'disabled'}>${icon('trash')}清空</button></div></div><div class="dock-ships">${TYPES.map(t=>`<div class="ship-group"><div class="ship-group-label">${t.name}<b>${t.length} 格 × ${t.count}</b></div><div class="ship-pieces">${state.own.ships.filter(s=>s.type===t.type).map(s=>`<button class="dock-piece${s.x!==null?' placed':''}${selectedShip===s.id?' selected':''}" style="--length:${s.length}" data-action="select-ship" data-ship="${s.id}" draggable="${editable}" aria-label="${t.name} ${s.id}${s.x!==null?' 已部署':''}" ${editable?'':'disabled'}>${vessel({...s,vertical:false})}</button>`).join('')}</div></div>`).join('')}</div><p class="dock-hint">${icon('mouse')}拖拽舰船到海域，或先选舰船、再点击坐标。已部署舰船可拖动调整位置。</p></section><div class="selection-toolbar">${selected && editable ? `<span>${typeName(selected.type)} ${selected.id} · ${selectedVertical?'纵向':'横向'}</span><button class="text-button" data-action="rotate">${icon('rotate')}旋转 90°<span class="keycap">R</span></button>${selected.x!==null?`<button class="text-button" data-action="remove">${icon('trash')}收回</button>`:''}` : `<span>${state.own.confirmed?'布阵已锁定，等待对方完成。':'选择一艘舰船，开始你的战术部署。'}</span>`}</div>`;
+  return `<section class="dock" aria-label="待部署舰队"><div class="dock-heading"><strong>舰队船坞 <span style="font:9px var(--mono);color:#526d84;margin-left:5px">FLEET DOCK</span></strong><div class="dock-tools"><button class="text-button" data-action="auto" ${editable?'':'disabled'}>${icon('shuffle')}${state.own.ships.some(s=>s.x===null)?'随机补齐':'重新随机'}</button><button class="text-button" data-action="clear" ${editable?'':'disabled'}>${icon('trash')}清空</button></div></div><div class="dock-ships">${TYPES.map(t=>`<div class="ship-group"><div class="ship-group-label">${t.name}<b>${t.length} 格 × ${t.count}</b></div><div class="ship-pieces">${state.own.ships.filter(s=>s.type===t.type).map(s=>`<button class="dock-piece${s.x!==null?' placed':''}${selectedShip===s.id?' selected':''}" style="--length:${s.length}" data-action="select-ship" data-ship="${s.id}" draggable="false" aria-label="${t.name} ${s.id}${s.x!==null?' 已部署':''}" ${editable?'':'disabled'}>${vessel({...s,vertical:false})}</button>`).join('')}</div></div>`).join('')}</div><p class="dock-hint">${icon('mouse')}拖拽舰船到海域，或先选舰船、再点击坐标。已部署舰船可拖动调整位置。</p></section><div class="selection-toolbar">${selected && editable ? `<span>${typeName(selected.type)} ${selected.id} · ${selectedVertical?'纵向':'横向'}</span><button class="text-button" data-action="rotate">${icon('rotate')}旋转 90°<span class="keycap">R</span></button>${selected.x!==null?`<button class="text-button" data-action="remove">${icon('trash')}收回</button>`:''}` : `<span>${state.own.confirmed?'布阵已锁定，等待对方完成。':'选择一艘舰船，开始你的战术部署。'}</span>`}</div>`;
 }
 function fleetCard(enemy = false) {
   return `<section class="sidebar-card fleet-card"><h3 class="sidebar-heading">${enemy ? '敌方舰队' : '己方舰队'}<small>${enemy ? 'ENEMY' : 'FRIENDLY'}</small></h3>${TYPES.map(t=>{
@@ -198,6 +198,11 @@ function acceptState(next, force = false) {
   const changed = force || !state || state.version!==next.version || connectionLost;
   const oldPhase = state?.phase, oldTurn = state?.turn;
   if (oldPhase==='result' && next.phase==='lobby') lastHistory=0;
+  if(pointerDrag && next.phase!=='placement') {
+    pointerDrag.ghost?.remove();
+    if(pointerDrag.source.hasPointerCapture(pointerDrag.id))pointerDrag.source.releasePointerCapture(pointerDrag.id);
+    pointerDrag=null;suppressClickUntil=performance.now()+350;
+  }
   state = next; connectionLost = false;
   if (oldTurn!==next.turn || oldPhase!==next.phase) { aimed=null; selectedShip=null; }
   if (next.phase==='result' && oldPhase!=='result') { showAftermath=false; beep('start'); }
@@ -206,7 +211,7 @@ function acceptState(next, force = false) {
     if (['hit','miss','sunk'].includes(event.type)) beep(event.type);
     lastHistory=event.id;
   }
-  if (changed) renderGame();
+  if (changed && !pointerDrag) renderGame();
 }
 async function request(route, options={}) {
   const response = await fetch(`./api/${route}`, { cache:'no-store', ...options,
@@ -248,7 +253,7 @@ async function send(action) {
       acceptState({...viewFor(practice,'human'),roomName:'北纬 31° · 演习海域',opponentConnected:true},true);
     } else acceptState(await request('action',{method:'POST',body:JSON.stringify(action)}),true);
     return true;
-  } catch(error) { toast(error.message,true); return false; }
+  } catch(error) { toast(error.message,true); if(state)renderGame(); return false; }
   finally {busy=false;}
 }
 function startPractice() {
@@ -389,6 +394,7 @@ async function handleAction(action,el){
   }
 }
 document.addEventListener('click',event=>{
+  if(performance.now()<suppressClickUntil){event.preventDefault();return;}
   const control=event.target.closest('[data-action]');
   if(control&&!control.disabled){event.preventDefault();handleAction(control.dataset.action,control);return;}
   const cell=event.target.closest('.cell');if(!cell||cell.disabled)return;
@@ -408,32 +414,39 @@ document.addEventListener('keydown',event=>{
 });
 document.addEventListener('mouseover',event=>{const c=event.target.closest('#own-grid .cell');if(c)previewCell(Number(c.dataset.cell));});
 document.addEventListener('mouseout',event=>{if(event.target.closest('#own-grid')&&!event.relatedTarget?.closest?.('#own-grid'))clearPreview();});
-document.addEventListener('dragstart',event=>{
-  const source=event.target.closest('[data-ship]');if(!source||state?.phase!=='placement'||state.own.confirmed){event.preventDefault();return;}
-  const ship=state.own.ships.find(s=>s.id===source.dataset.ship);if(!ship){event.preventDefault();return;}
-  selectedShip=ship.id;selectedVertical=ship.vertical;
-  event.dataTransfer.setData('text/plain',ship.id);event.dataTransfer.effectAllowed='move';
-});
-document.addEventListener('dragover',event=>{const c=event.target.closest('#own-grid .cell');if(c&&selectedShip){event.preventDefault();event.dataTransfer.dropEffect='move';previewCell(Number(c.dataset.cell));}});
-document.addEventListener('drop',event=>{const c=event.target.closest('#own-grid .cell');if(c&&selectedShip){event.preventDefault();placeAt(Number(c.dataset.cell));}});
-document.addEventListener('dragend',clearPreview);
-let touchDrag=null;
+document.addEventListener('dragstart',event=>{if(event.target.closest('[data-ship]'))event.preventDefault();});
+let pointerDrag=null, suppressClickUntil=0;
 document.addEventListener('pointerdown',event=>{
-  if(event.pointerType==='mouse')return;
-  const source=event.target.closest('.dock-piece');if(!source||source.disabled)return;
+  if(event.button!==0||state?.phase!=='placement'||state.own.confirmed)return;
+  const source=event.target.closest('.dock-piece, #own-grid .cell[data-ship]');if(!source||source.disabled)return;
   const ship=state.own.ships.find(s=>s.id===source.dataset.ship);selectedShip=ship.id;selectedVertical=ship.vertical;
-  touchDrag={id:event.pointerId,x:event.clientX,y:event.clientY,moved:false,ghost:null};
+  pointerDrag={id:event.pointerId,x:event.clientX,y:event.clientY,moved:false,ghost:null,source};
+  source.setPointerCapture(event.pointerId);
 });
 document.addEventListener('pointermove',event=>{
-  if(!touchDrag||event.pointerId!==touchDrag.id)return;
-  if(Math.hypot(event.clientX-touchDrag.x,event.clientY-touchDrag.y)<8&&!touchDrag.moved)return;
-  touchDrag.moved=true;
-  if(!touchDrag.ghost){touchDrag.ghost=document.createElement('div');touchDrag.ghost.className='drag-ghost';const s=state.own.ships.find(s=>s.id===selectedShip);touchDrag.ghost.style.cssText=`width:${s.length*30}px;height:30px`;touchDrag.ghost.innerHTML=vessel({...s,vertical:false});document.body.append(touchDrag.ghost);}
-  touchDrag.ghost.style.left=`${event.clientX-20}px`;touchDrag.ghost.style.top=`${event.clientY-15}px`;
+  if(!pointerDrag||event.pointerId!==pointerDrag.id)return;
+  if(Math.hypot(event.clientX-pointerDrag.x,event.clientY-pointerDrag.y)<8&&!pointerDrag.moved)return;
+  pointerDrag.moved=true;
+  if(!pointerDrag.ghost){
+    pointerDrag.ghost=document.createElement('div');pointerDrag.ghost.className='drag-ghost';
+    const s=state.own.ships.find(s=>s.id===selectedShip),size=$('#own-grid').getBoundingClientRect().width/10;
+    pointerDrag.ghost.style.cssText=`width:${(selectedVertical?1:s.length)*size}px;height:${(selectedVertical?s.length:1)*size}px`;
+    pointerDrag.ghost.innerHTML=vessel({...s,vertical:selectedVertical});document.body.append(pointerDrag.ghost);
+  }
+  pointerDrag.ghost.style.left=`${event.clientX-15}px`;pointerDrag.ghost.style.top=`${event.clientY-15}px`;
   const c=document.elementFromPoint(event.clientX,event.clientY)?.closest('#own-grid .cell');if(c)previewCell(Number(c.dataset.cell));else clearPreview();
 });
-function endTouch(event){if(!touchDrag||event.pointerId!==touchDrag.id)return;const drag=touchDrag;touchDrag=null;drag.ghost?.remove();clearPreview();if(drag.moved&&event.type!=='pointercancel'){const c=document.elementFromPoint(event.clientX,event.clientY)?.closest('#own-grid .cell');if(c)placeAt(Number(c.dataset.cell));}}
-document.addEventListener('pointerup',endTouch);document.addEventListener('pointercancel',endTouch);
+function endPointer(event){
+  if(!pointerDrag||event.pointerId!==pointerDrag.id)return;
+  const drag=pointerDrag;pointerDrag=null;drag.ghost?.remove();clearPreview();
+  if(drag.source.hasPointerCapture(event.pointerId))drag.source.releasePointerCapture(event.pointerId);
+  if(drag.moved){
+    suppressClickUntil=performance.now()+350;
+    const c=event.type==='pointercancel'?null:document.elementFromPoint(event.clientX,event.clientY)?.closest('#own-grid .cell');
+    if(c)placeAt(Number(c.dataset.cell));else if(state)renderGame();
+  }
+}
+document.addEventListener('pointerup',endPointer);document.addEventListener('pointercancel',endPointer);
 
 async function init(){
   app.innerHTML='<div class="loading">DEEP BLUE / 正在连接海域</div>';
