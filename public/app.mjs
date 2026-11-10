@@ -172,12 +172,12 @@ function logCard() {
 }
 function resultCard() {
   const win = state.winner === state.me;
-  const shots = state.history.filter(e=>e.playerId===state.own.id && ['hit','miss','sunk'].includes(e.type));
-  const hits = shots.filter(e=>e.type!=='miss').length;
+  const shots = state.enemyCells.filter(c=>c!=='unknown').length;
+  const hits = state.enemyCells.filter(c=>c==='hit'||c==='sunk').length;
   const elapsed = state.startedAt ? Math.max(0,Math.round((state.endedAt-state.startedAt)/1000)) : 0;
   const time = `${Math.floor(elapsed/60)}:${String(elapsed%60).padStart(2,'0')}`;
   const left = state.history.at(-1)?.reason === 'left';
-  return `<section class="result-card${win?'':' defeat'}"><div class="result-icon">${icon(win?'trophy':'flag')}</div><div class="eyebrow" style="justify-content:center;margin-bottom:9px">${win?'MISSION ACCOMPLISHED':'MISSION COMPLETE'}</div><h2>${win?'海域，已在掌控。':'胜负已定，再战深蓝。'}</h2><p>${left ? '一位指挥官已离开，仍在场的舰队获胜。' : win ? '敌方舰队全数沉没。指挥官，干得漂亮。' : '你的舰队已全数沉没。下一次，用战术改写结局。'}</p><div class="result-stats"><div><b>${shots.length}</b><span>发射炮弹</span></div><div><b>${shots.length?Math.round(hits/shots.length*100):0}%</b><span>命中率</span></div><div><b>${time}</b><span>交战时长</span></div></div><div class="result-actions"><button class="btn subtle" data-action="exit">返回大厅</button><button class="btn primary" data-action="rematch" ${state.own.rematch||state.opponentConnected===false?'disabled':''}>${icon('refresh')}${state.own.rematch?'等待对手再战':'再来一局'}</button></div></section><div class="reveal-toggle"><button class="text-button" data-action="aftermath">${icon('eye')}${showAftermath?'收起':'查看'}本局战况${icon('chevron')}</button></div>`;
+  return `<section class="result-card${win?'':' defeat'}"><div class="result-icon">${icon(win?'trophy':'flag')}</div><div class="eyebrow" style="justify-content:center;margin-bottom:9px">${win?'MISSION ACCOMPLISHED':'MISSION COMPLETE'}</div><h2>${win?'海域，已在掌控。':'胜负已定，再战深蓝。'}</h2><p>${left ? '一位指挥官已离开，仍在场的舰队获胜。' : win ? '敌方舰队全数沉没。指挥官，干得漂亮。' : '你的舰队已全数沉没。下一次，用战术改写结局。'}</p><div class="result-stats"><div><b>${shots}</b><span>发射炮弹</span></div><div><b>${shots?Math.round(hits/shots*100):0}%</b><span>命中率</span></div><div><b>${time}</b><span>交战时长</span></div></div><div class="result-actions"><button class="btn subtle" data-action="exit">返回大厅</button><button class="btn primary" data-action="rematch" ${state.own.rematch||state.opponentConnected===false?'disabled':''}>${icon('refresh')}${state.own.rematch?'等待对手再战':'再来一局'}</button></div></section><div class="reveal-toggle"><button class="text-button" data-action="aftermath">${icon('eye')}${showAftermath?'收起':'查看'}本局战况${icon('chevron')}</button></div>`;
 }
 function renderGame() {
   if (!state) return;
@@ -197,6 +197,7 @@ function acceptState(next, force = false) {
   if (next.serverNow) serverOffset = next.serverNow-Date.now();
   const changed = force || !state || state.version!==next.version || connectionLost;
   const oldPhase = state?.phase, oldTurn = state?.turn;
+  if (oldPhase==='result' && next.phase==='lobby') lastHistory=0;
   state = next; connectionLost = false;
   if (oldTurn!==next.turn || oldPhase!==next.phase) { aimed=null; selectedShip=null; }
   if (next.phase==='result' && oldPhase!=='result') { showAftermath=false; beep('start'); }
@@ -228,8 +229,10 @@ async function refreshRooms(notify = false) {
 async function pollState() {
   if (mode!=='lan'||!session||polling||busy) return;
   polling=true;
-  try { acceptState(await request('state')); }
+  const currentSession = session.token;
+  try { const next=await request('state'); if(mode==='lan'&&session?.token===currentSession) acceptState(next); }
   catch(error) {
+    if(mode!=='lan'||session?.token!==currentSession)return;
     if (error.status===401) { session=null; store('deepblue-session',null); state=null; mode='lobby'; renderLobby(); toast(error.message,true); }
     else if(!connectionLost) {connectionLost=true;renderGame();}
   } finally {polling=false;}
