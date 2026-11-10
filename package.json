@@ -1,0 +1,14 @@
+{
+  "name": "imdt-game-design",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "深蓝航线 — 双人局域网海战棋 Demo",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "test": "node --test",
+    "build": "node scripts/build.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
