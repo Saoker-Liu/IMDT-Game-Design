@@ -71,13 +71,13 @@ function beep(kind = 'click') {
 }
 function header(inGame = false) {
   return `<header class="${inGame ? 'game-wrap' : 'wrap'}"><div class="topbar">
-    <a class="brand" href="#" data-action="home" aria-label="深蓝航线 首页"><span class="brand-mark">${icon('anchor')}</span><span><span class="brand-name">深蓝航线</span><span class="brand-sub" style="display:block">DEEP BLUE</span></span></a>
+    <a class="brand" href="#" data-action="home" aria-label="雾海对弈 首页"><span class="brand-mark">${icon('anchor')}</span><span><span class="brand-name">雾海对弈</span><span class="brand-sub" style="display:block">FOGBOUND</span></span></a>
     <nav class="nav" aria-label="主导航"><button data-action="home" class="${inGame ? '' : 'active'} desktop-nav">作战大厅</button><button data-action="rules">游戏规则</button></nav>
     <div class="header-status"><span class="status-pill"><i class="dot"></i>${mode === 'practice' ? 'TRAINING MODE' : lan ? 'LAN CONNECTED' : 'DEMO ONLINE'}</span><button class="icon-button" data-action="sound" title="${sound ? '关闭' : '开启'}音效" aria-label="${sound ? '关闭' : '开启'}音效">${icon(sound ? 'sound' : 'mute')}</button></div>
   </div></header>`;
 }
 function footer() {
-  return `<footer class="footer"><span class="english">DEEP BLUE / NAVAL TACTICS</span><span class="footer-links"><button data-action="rules">作战手册</button><a href="${REPO}" target="_blank" rel="noopener">GitHub ↗</a><span class="desktop-nav">IMDT · DEMO 1.0</span></span></footer>`;
+  return `<footer class="footer"><span class="english">FOGBOUND / NAVAL TACTICS</span><span class="footer-links"><button data-action="rules">作战手册</button><a href="${REPO}" target="_blank" rel="noopener">GitHub ↗</a><span class="desktop-nav">IMDT · DEMO 1.0</span></span></footer>`;
 }
 function heroVisual() {
   return `<div class="hero-visual" aria-hidden="true"><span class="visual-coordinate">N 31° 14′ 12″<br>E 121° 28′ 08″</span><div class="radar-map"><div class="radar-circle"><div class="radar-sweep"></div></div><div class="map-ship s1"></div><div class="map-ship s2"></div><div class="map-ship s3"></div><div class="map-hit">+</div><div class="map-dot"></div></div><div class="visual-tag t1"><div class="tag-caption">FLEET STATUS</div><div class="tag-value"><i class="dot"></i>舰队集结完毕</div></div><div class="visual-tag t2"><div class="tag-caption">TARGET ACQUIRED</div><div class="tag-value">${icon('target')}发现目标 · D4</div></div><span class="visual-watermark">TACTICAL OCEAN SECTOR / 001</span></div>`;
@@ -177,7 +177,7 @@ function resultCard() {
   const elapsed = state.startedAt ? Math.max(0,Math.round((state.endedAt-state.startedAt)/1000)) : 0;
   const time = `${Math.floor(elapsed/60)}:${String(elapsed%60).padStart(2,'0')}`;
   const left = state.history.at(-1)?.reason === 'left';
-  return `<section class="result-card${win?'':' defeat'}"><div class="result-icon">${icon(win?'trophy':'flag')}</div><div class="eyebrow" style="justify-content:center;margin-bottom:9px">${win?'MISSION ACCOMPLISHED':'MISSION COMPLETE'}</div><h2>${win?'海域，已在掌控。':'胜负已定，再战深蓝。'}</h2><p>${left ? '一位指挥官已离开，仍在场的舰队获胜。' : win ? '敌方舰队全数沉没。指挥官，干得漂亮。' : '你的舰队已全数沉没。下一次，用战术改写结局。'}</p><div class="result-stats"><div><b>${shots}</b><span>发射炮弹</span></div><div><b>${shots?Math.round(hits/shots*100):0}%</b><span>命中率</span></div><div><b>${time}</b><span>交战时长</span></div></div><div class="result-actions"><button class="btn subtle" data-action="exit">返回大厅</button><button class="btn primary" data-action="rematch" ${state.own.rematch||state.opponentConnected===false?'disabled':''}>${icon('refresh')}${state.own.rematch?'等待对手再战':'再来一局'}</button></div></section><div class="reveal-toggle"><button class="text-button" data-action="aftermath">${icon('eye')}${showAftermath?'收起':'查看'}本局战况${icon('chevron')}</button></div>`;
+  return `<section class="result-card${win?'':' defeat'}"><div class="result-icon">${icon(win?'trophy':'flag')}</div><div class="eyebrow" style="justify-content:center;margin-bottom:9px">${win?'MISSION ACCOMPLISHED':'MISSION COMPLETE'}</div><h2>${win?'海域，已在掌控。':'胜负已定，再战雾海。'}</h2><p>${left ? '一位指挥官已离开，仍在场的舰队获胜。' : win ? '敌方舰队全数沉没。指挥官，干得漂亮。' : '你的舰队已全数沉没。下一次，用战术改写结局。'}</p><div class="result-stats"><div><b>${shots}</b><span>发射炮弹</span></div><div><b>${shots?Math.round(hits/shots*100):0}%</b><span>命中率</span></div><div><b>${time}</b><span>交战时长</span></div></div><div class="result-actions"><button class="btn subtle" data-action="exit">返回大厅</button><button class="btn primary" data-action="rematch" ${state.own.rematch||state.opponentConnected===false?'disabled':''}>${icon('refresh')}${state.own.rematch?'等待对手再战':'再来一局'}</button></div></section><div class="reveal-toggle"><button class="text-button" data-action="aftermath">${icon('eye')}${showAftermath?'收起':'查看'}本局战况${icon('chevron')}</button></div>`;
 }
 function renderGame() {
   if (!state) return;
@@ -258,7 +258,7 @@ async function send(action) {
 }
 function startPractice() {
   session=null; mode='practice'; serverOffset=0; aimed=null; selectedShip=null; lastHistory=0;
-  practice=makeGame([makePlayer('human',readStorage('deepblue-name','指挥官',true)),makePlayer('bot','深蓝 AI')]);
+  practice=makeGame([makePlayer('human',readStorage('deepblue-name','指挥官',true)),makePlayer('bot','迷雾 AI')]);
   act(practice,'bot',{type:'ready'});act(practice,'human',{type:'ready'});
   state=null; botDue=Date.now()+1000; lastBotTurn='';
   acceptState({...viewFor(practice,'human'),roomName:'北纬 31° · 演习海域',opponentConnected:true},true);
@@ -449,7 +449,7 @@ function endPointer(event){
 document.addEventListener('pointerup',endPointer);document.addEventListener('pointercancel',endPointer);
 
 async function init(){
-  app.innerHTML='<div class="loading">DEEP BLUE / 正在连接海域</div>';
+  app.innerHTML='<div class="loading">FOGBOUND / 正在连接海域</div>';
   try{const health=await request('health');lan=health.ok&&health.mode==='lan';}catch{lan=false;}
   const saved=readStorage('deepblue-session');
   if(lan&&saved){try{session=JSON.parse(saved);mode='lan';await pollState();if(state)return;}catch{session=null;mode='lobby';store('deepblue-session',null);}}

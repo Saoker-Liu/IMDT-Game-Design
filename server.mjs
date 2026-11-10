@@ -151,7 +151,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   const port = Number(process.env.PORT) || 3000;
   const server = createGameServer();
   server.listen(port, '0.0.0.0', () => {
-    console.log(`\n  深蓝航线 · DEEP BLUE\n  本机试玩  http://localhost:${port}`);
+    console.log(`\n  雾海对弈 · FOGBOUND\n  本机试玩  http://localhost:${port}`);
     for (const entries of Object.values(networkInterfaces())) for (const net of entries || []) {
       if (net.family === 'IPv4' && !net.internal) console.log(`  局域网    http://${net.address}:${port}`);
     }
