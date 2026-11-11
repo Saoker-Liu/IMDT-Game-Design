@@ -1,5 +1,5 @@
-import { TYPES, TOTAL_CELLS, PREP_MS, TURN_MS, makePlayer, makeGame, cells, isSunk, canPlace, act, tick, viewFor } from './engine.mjs?v=2.0.0';
-import { vesselArt, shipOverlay, impactArt, boardFurniture } from './art.mjs?v=2.0.0';
+import { TYPES, TOTAL_CELLS, PREP_MS, TURN_MS, makePlayer, makeGame, cells, isSunk, canPlace, act, tick, viewFor } from './engine.mjs?v=2.0.1';
+import { vesselArt, shipOverlay, impactArt, boardFurniture } from './art.mjs?v=2.0.1';
 
 const app = document.querySelector('#app');
 const modal = document.querySelector('#modal');

@@ -1,6 +1,6 @@
 {
   "name": "imdt-game-design",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "type": "module",
   "description": "雾海对弈 — 双人局域网海战棋 Demo",

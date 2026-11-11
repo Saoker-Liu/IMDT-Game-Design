@@ -62,7 +62,7 @@ body {
 .board-matrix {
   background:
     linear-gradient(145deg, #163f4b05, #071e32a6),
-    url('./assets/ocean-chart.webp') center / cover;
+    url('./assets/ocean-chart.webp?v=2.0.1') center / cover;
   box-shadow: 0 0 0 1px #aec1ae38, 0 0 0 3px #0b2028, inset 0 0 25px #031a2c99;
   isolation: isolate;
 }
@@ -98,7 +98,7 @@ body {
   background-image:
     radial-gradient(ellipse at 30% 5%, #bac5b721, transparent 70%),
     linear-gradient(#192f3adb, #152936ed),
-    url('./assets/ocean-chart.webp');
+    url('./assets/ocean-chart.webp?v=2.0.1');
   background-size: 1000% 1000%;
   background-position: calc(var(--col) * 100% / 9) calc(var(--row) * 100% / 9);
   border-top-color: #acb8a91d;
@@ -282,7 +282,7 @@ body {
 .drag-ghost { border-color: #dccc99; background: #3a56534d; padding: 3px; filter: drop-shadow(0 9px 6px #00121a77); }
 .drag-ghost .vessel { height: 100%; }
 /* The landing chart uses the same fleet and sea as the actual board. */
-.radar-map { background: linear-gradient(#14313e42, #132f3a77), url('./assets/ocean-chart.webp') center / cover; border: 1px solid #8a9071; box-shadow: 0 22px 70px #0006, inset 0 0 0 5px #1f373dcc; }
+.radar-map { background: linear-gradient(#14313e42, #132f3a77), url('./assets/ocean-chart.webp?v=2.0.1') center / cover; border: 1px solid #8a9071; box-shadow: 0 22px 70px #0006, inset 0 0 0 5px #1f373dcc; }
 .radar-map::before { content: ''; position: absolute; inset: 5px; background: linear-gradient(#b6c4a02b 1px, transparent 1px), linear-gradient(90deg, #b6c4a02b 1px, transparent 1px); background-size: 30px 30px; }
 .map-ship { background: none; border: 0; clip-path: none; height: 26px; }
 .map-ship::after { content: none; }
