@@ -2,7 +2,7 @@ import { TYPES, TOTAL_CELLS, PREP_MS, TURN_MS, makePlayer, makeGame, cells, isSu
 import { vesselArt, shipOverlay, impactArt, boardFurniture } from './art.mjs?v=3.0.0';
 
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=3.0.0';
-import { terrainTiles, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=3.0.0';
+import { terrainTiles, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=3.1.0';
 
 const app = document.querySelector('#app');
 const modal = document.querySelector('#modal');

@@ -25,7 +25,13 @@ try {
   }
   async function screenshot(p,name,selector) {
     await p.waitForFunction(()=>[...document.images].every(i=>i.complete&&i.naturalWidth>0));
-    await p.evaluate(async()=>{await document.fonts.ready;const img=new Image();img.src='./assets/terrain-atlas.webp?v=3.0.0';await img.decode();});
+    await p.evaluate(async()=>{
+      await document.fonts.ready;
+      const urls=new Set(['./assets/terrain-atlas.webp?v=3.0.0']);
+      for(const node of document.querySelectorAll('.coastal-water,.terrain-guide-art.terrain-shoal'))
+        for(const match of getComputedStyle(node).backgroundImage.matchAll(/url\(["']?([^"')]+)["']?\)/g)) urls.add(match[1]);
+      await Promise.all([...urls].map(async src=>{const img=new Image();img.src=src;await img.decode();}));
+    });
     await (selector?p.locator(selector):p).screenshot({path:path.join(output,name),animations:'disabled',...(!selector?{fullPage:true}:{})});
     assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No horizontal overflow');
   }
@@ -112,6 +118,12 @@ try {
 
   const coast=await prepared('blue-frontier',true),coastContext=await context(coast.host),coastPage=await coastContext.newPage();
   await coastPage.goto(base);await waitTurn(coastPage);
+  // The painted depth fade must not shift the actual boundary players use to move.
+  for(const [chart,cell]of [['friendly-chart',3],['hostile-chart',7]]) {
+    const edge=await coastPage.locator(`.${chart} .shoal-edge`).boundingBox();
+    const boundaryCell=await coastPage.locator(`.${chart} [data-cell="${cell}"]`).boundingBox();
+    assert.ok(Math.abs(edge.x-boundaryCell.x)<1.5,'Depth contour agrees with the logical terrain edge');
+  }
   await coastPage.locator('#own-grid [data-cell="83"]').click();
   await coastPage.locator('[data-action="move"][data-dx="-1"][data-dy="0"]').click();
   await coastPage.waitForSelector('.ship-status-anchor');
