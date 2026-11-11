@@ -2,14 +2,17 @@ import { MAPS, TERRAIN, mapInfo, terrainFor, tileVariant } from './terrain.mjs?v
 import { canMove, isSunk } from './engine.mjs?v=3.0.0';
 
 export function terrainTiles(terrain, small = false) {
-  return `<div class="${small ? 'map-mini' : 'terrain-layer'}" aria-hidden="true">${terrain.map((type, c) => `<span class="terrain-tile terrain-${type}" style="--tile-row:${TERRAIN[type].row};--tile-col:${tileVariant(c)}"></span>`).join('')}</div>`;
+  // Paint continuous water independently of the logical grid. Never infer terrain from the image.
+  const coast = terrain.length === 100 && terrain.every((t,c) => t === (c%10<3?'shoal':'deep')) ? 'west'
+    : terrain.length === 100 && terrain.every((t,c) => t === (c%10>=7?'shoal':'deep')) ? 'east' : '';
+  return `<div class="${small ? 'map-mini' : 'terrain-layer'}${coast ? ` coastal-water coast-${coast}` : ''}" ${coast ? `data-shore="${coast}"` : ''} aria-hidden="true">${terrain.map((type, c) => `<span class="terrain-tile terrain-${type}" style="--tile-row:${TERRAIN[type].row};--tile-col:${tileVariant(c)}"></span>`).join('')}${coast?'<span class="shoal-edge"></span>':''}</div>`;
 }
 export function mapPicker(selected) {
   return `<section class="map-selection" aria-label="选择作战地图"><div class="map-selection-heading"><div><span class="eyebrow">CHOOSE YOUR WATERS</span><h2>选择你的作战海域</h2></div><span>地形公开 · 舰位隐蔽</span></div><div class="map-cards">${MAPS.map(m => `<button class="map-card ${selected === m.id ? 'selected' : ''}" data-action="select-map" data-map="${m.id}" aria-pressed="${selected === m.id}">${terrainTiles(terrainFor(m.id), true)}<span class="map-card-shade"></span><span class="map-card-number">0${MAPS.indexOf(m) + 1} / ${m.tag}</span><span class="map-card-body"><strong>${m.name}</strong><span>${m.summary}</span></span><span class="map-card-selected">${selected === m.id ? '✓ 已选海域' : '选择海域'}</span></button>`).join('')}</div><div class="map-selection-foot"><span>已选 <b>${mapInfo(selected).name}</b> · ${mapInfo(selected).detail}</span><button class="btn small primary" data-action="practice">进入此海域演习 →</button></div></section>`;
 }
 export function mapBrief(mapId, me = 0) {
   const m = mapInfo(mapId);
-  return `<div class="map-brief"><span class="map-seal terrain-${m.theme}" style="--tile-row:${TERRAIN[m.theme].row};--tile-col:0"></span><div><b>${m.name}</b><span>${m.detail}${mapId==='blue-frontier'?` 己方迎敌方向 ${me===0?'→':'←'}。`:''}</span></div><button class="text-button" data-action="terrain-guide">地形图鉴 ↗</button></div>`;
+  return `<div class="map-brief"><span class="map-seal terrain-${m.theme}" style="--tile-row:${TERRAIN[m.theme].row};--tile-col:0"></span><div><b>${m.name}</b><span>${m.detail}${mapId==='blue-frontier'?` 虚线为浅滩边界；己方迎敌方向 ${me===0?'→':'←'}。`:''}</span></div><button class="text-button" data-action="terrain-guide">地形图鉴 ↗</button></div>`;
 }
 export function terrainLegend() {
   return `<div class="terrain-legend" aria-label="地形效果">${Object.entries(TERRAIN).map(([type, t]) => `<button data-action="terrain-guide" class="terrain-key"><span class="terrain-swatch terrain-${type}" style="--tile-row:${t.row};--tile-col:0"></span><span><b>${t.name}</b><small>${({deep:'鱼雷命中整舰沉没',rock:'禁止部署与航行',reef:'驶入 25% 触礁沉没',shoal:'驶入后永久搁浅'})[type]}</small></span></button>`).join('')}</div>`;

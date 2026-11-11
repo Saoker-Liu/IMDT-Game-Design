@@ -8,8 +8,44 @@
 .terrain-layer, .map-mini { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(10, 1fr); }
 .terrain-layer { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .terrain-tile { display: block; min-width: 0; min-height: 0; }
+.terrain-tile.terrain-shoal, .terrain-swatch.terrain-shoal,
+.terrain-guide-art.terrain-shoal, .terrain-variants .terrain-shoal, .map-seal.terrain-shoal {
+  background-image: url('./assets/shoal-variants-v2.webp?v=3.1.0');
+  background-size: 400% 100%;
+  background-position: calc(var(--tile-col) * 100% / 3) 0;
+}
 .terrain-layer .terrain-deep, .map-mini .terrain-deep { background-image: none; }
 .map-mini { background: url('./assets/ocean-chart.webp?v=2.0.1') center / cover; }
+.coastal-water.coast-west { --coastal-art: url('./assets/coast-west-v2.webp?v=3.1.0'); }
+.coastal-water.coast-east { --coastal-art: url('./assets/coast-east-v2.webp?v=3.1.0'); }
+.terrain-layer.coastal-water, .map-mini.coastal-water {
+  background-image: linear-gradient(145deg, #163f4b05, #071e32a6), var(--coastal-art);
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.coastal-water > .terrain-tile { background-image: none; }
+.shoal-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed #cfdbbd55;
+  pointer-events: none;
+}
+.coast-west > .shoal-edge { left: 30%; }
+.coast-east > .shoal-edge { left: 70%; }
+.shoal-edge::before, .shoal-edge::after {
+  content: '';
+  position: absolute;
+  left: -3px;
+  width: 5px;
+  height: 2px;
+  background: #c7d2b8a6;
+}
+.shoal-edge::before { top: 0; }
+.shoal-edge::after { bottom: 0; }
+.map-mini > .shoal-edge { display: none; }
 .terrain-layer .terrain-rock { mask-image: radial-gradient(ellipse, #000 48%, #000 72%, transparent 100%); }
 .chart-furniture { z-index: 1; opacity: .24; }
 .board-grid { z-index: 2; }
