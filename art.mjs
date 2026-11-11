@@ -5,7 +5,7 @@ export function vesselArt(ship, extra = '') {
   return `<span class="vessel ${ship.type}${ship.vertical ? ' vertical' : ''} ${extra}" style="--ship-length:${length}" aria-hidden="true"><span class="vessel-waterline"></span><img class="ship-art" src="./assets/fleet-${ship.type}.webp?v=2.0.1" alt="" draggable="false" decoding="async"><span class="vessel-debris"></span></span>`;
 }
 export function shipOverlay(ship, { selected = false, wreck = false } = {}) {
-  return `<div class="ship-overlay${selected ? ' selected' : ''}${wreck ? ' wreck-overlay' : ''}" style="left:${ship.x*10}%;top:${ship.y*10}%;width:${(ship.vertical?1:ship.length)*10}%;height:${(ship.vertical?ship.length:1)*10}%">${vesselArt(ship,wreck?'wreck':'')}${selected?'<span class="ship-selection-corner tl"></span><span class="ship-selection-corner br"></span>':''}</div>`;
+  return `<div class="ship-overlay${selected ? ' selected' : ''}${wreck ? ' wreck-overlay' : ''}${ship.grounded&&!wreck?' grounded':''}" style="left:${ship.x*10}%;top:${ship.y*10}%;width:${(ship.vertical?1:ship.length)*10}%;height:${(ship.vertical?ship.length:1)*10}%">${vesselArt(ship,wreck?'wreck':'')}${ship.grounded&&!wreck?'<span class="ship-status-anchor" aria-hidden="true">⚓</span>':''}${selected?'<span class="ship-selection-corner tl"></span><span class="ship-selection-corner br"></span>':''}</div>`;
 }
 export function impactArt(status) {
   if (status === 'hit') return `<span class="impact impact-hit" aria-hidden="true"><span class="impact-embers"></span><img class="fire-art" src="./assets/impact-fire.webp?v=2.0.1" alt="" draggable="false" decoding="async"></span>`;
