@@ -1,6 +1,6 @@
 {
   "name": "imdt-game-design",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "description": "雾海对弈 — 双人局域网海战棋 Demo",
@@ -8,7 +8,13 @@
     "start": "node server.mjs",
     "dev": "node --watch server.mjs",
     "test": "node --test",
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "check:art": "node scripts/art-check.mjs"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.65.0"
+  }
 }

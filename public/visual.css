@@ -1,0 +1,366 @@
+/* FOGBOUND · illustrated naval chart and miniature fleet art */
+:root {
+  --chart-brass: #bdab7b;
+  --chart-ivory: #e6dcc0;
+  --chart-ink: #263c41;
+}
+body {
+  background: radial-gradient(ellipse at 38% 0, #18323a55, transparent 60%), #0c141c;
+}
+.war-room {
+  background: radial-gradient(ellipse at 48% 40%, #193b3d30, transparent 70%);
+}
+.war-room .topbar { border-color: #344443; }
+.war-room .brand-mark { border-color: #7c7958; color: #d5c89d; background: #273c3e; }
+.game-toolbar {
+  background: linear-gradient(105deg, #1c2d32, #121e27 65%);
+  border-color: #3a4c4c;
+  box-shadow: inset 0 1px #d0c9a509, 0 8px 30px #0002;
+}
+.game-title h1 { color: #e4dfcc; }
+.board-caption { margin-bottom: 12px; max-width: none; margin-inline: 0; }
+.board-caption h3 { color: #e3dfcf; letter-spacing: 1px; }
+.board-caption svg { color: #b7bc98; }
+.board-caption .enemy-title svg { color: #bca68d; }
+.board-subtitle { font-size: 8px; color: #899e9e; letter-spacing: 1.5px; }
+.board-frame {
+  padding: 29px 15px 0 29px;
+  border: 1px solid #77775e;
+  border-radius: 5px;
+  max-width: none;
+  margin-inline: 0;
+  background:
+    repeating-linear-gradient(110deg, #a2baac03 0 1px, transparent 1px 4px),
+    linear-gradient(135deg, #3c5050, #24373b 8%, #182b31 50%, #304445 100%);
+  box-shadow: 0 14px 32px #0004, 0 2px 3px #0009, inset 0 1px #d6dbbd48,
+    inset 1px 0 #d6dbbd28, inset 0 -3px #0006, inset -2px 0 #0005;
+}
+.board-frame::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid #a7b19a19;
+  border-radius: 2px;
+  pointer-events: none;
+}
+.board-frame.target-active {
+  border-color: #b5b384;
+  box-shadow: 0 0 0 1px #c4c28d1a, 0 14px 32px #0004, inset 0 1px #e8e1b34d;
+}
+.frame-rivet {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: linear-gradient(135deg, #b8b9a0, #52676a 44%, #172a2d 48%, #62716c 60%, #33474a);
+  border-radius: 50%;
+  box-shadow: 0 1px 1px #000b, 0 0 0 1px #102129;
+}
+.frame-rivet.tl { top: 10px; left: 10px; }
+.frame-rivet.tr { top: 10px; right: 9px; }
+.frame-rivet.bl { bottom: 10px; left: 10px; }
+.frame-rivet.br { bottom: 10px; right: 9px; }
+.board-matrix {
+  background:
+    linear-gradient(145deg, #163f4b05, #071e32a6),
+    url('./assets/ocean-chart.webp') center / cover;
+  box-shadow: 0 0 0 1px #aec1ae38, 0 0 0 3px #0b2028, inset 0 0 25px #031a2c99;
+  isolation: isolate;
+}
+.axis-x, .axis-y { color: #b6b6a0; font-size: 9px; text-shadow: 0 1px #0008; z-index: 5; }
+.axis-x { top: -23px; height: 20px; }
+.axis-y { left: -24px; width: 20px; }
+.chart-frame-foot {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font: 7px var(--mono);
+  letter-spacing: 1.4px;
+  color: #a0b0a5;
+}
+.chart-furniture { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; color: #ccddc1; opacity: .32; }
+.chart-compass { position: absolute; right: 4%; bottom: 5%; width: 25%; stroke: currentColor; stroke-width: .5; }
+.chart-bearing { position: absolute; left: 4%; top: 3%; font: 7px var(--mono); letter-spacing: 1.2px; }
+.chart-classification { position: absolute; left: 4%; bottom: 3%; font: 6px var(--mono); letter-spacing: 1px; }
+.board-grid { z-index: 1; }
+.cell {
+  border-top-color: #b2c4ad28;
+  border-left-color: #b2c4ad28;
+  transition: background-color .2s, box-shadow .2s;
+}
+.cell:nth-child(10n) { border-right-color: #b2c4ad28; }
+.cell:nth-last-child(-n+10) { border-bottom-color: #b2c4ad28; }
+.cell:nth-child(10n+6) { border-left-color: #dce0be4a; }
+.cell:nth-child(n+51):nth-child(-n+60) { border-top-color: #dce0be4a; }
+.cell.unknown {
+  background-color: #152a32;
+  background-image:
+    radial-gradient(ellipse at 30% 5%, #bac5b721, transparent 70%),
+    linear-gradient(#192f3adb, #152936ed),
+    url('./assets/ocean-chart.webp');
+  background-size: 1000% 1000%;
+  background-position: calc(var(--col) * 100% / 9) calc(var(--row) * 100% / 9);
+  border-top-color: #acb8a91d;
+  border-left-color: #acb8a91d;
+}
+.cell.unknown::after {
+  content: '';
+  width: 2px;
+  height: 2px;
+  border-radius: 0;
+  background: #bac5b743;
+  box-shadow: 0 0 4px #bac5b712;
+}
+.cell.hit, .cell.miss, .cell.sunk { background: transparent; }
+.cell.hit::before, .cell.hit::after, .cell.miss::after, .cell.sunk::after,
+.effect.hit::after, .effect.miss::after, .effect.sunk::after { content: none; }
+.cell:not(:disabled):hover { background-color: #adcaae21; box-shadow: inset 0 0 0 1px #e4dfb875; }
+.target-active .cell.unknown:hover { background-color: #3c5356; cursor: crosshair; }
+.cell.aim { background: #a9b98c32 !important; box-shadow: inset 0 0 0 1px #ecdfad, 0 0 12px #d9d5a022; z-index: 3; }
+.cell.aim::before {
+  content: '';
+  position: absolute;
+  width: 61%;
+  height: 61%;
+  border: 1px solid #e4d7a7;
+  border-radius: 50%;
+}
+.cell.aim::after { content: '+' !important; font: 20px var(--mono); color: #f3e4ae; }
+.cell.place-valid { background: #99cfac35 !important; box-shadow: inset 0 0 0 1px #c8e5b8; }
+.cell.place-invalid { background: #e47c574d !important; box-shadow: inset 0 0 0 1px #e9a382; }
+.ship-layer { z-index: 2; }
+.ship-overlay { padding: 3px 2px; }
+.ship-overlay.selected {
+  outline: 0;
+  border-radius: 0;
+  background: #dfd6a512;
+  box-shadow: inset 0 0 0 1px #dcd4ac44;
+}
+.ship-selection-corner { position: absolute; width: 9px; height: 9px; border-color: #f4dc9f; border-style: solid; }
+.ship-selection-corner.tl { top: 1px; left: 1px; border-width: 2px 0 0 2px; }
+.ship-selection-corner.br { bottom: 1px; right: 1px; border-width: 0 2px 2px 0; }
+.vessel, .vessel.vertical, .vessel.wreck {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: none;
+  border: 0;
+  clip-path: none;
+  filter: none;
+  opacity: 1;
+}
+.vessel::before, .vessel::after { content: none; }
+.ship-art {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(1px 3px 2px #03121be0) drop-shadow(0 -1px 1px #d7e6c71a);
+  pointer-events: none;
+  user-select: none;
+}
+.vessel.vertical .ship-art {
+  width: calc(var(--ship-length) * 100%);
+  height: calc(100% / var(--ship-length));
+  max-width: none;
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+.vessel-waterline {
+  position: absolute;
+  inset: 15% 3%;
+  border-radius: 50%;
+  background: #c9e6cc12;
+  box-shadow: 0 1px 3px #adcebd26;
+}
+.vessel.vertical .vessel-waterline { inset: 3% 15%; }
+.vessel.frigate .vessel-waterline, .vessel.destroyer .vessel-waterline { inset: 32% 3%; }
+.vessel.destroyer.vertical .vessel-waterline { inset: 3% 32%; }
+.vessel.wreck .ship-art {
+  filter: grayscale(.95) sepia(.15) brightness(.48) drop-shadow(1px 3px 2px #021923);
+  opacity: .8;
+  mask-image: linear-gradient(87deg, #000 28%, transparent 29%, #000 32%, #000 64%, transparent 65%, #000 68%);
+}
+.vessel.wreck .vessel-waterline { background: #030e1699; box-shadow: 0 0 5px #05131b; }
+.vessel-debris { display: none; }
+.vessel.wreck .vessel-debris {
+  display: block;
+  position: absolute;
+  left: 28%;
+  top: 21%;
+  width: 3px;
+  height: 5px;
+  background: #8a9389;
+  transform: rotate(26deg);
+  box-shadow: 8px 11px #273639, 17px 5px #79867b;
+  opacity: .6;
+}
+.board-effects { z-index: 4; }
+.effect.hit { background: radial-gradient(ellipse at 50% 72%, #e5703626, transparent 70%); }
+.effect.sunk, .effect.miss { background: none; }
+.impact { display: block; position: absolute; inset: 0; pointer-events: none; }
+.fire-art { position: absolute; width: 110%; height: 145%; max-width: none; left: -5%; bottom: 23%; object-fit: contain; object-position: center bottom; transform-origin: center bottom; filter: drop-shadow(0 1px 2px #10232c66); animation: art-fire-drift 2s ease-in-out infinite alternate; animation-delay: var(--fx-delay); }
+.impact-embers { position: absolute; width: 4px; height: 4px; left: 51%; top: 56%; border-radius: 50%; box-shadow: 6px -9px 1px #ffd885, -9px -15px 0 -1px #d99a59, 1px -22px 0 -1px #ffd88b; opacity: .8; }
+.water-ring { position: absolute; border: 1px solid #d1e4d6a6; border-radius: 50%; width: 58%; height: 27%; top: 43%; left: 21%; transform: rotate(-18deg); }
+.water-ring.outer { box-shadow: 0 1px 2px #173c48; border-bottom-color: #cce4db35; }
+.water-ring.inner { width: 32%; height: 16%; top: 47%; left: 34%; border-color: #b4dbdba1; }
+.water-dot { position: absolute; width: 4px; height: 4px; top: 46%; left: 46%; background: #d9e6d8; border-radius: 50%; box-shadow: 0 2px 4px #081f31; }
+.water-glint { position: absolute; left: 60%; top: 38%; width: 2px; height: 4px; background: #d7e9e1b3; transform: rotate(24deg); }
+.oil-slick { position: absolute; inset: 14% 2%; background: radial-gradient(ellipse, #071b25a1, #435d5d55 50%, transparent 71%); border-radius: 50%; transform: rotate(-20deg); }
+.wreck-splinter { position: absolute; width: 10%; height: 5%; background: #94a298; border: 1px solid #243d44; box-shadow: 1px 1px 1px #081e28; }
+.wreck-splinter.one { left: 22%; top: 32%; transform: rotate(42deg); }
+.wreck-splinter.two { left: 65%; top: 58%; transform: rotate(-23deg); width: 15%; }
+.wreck-splinter.three { left: 45%; top: 77%; transform: rotate(-64deg); width: 7%; opacity: .6; }
+.wreck-bubble { position: absolute; width: 3px; height: 3px; border: 1px solid #b8d0c48c; border-radius: 50%; top: 24%; right: 25%; box-shadow: -5px 3px 0 -1px #a2b9ad; }
+.fog-overlay {
+  z-index: 5;
+  gap: 8px;
+  background:
+    radial-gradient(ellipse at 28% 30%, #8bada331, transparent 45%),
+    radial-gradient(ellipse at 88% 84%, #bbc1ac14, transparent 50%),
+    linear-gradient(150deg, #19343d6b, #10232dbe);
+  box-shadow: inset 0 0 70px #081b2d7d;
+}
+.fog-emblem { width: 68px; height: 68px; display: grid; place-items: center; border: 1px solid #b8c7aa45; border-radius: 50%; margin-bottom: 8px; box-shadow: 0 0 0 9px #c7d8b804, inset 0 0 20px #a1bda508; }
+.fog-overlay .fog-emblem svg { width: 37px; height: 37px; color: #c3cbb2; stroke-width: 1; opacity: .8; }
+.fog-overlay b { font-size: 13px; letter-spacing: 3px; color: #ced3bf; text-shadow: 0 2px 6px #081f2b; }
+.fog-overlay small { font: 7px var(--mono); color: #a2b4a9; letter-spacing: 2.8px; }
+.fog-divider { width: 28px; height: 1px; background: #bdc7aa57; margin: 9px 0 3px; }
+.fog-hint { font-size: 10px; color: #97aea7; letter-spacing: 1px; }
+.board-bottom { color: #8d9f9b; margin-top: 12px; max-width: none; margin-inline: 0; }
+.board-bottom b { color: #d5cba6; }
+.legend { color: #94a6a3; gap: 19px; margin: 12px 0 17px; }
+.legend-square { background: #8d9d94; border-color: #d7d6b4; }
+.legend-square.fire { background: #eb9a49; border-color: #ffdb8e; }
+.legend-square.wreck { background: #33494c; border-color: #8a9789; }
+.legend-square.fog { background: #20343d; border-color: #657d7b; }
+.legend-square.water { background: #d3e8dc; }
+.dock {
+  border-color: #3b5050;
+  padding: 18px 20px;
+  background: linear-gradient(130deg, #1b3035, #13242c);
+  box-shadow: inset 0 1px #c5c9a711, 0 7px 24px #0002;
+}
+.dock-heading strong { color: #e1d8bc; }
+.dock-ships { gap: 14px; }
+.ship-group { border-color: #5b716133; }
+.ship-group-label { color: #afbeb4; }
+.ship-group-label b { color: #bfb89b; }
+.ship-pieces { gap: 7px; align-content: flex-start; }
+.dock-piece {
+  position: relative;
+  width: calc(var(--length) * 27px + 14px);
+  height: 40px;
+  padding: 5px 4px;
+  border-color: #64756c80;
+  border-radius: 3px;
+  background: radial-gradient(ellipse at 50% 10%, #4960644d, transparent 90%), #1b3038;
+  box-shadow: inset 0 1px #c3c6aa1c, inset 0 -2px #07171d66, 0 2px 4px #0003;
+}
+.dock-piece:hover { border-color: #d2c596; background-color: #344c4c; }
+.dock-piece.selected { border-color: #e2cf95; background: #3c4d42; box-shadow: 0 0 0 2px #e2cf9514, inset 0 1px #f3e8b033; }
+.dock-piece.placed { opacity: .23; filter: saturate(.4); box-shadow: none; }
+.dock-piece .vessel { width: 100%; height: 100%; }
+.dock-piece .vessel-waterline, .fleet-glyph .vessel-waterline { display: none; }
+.dock-hint { color: #8aa09b; }
+.selection-toolbar { color: #c8c8ae; }
+.selection-toolbar .text-button { color: #d8c99e; }
+.sidebar-card { border-color: #3c5050; background: linear-gradient(135deg, #1a2c31, #14212a); box-shadow: inset 0 1px #dde3bc09; }
+.sidebar-heading { color: #d1d6c7; }
+.sidebar-heading small { color: #829a97; }
+.fleet-glyph { display: inline-block; width: 47px; height: 16px; }
+.fleet-glyph .vessel { width: 100%; height: 100%; }
+.fleet-status-name { color: #b4c1b7; }
+.fleet-marker { border-color: #818d70; background: #adc6a4; }
+.fleet-marker.pending { border-color: #65776c; }
+.drag-ghost { border-color: #dccc99; background: #3a56534d; padding: 3px; filter: drop-shadow(0 9px 6px #00121a77); }
+.drag-ghost .vessel { height: 100%; }
+/* The landing chart uses the same fleet and sea as the actual board. */
+.radar-map { background: linear-gradient(#14313e42, #132f3a77), url('./assets/ocean-chart.webp') center / cover; border: 1px solid #8a9071; box-shadow: 0 22px 70px #0006, inset 0 0 0 5px #1f373dcc; }
+.radar-map::before { content: ''; position: absolute; inset: 5px; background: linear-gradient(#b6c4a02b 1px, transparent 1px), linear-gradient(90deg, #b6c4a02b 1px, transparent 1px); background-size: 30px 30px; }
+.map-ship { background: none; border: 0; clip-path: none; height: 26px; }
+.map-ship::after { content: none; }
+.map-ship.s1 { width: 150px; left: 30px; top: 60px; }
+.map-ship.s2 { width: 96px; left: 165px; top: 160px; }
+.map-ship.s3 { width: 67px; left: 43px; top: 220px; }
+.map-hit { background: #263a3888; color: #f3cd8e; border-color: #d1b27c; }
+@keyframes art-fire-drift { from { transform: scale(.96, .98) rotate(-1deg); opacity: .88; } to { transform: scale(1.02, 1.03) rotate(1deg); opacity: 1; } }
+@media (min-width: 1100px) {
+  .game-wrap { padding: 0 30px; }
+  .game-layout { grid-template-columns: minmax(0, 1fr) 232px; gap: 25px; }
+  .boards { gap: 24px; }
+}
+@media (min-width: 961px) {
+  .game-sidebar .sidebar-card { padding: 14px 15px; margin-bottom: 12px; }
+  .game-sidebar .sidebar-heading { margin-bottom: 12px; }
+  .game-sidebar .fleet-status-row { margin-bottom: 9px; }
+  .game-sidebar .fleet-status-row:last-child { margin-bottom: 0; }
+  .game-sidebar .combat-log { max-height: 115px; }
+  .game-sidebar .sidebar-note { line-height: 1.7; font-size: 9px; }
+  .game-sidebar .turn-status { padding: 7px 10px; margin-bottom: 8px; font-size: 11px; }
+  .game-sidebar .attack-coordinate { margin: 10px 0 14px; }
+  .game-sidebar .attack-coordinate b { font-size: 27px; margin-top: 4px; }
+}
+@media (min-width: 1450px) { .game-wrap { max-width: 1550px; padding-inline: 42px; } }
+@media (min-width: 941px) and (max-width: 1160px) {
+  .board-subtitle { display: none; }
+  .game-layout { grid-template-columns: minmax(0, 1fr) 218px; gap: 18px; }
+  .boards { gap: 18px; }
+  .dock-ships { gap: 10px; }
+  .ship-group { padding-right: 10px; }
+  .ship-group-label { flex-wrap: wrap; }
+}
+@media (max-width: 940px) {
+  .board-frame { max-width: none; }
+  .board-subtitle { font-size: 7px; letter-spacing: .8px; }
+}
+@media (max-width: 650px) {
+  .board-frame { padding: 27px 13px 0 27px; max-width: 480px; margin-inline: auto; }
+  .board-caption, .board-bottom { max-width: 480px; margin-inline: auto; }
+  .board-caption { margin-bottom: 12px; }
+  .board-bottom { margin-top: 11px; }
+  .boards { gap: 26px; }
+  .chart-frame-foot { height: 25px; font-size: 6px; letter-spacing: 1px; }
+  .dock { padding: 16px; }
+  .dock-ships { gap: 16px; }
+  .dock-piece { height: 39px; }
+  .ship-group:nth-child(2) { border: 0; padding-right: 0; }
+  .ship-group-label { flex-wrap: wrap; }
+  .legend { gap: 12px; font-size: 9px; }
+}
+@media (max-width: 680px) {
+  /* Keep the firing controls next to the attack board on a small screen. */
+  .game-layout:has(.boards.battling) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .game-layout:has(.boards.battling) > div,
+  .game-layout:has(.boards.battling) .boards,
+  .game-layout:has(.boards.battling) .game-sidebar { display: contents; }
+  .game-layout:has(.boards.battling) .board-panel { grid-column: 1 / -1; }
+  .game-layout:has(.boards.battling) .hostile-chart { grid-row: 1; }
+  .game-layout:has(.boards.battling) .friendly-chart { grid-row: 3; margin-top: 16px; }
+  .game-layout:has(.boards.battling) .command-card { grid-row: 2; grid-column: 1 / -1; }
+  .game-layout:has(.boards.battling) .legend { grid-row: 4; grid-column: 1 / -1; }
+  .game-layout:has(.boards.battling) .fleet-card { grid-row: 5; }
+  .game-layout:has(.boards.battling) .log-card { grid-row: 6; grid-column: 1 / -1; }
+  .game-layout:has(.boards.battling) .command-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 100px;
+    column-gap: 12px;
+    padding: 12px 14px;
+  }
+  .game-layout:has(.boards.battling) .command-card .sidebar-heading { grid-column: 1 / -1; margin-bottom: 8px; }
+  .game-layout:has(.boards.battling) .command-card .turn-status { grid-column: 1; grid-row: 2; padding: 4px 8px; margin: 0; font-size: 10px; }
+  .game-layout:has(.boards.battling) .attack-coordinate { grid-column: 1; grid-row: 3; display: flex; align-items: center; gap: 14px; text-align: left; font-size: 9px; margin: 7px 0; }
+  .game-layout:has(.boards.battling) .attack-coordinate b { font-size: 21px; margin: 0; }
+  .game-layout:has(.boards.battling) [data-action='fire'] { grid-column: 2; grid-row: 2 / 4; padding: 9px; min-height: 58px; }
+  .game-layout:has(.boards.battling) [data-action='pass'] { grid-column: 2; grid-row: 4; margin: 0 auto !important; font-size: 9px; }
+  .game-layout:has(.boards.battling) .command-card .sidebar-note { grid-column: 1; grid-row: 4; margin: 0; text-align: left; font-size: 8px; line-height: 1.6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fire-art { animation: none; }
+}

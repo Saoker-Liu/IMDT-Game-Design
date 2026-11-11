@@ -55,6 +55,7 @@ test('fog redacts unhit enemy locations in all phases, including results',()=>{
   assert.equal(v.enemyCells.filter(c=>c==='unknown').length,100);
   assert.equal(v.players[1].ships,undefined);assert.equal(v.players[1].shots,undefined);assert.equal(v.enemy,undefined);
   assert.equal(v.own.ships.length,10);
+  assert.deepEqual(v.enemyWrecks,[]);
   // Mutating a view must never mutate the game itself.
   v.own.ships[0].x=999;assert.notEqual(g.players[0].ships[0].x,999);
 });
@@ -64,6 +65,7 @@ test('hit reveals one segment, switches turns and does not reveal ship identity'
   assert.equal(g.turn,1);assert.equal(g.deadline,1200+TURN_MS);
   const v=viewFor(g,'a');assert.equal(v.enemyCells[c],'hit');assert.equal(v.enemyCells.filter(c=>c!=='unknown').length,1);
   assert.equal(v.history.at(-1).shipType,undefined);
+  assert.deepEqual(v.enemyWrecks,[]);
   assert.throws(()=>act(g,'a',{type:'fire',cell:99},1201),/等待/);
 });
 test('a missed shot reveals water, duplicates and invalid coordinates consume no turn',()=>{
@@ -79,6 +81,10 @@ test('a ship becomes wreckage only after all of its segments are hit',()=>{
   assert.equal(isSunk(g.players[1],ship),true);
   assert.ok(targets.every(c=>viewFor(g,'a').enemyCells[c]==='sunk'));
   assert.deepEqual(viewFor(g,'a').enemySunk,['battleship']);
+  const wrecks=viewFor(g,'a').enemyWrecks;
+  assert.deepEqual(wrecks,[{type:ship.type,length:ship.length,x:ship.x,y:ship.y,vertical:ship.vertical}]);
+  assert.ok(wrecks.flatMap(cells).every(c=>viewFor(g,'a').enemyCells[c]==='sunk'));
+  wrecks[0].x=999;assert.notEqual(ship.x,999);
 });
 test('10 second deadline skips a turn; an attack arriving at the deadline is rejected',()=>{
   const g=battle(),deadline=g.deadline;

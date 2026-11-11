@@ -11,6 +11,8 @@ test('two real HTTP clients play a private-board game with room discovery, timeo
   const base=`http://127.0.0.1:${server.address().port}`;
   async function req(route,body,token){const response=await fetch(`${base}/api/${route}`,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:`Bearer ${token}`}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:response.status,data:await response.json()};}
   assert.equal((await fetch(base)).status,200);assert.equal((await fetch(`${base}/app.mjs`)).status,200);
+  const sprite=await fetch(`${base}/assets/fleet-battleship.webp`);
+  assert.equal(sprite.status,200);assert.equal(sprite.headers.get('content-type'),'image/webp');
   assert.equal((await req('health')).data.mode,'lan');
   const host=(await req('create',{name:'甲',roomName:'测试海域'})).data;
   let list=(await req('rooms')).data.rooms;assert.equal(list.length,1);assert.equal(list[0].count,1);assert.equal(list[0].name,'测试海域');assert.equal(list[0].token,undefined);

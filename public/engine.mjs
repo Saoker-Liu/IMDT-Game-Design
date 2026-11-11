@@ -190,6 +190,10 @@ export function viewFor(game, playerId) {
     round: game.round, version: game.version, startedAt: game.startedAt, endedAt: game.endedAt,
     me, players: game.players.map(publicPlayer), own: structuredClone(own), enemyCells,
     enemySunk: other ? other.ships.filter(s => isSunk(other, s)).map(s => s.type) : [],
+    // A complete wreck is public only after every segment has been revealed by cannon fire.
+    enemyWrecks: other ? other.ships.filter(s => isSunk(other, s)).map(s => ({
+      type: s.type, length: s.length, x: s.x, y: s.y, vertical: s.vertical,
+    })) : [],
     history: structuredClone(game.history.slice(-200)),
   };
 }
