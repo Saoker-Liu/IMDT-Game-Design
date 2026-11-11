@@ -39,10 +39,10 @@ try {
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Layout must not overflow horizontally');
   }
 
-  const practiceContext = await context();
+  const practiceContext = await context({ viewport: { width: 1440, height: 1500 } });
   const practice = await practiceContext.newPage();
   await practice.goto(base);
-  await practice.locator('[data-action="practice"]').click();
+  await practice.locator('[data-action="practice"]').first().click();
   await practice.waitForSelector('#own-grid');
   await artReady(practice);
   const piece = await practice.locator('.dock-piece[data-ship="BB-1"]').boundingBox();

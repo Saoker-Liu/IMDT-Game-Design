@@ -5,6 +5,7 @@ import { networkInterfaces } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { makePlayer, makeGame, act, tick, viewFor, finish } from './public/engine.mjs';
+import { MAPS, terrainFor } from './public/terrain.mjs';
 
 const PUBLIC = path.resolve(fileURLToPath(new URL('./public/', import.meta.url)));
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.ico': 'image/x-icon', '.json': 'application/json' };
@@ -12,7 +13,7 @@ const clean = (s, fallback, max = 20) => typeof s === 'string' && s.trim() ? s.t
 const token = () => randomBytes(32).toString('hex');
 const equalToken = (a, b) => typeof a === 'string' && a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
-export function createGameServer({ now = Date.now, disconnectMs = 90_000 } = {}) {
+export function createGameServer({ now = Date.now, disconnectMs = 90_000, rng = Math.random } = {}) {
   const rooms = new Map();
   const sessions = new Map();
   const limits = new Map();
@@ -25,7 +26,7 @@ export function createGameServer({ now = Date.now, disconnectMs = 90_000 } = {})
     if (room.members.size === 0) { rooms.delete(room.id); return; }
     if (room.game.phase === 'lobby') {
       room.game.players.splice(index, 1);
-      room.game.players.forEach(p => { p.ready = false; });
+      room.game.players.forEach((p, i) => { p.ready = false; p.terrain = terrainFor(room.game.mapId, i); });
       room.game.version++;
     } else if (room.game.phase !== 'result') {
       finish(room.game, 1 - index, now(), 'left');
@@ -69,10 +70,10 @@ export function createGameServer({ now = Date.now, disconnectMs = 90_000 } = {})
       if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}` && req.headers.origin !== `https://${req.headers.host}`) {
         return send(403, { error: '请从房间服务器的地址打开游戏' });
       }
-      if (url.pathname === '/api/health' && req.method === 'GET') return send(200, { ok: true, mode: 'lan', version: '1.0.0' });
+      if (url.pathname === '/api/health' && req.method === 'GET') return send(200, { ok: true, mode: 'lan', version: '3.0.0' });
       if (url.pathname === '/api/rooms' && req.method === 'GET') {
         return send(200, { rooms: [...rooms.values()].map(r => ({
-          id: r.id, name: r.name, count: r.members.size, phase: r.game.phase,
+          id: r.id, name: r.name, mapId: r.game.mapId, count: r.members.size, phase: r.game.phase,
           host: r.game.players.find(p => r.members.has(p.id))?.name || '指挥官', createdAt: r.createdAt,
         })).sort((a, b) => b.createdAt - a.createdAt) });
       }
@@ -98,17 +99,21 @@ export function createGameServer({ now = Date.now, disconnectMs = 90_000 } = {})
         const secret = token();
         let room;
         if (url.pathname === '/api/create') {
+          const mapId = body.mapId ?? 'open-sea';
+          if (!MAPS.some(m => m.id === mapId)) return send(400, { error: '未知的作战地图' });
           if (rooms.size >= 100) return send(409, { error: '房间已满，请稍后再试' });
           let code;
           do { code = randomBytes(3).toString('hex').toUpperCase(); } while (rooms.has(code));
           room = { id: code, name: clean(body.roomName, `${name}的海域`), createdAt: now(),
-            game: makeGame([makePlayer(id, name)]), members: new Map() };
+            game: makeGame([makePlayer(id, name)], mapId), members: new Map() };
           rooms.set(code, room);
         } else {
           room = rooms.get(String(body.roomId || '').toUpperCase());
           if (!room) return send(404, { error: '房间不存在或已结束' });
           if (room.game.phase !== 'lobby' || room.members.size >= 2) return send(409, { error: '房间已满或正在交战' });
-          room.game.players.push(makePlayer(id, name)); room.game.version++;
+          const player = makePlayer(id, name);
+          player.terrain = terrainFor(room.game.mapId, room.game.players.length);
+          room.game.players.push(player); room.game.version++;
         }
         room.members.set(id, { token: secret, lastSeen: now() });
         sessions.set(secret, { roomId: room.id, playerId: id });
@@ -126,7 +131,7 @@ export function createGameServer({ now = Date.now, disconnectMs = 90_000 } = {})
         opponentConnected: room.members.size === 2,
       });
       if (url.pathname === '/api/action' && req.method === 'POST') {
-        try { act(room.game, session.playerId, body, now()); }
+        try { act(room.game, session.playerId, body, now(), rng); }
         catch (error) { return send(409, { error: error.message }); }
         return send(200, { ...viewFor(room.game, session.playerId), roomId: room.id, roomName: room.name,
           serverNow: now(), opponentConnected: room.members.size === 2 });

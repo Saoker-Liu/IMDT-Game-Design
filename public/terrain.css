@@ -1,0 +1,139 @@
+/* FOGBOUND · public terrain charts, map library and tactical controls */
+.terrain-tile, .terrain-swatch, .terrain-guide-art, .terrain-variants i, .map-seal {
+  background-image: url('./assets/terrain-atlas.webp?v=3.0.0');
+  background-size: 400% 400%;
+  background-position: calc(var(--tile-col) * 100% / 3) calc(var(--tile-row) * 100% / 3);
+  background-repeat: no-repeat;
+}
+.terrain-layer, .map-mini { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(10, 1fr); }
+.terrain-layer { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.terrain-tile { display: block; min-width: 0; min-height: 0; }
+.terrain-layer .terrain-deep, .map-mini .terrain-deep { background-image: none; }
+.map-mini { background: url('./assets/ocean-chart.webp?v=2.0.1') center / cover; }
+.terrain-layer .terrain-rock { mask-image: radial-gradient(ellipse, #000 48%, #000 72%, transparent 100%); }
+.chart-furniture { z-index: 1; opacity: .24; }
+.board-grid { z-index: 2; }
+.ship-layer { z-index: 3; }
+.hostile-chart .terrain-layer { filter: saturate(.82) brightness(.85); }
+.cell.unknown { background: #071b2a24; }
+.cell.unknown::after { background: #d9e4cb40; box-shadow: none; }
+.cell.terrain-rock { cursor: not-allowed; }
+.cell.rescan:not(.aim)::before { content: ''; width: 4px; height: 4px; border-top: 1px solid #d2ddbf; border-right: 1px solid #d2ddbf; position: absolute; top: 3px; right: 3px; opacity: .75; }
+.ship-overlay.grounded .ship-art { filter: drop-shadow(0 0 1px #e4c07c) drop-shadow(0 3px 3px #061b29); }
+.ship-status-anchor { position: absolute; z-index: 2; right: 0; top: -6px; width: 17px; height: 17px; border-radius: 50%; border: 1px solid #dbc38a; background: #302c20; display: grid; place-items: center; color: #f1d698; font-size: 10px; line-height: 1; box-shadow: 0 2px 4px #0007; }
+.map-selection { padding: 4px 0 28px; margin-bottom: 24px; }
+.map-selection-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 18px; }
+.map-selection-heading .eyebrow { font-size: 8px; color: #b9b796; letter-spacing: 2px; }
+.map-selection-heading .eyebrow::before { background: #b9b796; }
+.map-selection-heading h2 { margin-top: 8px; font-size: 19px; font-weight: 600; color: #e0deca; letter-spacing: 2px; }
+.map-selection-heading > span { color: #8a9d9b; font-size: 10px; letter-spacing: 1px; }
+.map-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.map-card { position: relative; isolation: isolate; height: 214px; overflow: hidden; text-align: left; border: 1px solid #4b6261; border-radius: 5px; padding: 0; background: #16323f; transition: transform .2s, border-color .2s; }
+.map-card:hover { border-color: #d1c796; transform: translateY(-3px); }
+.map-card.selected { border-color: #e2cc91; box-shadow: 0 0 0 2px #e2cc9124, 0 8px 24px #0003; }
+.map-card .map-mini { position: absolute; inset: -18%; transform: rotate(-10deg); filter: brightness(.82) saturate(.85); }
+.map-card-shade { position: absolute; inset: 0; background: linear-gradient(180deg, #071b2c77, transparent 33%, #071b2c77 56%, #091d2af7); }
+.map-card-number { position: absolute; left: 14px; top: 13px; font: 7px var(--mono); letter-spacing: .8px; color: #d4d9c2; }
+.map-card-body { position: absolute; left: 17px; right: 14px; bottom: 18px; }
+.map-card-body strong { display: block; font-size: 19px; color: #f0e2bc; font-weight: 600; letter-spacing: 3px; text-shadow: 0 2px 5px #0007; }
+.map-card-body > span { display: block; color: #a6b9ad; font-size: 9px; margin-top: 8px; line-height: 1.8; }
+.map-card-selected { position: absolute; right: 10px; top: 34px; padding: 3px 7px; border: 1px solid #c5c6a73d; border-radius: 3px; font-size: 8px; color: #d8dcca; background: #102837c9; }
+.map-card.selected .map-card-selected { color: #eddaa7; border-color: #e2cc9199; background: #2d3d36e8; }
+.map-selection-foot { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 15px; color: #829995; font-size: 10px; }
+.map-selection-foot b { color: #d8cca8; font-weight: 500; }
+.map-selection-foot .btn { flex-shrink: 0; }
+.map-brief { display: flex; align-items: center; gap: 13px; border: 1px solid #61756366; border-radius: 5px; padding: 11px 15px; margin: -3px 0 20px; background: linear-gradient(110deg, #273b39aa, #12232d); }
+.map-seal { display: block; width: 37px; height: 37px; border-radius: 3px; border: 1px solid #acb5976b; flex-shrink: 0; box-shadow: 0 2px 6px #0004; }
+.map-brief > div { flex: 1; }
+.map-brief b { font-size: 12px; color: #e2d7b6; margin-right: 15px; letter-spacing: 2px; }
+.map-brief > div > span { color: #9db0a3; font-size: 10px; }
+.map-brief .text-button { color: #c2c5a6; white-space: nowrap; font-size: 10px; }
+.waiting-room .map-brief { margin-top: 22px; text-align: left; }
+.waiting-room .map-brief > div > span { display: block; margin-top: 3px; }
+.terrain-legend { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin: 13px 0 17px; }
+.terrain-key { display: flex; gap: 9px; align-items: center; text-align: left; padding: 8px; border: 1px solid #5b716344; border-radius: 4px; background: #172b32bb; min-width: 0; }
+.terrain-key:hover { border-color: #b3b68a; background-color: #293d3c; }
+.terrain-swatch { width: 33px; height: 33px; flex-shrink: 0; display: block; border-radius: 3px; border: 1px solid #b8c1a93b; }
+.terrain-key b { display: block; font-size: 10px; font-weight: 500; color: #d5d8bd; letter-spacing: 1px; }
+.terrain-key small { display: block; font-size: 8px; color: #94a79a; margin-top: 2px; line-height: 1.5; }
+dialog:has(.terrain-guide) { width: min(740px, calc(100% - 30px)); max-width: 740px; }
+.terrain-guide { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; margin-top: 20px; }
+.terrain-guide-card { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 12px; border: 1px solid #4a6358; border-radius: 5px; background: #192f36; padding: 13px; }
+.terrain-guide-art { display: block; width: 80px; height: 80px; border: 1px solid #92a88b66; border-radius: 3px; }
+.terrain-guide-card small { font: 7px var(--mono); letter-spacing: 1.2px; color: #a2b99f; }
+.terrain-guide-card h3 { font-size: 16px; color: #e6d7b0; font-weight: 500; letter-spacing: 2px; margin: 5px 0; }
+.terrain-guide-card p { font-size: 10px; color: #a9bbaf; line-height: 1.8; }
+.terrain-variants { grid-column: 1 / -1; display: flex; gap: 6px; padding-top: 1px; }
+.terrain-variants i { display: block; flex: 1; height: 35px; border-radius: 2px; border: 1px solid #b1c1a629; }
+.terrain-rules-note { color: #9aac9f; font-size: 11px; line-height: 2; margin: 18px 0; }
+.mobility-panel { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 15px 0 3px; padding: 12px 14px; border: 1px solid #69765b75; background: linear-gradient(120deg, #2d3e35b0, #142b33); border-radius: 5px; }
+.mobility-panel > div:first-child { min-width: 0; }
+.mobility-panel small { display: block; font: 7px var(--mono); letter-spacing: 1.7px; color: #90a48e; }
+.mobility-panel b { display: block; font-size: 11px; letter-spacing: 1px; font-weight: 500; color: #e2d6b0; margin: 4px 0; }
+.mobility-panel > div > span { display: block; font-size: 9px; color: #91a79a; line-height: 1.6; }
+.move-pad { display: grid; grid-template: repeat(3, 22px) / repeat(3, 24px); gap: 3px; flex-shrink: 0; }
+.move-direction { display: grid; place-items: center; padding: 0; color: #ddd1a0; background: linear-gradient(#40564f, #263d3a); border: 1px solid #8d9673; border-radius: 3px; font: 14px var(--mono); line-height: 1; box-shadow: inset 0 1px #e2dcad1f, 0 2px 3px #001a20; }
+.move-direction:hover:not(:disabled) { background: #667457; border-color: #f0d99d; }
+.move-direction:disabled { opacity: .25; }
+.move-direction.north { grid-area: 1 / 2; }
+.move-direction.west { grid-area: 2 / 1; }
+.move-direction.east { grid-area: 2 / 3; }
+.move-direction.south { grid-area: 3 / 2; }
+.move-center { grid-area: 2 / 2; color: #9cad93; display: grid; place-items: center; font-size: 16px; }
+.weapon-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; margin: 9px 0 11px; }
+.weapon-switch button { border: 1px solid #5f756769; border-radius: 4px; padding: 7px 5px; background: #21343a; text-align: center; }
+.weapon-switch button[aria-pressed='true'] { border-color: #d8c18a; background: #414d37; box-shadow: inset 0 1px #e3d7ac24; }
+.weapon-switch b { font-size: 11px; font-weight: 500; color: #e0d4af; }
+.weapon-switch small { margin-left: 5px; font-size: 8px; color: #a7b39a; }
+.weapon-switch button:disabled { opacity: .35; }
+select { width: 100%; border: 1px solid #415b56; background: #142b31; border-radius: 5px; color: #d3d9c4; font: 12px var(--font); padding: 12px; }
+.board-caption .badge { max-width: 48%; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1150px) and (min-width: 961px) {
+  .terrain-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .map-brief > div > span { display: block; margin-top: 2px; }
+}
+@media (max-width: 960px) {
+  .map-cards { gap: 10px; }
+  .map-card { height: 190px; }
+  .map-card-number { font-size: 6px; left: 10px; }
+  .map-card-body { left: 12px; right: 10px; }
+  .map-card-body strong { font-size: 16px; letter-spacing: 2px; }
+  .map-card-body > span { font-size: 8px; }
+  .map-brief > div > span { display: block; margin-top: 3px; }
+  .terrain-legend { gap: 6px; }
+  .terrain-key { padding: 6px; gap: 6px; }
+  .terrain-swatch { width: 28px; height: 28px; }
+}
+@media (max-width: 680px) {
+  .map-selection { padding-top: 24px; margin-bottom: 6px; }
+  .map-selection-heading { gap: 10px; }
+  .map-selection-heading h2 { font-size: 17px; }
+  .map-selection-heading > span { font-size: 8px; }
+  .map-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+  .map-card { height: 175px; }
+  .map-card-body { left: 11px; bottom: 13px; }
+  .map-card-body strong { font-size: 17px; }
+  .map-card-body > span { font-size: 8px; margin-top: 5px; }
+  .map-card-number { font-size: 5px; left: 10px; top: 10px; }
+  .map-card-selected { top: 27px; right: 8px; font-size: 7px; }
+  .map-selection-foot { align-items: flex-start; flex-direction: column; gap: 12px; font-size: 9px; }
+  .map-selection-foot .btn { width: 100%; }
+  .map-brief { padding: 10px; gap: 9px; margin-bottom: 18px; }
+  .map-seal { width: 32px; height: 32px; }
+  .map-brief b { font-size: 11px; margin-right: 0; }
+  .map-brief > div > span { font-size: 8px; line-height: 1.7; }
+  .map-brief .text-button { font-size: 8px; padding: 3px; }
+  .terrain-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .terrain-key { padding: 8px; gap: 9px; }
+  .terrain-swatch { width: 32px; height: 32px; }
+  .game-layout:has(.boards.battling) .terrain-legend { grid-row: 5; grid-column: 1 / -1; }
+  .game-layout:has(.boards.battling) .fleet-card { grid-row: 6; }
+  .game-layout:has(.boards.battling) .log-card { grid-row: 7; }
+  .game-layout:has(.boards.battling) .weapon-switch { grid-row: 5; grid-column: 1 / -1; margin-bottom: 0; }
+  .weapon-switch button { padding: 5px; }
+  .mobility-panel { margin-top: 13px; }
+  .terrain-guide { grid-template-columns: 1fr; }
+  .terrain-guide-card { grid-template-columns: 75px minmax(0, 1fr); padding: 11px; }
+  .terrain-guide-art { width: 75px; height: 75px; }
+  .terrain-guide-card p { font-size: 10px; }
+}
