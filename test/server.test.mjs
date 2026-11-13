@@ -79,3 +79,18 @@ test('static traversal, cross-origin writes, malformed requests and anonymous ac
   for(const body of ['{bad','null'])assert.equal((await fetch(`${base}/api/create`,{method:'POST',body})).status,400);
   assert.equal((await fetch(`${base}/api/action`,{method:'POST',body:'{}'})).status,401);
 });
+
+test('directory index pages and local fonts are served without changing the game entry',async t=>{
+  const {base}=await setup(t);
+  for(const route of ['/','/one-page/']){
+    const response=await fetch(`${base}${route}`);
+    assert.equal(response.status,200);
+    assert.match(response.headers.get('content-type'),/^text\/html/);
+    const head=await fetch(`${base}${route}`,{method:'HEAD'});
+    assert.equal(head.status,200);assert.equal(await head.text(),'');
+  }
+  const font=await fetch(`${base}/one-page/assets/serif-cn.woff2`);
+  assert.equal(font.status,200);assert.equal(font.headers.get('content-type'),'font/woff2');
+  assert.equal(Buffer.from(await font.arrayBuffer()).subarray(0,4).toString(),'wOF2');
+  assert.equal((await fetch(`${base}/one-page/%2e%2e%2f%2e%2e%2fpackage.json`)).status,403);
+});

@@ -2,7 +2,9 @@
 
 一个以海战为主题的卡牌回合制棋类游戏 MVP。支持**双人局域网房间**和**人机演习**。纯 JavaScript，零第三方运行依赖。
 
-**[在线试玩](https://saoker-liu.github.io/IMDT-Game-Design/)** · [源代码](https://github.com/Saoker-Liu/IMDT-Game-Design)
+**[游戏宣传页 / One Page Site](https://saoker-liu.github.io/IMDT-Game-Design/one-page/)** · **[在线试玩](https://saoker-liu.github.io/IMDT-Game-Design/)** · [源代码](https://github.com/Saoker-Liu/IMDT-Game-Design)
+
+宣传页以原创海雾舰队主视觉、可交互的战术演示、五种舰型和三片海域展示游戏，支持手机和减少动画偏好。设计依据、素材来源与完整生成提示词见 [One Page Site 设计记录](docs/one-page/site-design.md)。
 
 > GitHub Pages 是静态托管，在线链接提供完整的人机演习。双人房间需要下方的 Node.js 服务；两位玩家打开同一台主机的局域网地址即可联机，无需 GitHub 或其他账号。
 
@@ -81,6 +83,7 @@ npm run check:reefs # 暗礁隐蔽外观、炮击不揭示与触礁悬停信息�
 npm run check:cards # 20 张卡、航母矩形拖拽/旋转、全套选目标方式、触屏与人机模式
 npm run check:turns # 无倒计时、0 行动力等待、刷新与手动确认换手
 npm run check:air # 战斗机夺取/反夺制空权与其他飞机的禁飞规则
+npm run check:onepage # 宣传页：六种屏宽、战术演示、舰型切换、地图入口与动画偏好
 ```
 
 美术浏览器验证使用隔离的无头 Edge，不读取个人浏览器资料。开发者可先 `npm install`，再运行 `npm run check:art`，检查拖拽、旋转边界、迷雾保密、炮击效果与 390px 手机布局，并输出截图到 `test-results/art/`。其他 Chromium 安装可通过 `PLAYWRIGHT_EXECUTABLE_PATH` 指定。运行游戏与规则测试无需安装此开发依赖。
@@ -88,6 +91,7 @@ npm run check:air # 战斗机夺取/反夺制空权与其他飞机的禁飞规�
 ```text
 public/
   index.html       页面入口
+  one-page/        独立游戏宣传页、动效与本地字体
   app.mjs          大厅、布阵、战斗与人机客户端
   engine.mjs       纯规则引擎，服务端与练习模式共用
   cards.mjs        二十张卡定义、费用、舰型条件、洗牌与抓牌

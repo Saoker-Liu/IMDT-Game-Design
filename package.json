@@ -16,7 +16,8 @@
     "check:cards": "node scripts/cards-check.mjs",
     "check:naval": "node scripts/naval-check.mjs",
     "check:air": "node scripts/air-check.mjs",
-    "check:turns": "node scripts/manual-turn-check.mjs"
+    "check:turns": "node scripts/manual-turn-check.mjs",
+    "check:onepage": "node scripts/one-page-check.mjs"
   },
   "engines": {
     "node": ">=22"

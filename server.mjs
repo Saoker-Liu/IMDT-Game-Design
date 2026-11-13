@@ -8,7 +8,7 @@ import { makePlayer, makeGame, act, tick, viewFor, finish } from './public/engin
 import { MAPS, terrainFor } from './public/terrain.mjs';
 
 const PUBLIC = path.resolve(fileURLToPath(new URL('./public/', import.meta.url)));
-const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.ico': 'image/x-icon', '.json': 'application/json' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.json': 'application/json' };
 const clean = (s, fallback, max = 20) => typeof s === 'string' && s.trim() ? s.trim().slice(0, max) : fallback;
 const token = () => randomBytes(32).toString('hex');
 const equalToken = (a, b) => typeof a === 'string' && a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -56,8 +56,8 @@ export function createGameServer({ now = Date.now, disconnectMs = 90_000, rng = 
       const url = new URL(req.url, 'http://localhost');
       if (!url.pathname.startsWith('/api/')) {
         if (req.method !== 'GET' && req.method !== 'HEAD') return send(405, { error: 'Method not allowed' });
-        const route = decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname);
-        const target = path.resolve(PUBLIC, `.${route}`);
+        const route = decodeURIComponent(url.pathname);
+        const target = path.resolve(PUBLIC, `.${route.endsWith('/') ? `${route}index.html` : route}`);
         if (!target.startsWith(PUBLIC + path.sep)) return send(403, { error: 'Forbidden' });
         try {
           const data = await readFile(target);
