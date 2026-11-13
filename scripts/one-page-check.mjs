@@ -18,7 +18,11 @@ try{
   const errors=[],external=[];
   context.on('page',page=>{
     page.on('pageerror',error=>errors.push(error.message));
-    page.on('response',response=>{if(response.status()>=400)errors.push(`${response.status()} ${response.url()}`);});
+    page.on('response',response=>{
+      // The existing game probes for a LAN backend, then uses practice mode on static hosting.
+      const staticDiscovery=!server&&response.status()===404&&response.url()===new URL('api/health',game).href;
+      if(response.status()>=400&&!staticDiscovery)errors.push(`${response.status()} ${response.url()}`);
+    });
     page.on('request',request=>{
       const onSite=new URL(page.url()).pathname===new URL(site).pathname;
       if(onSite&&new URL(request.url()).origin!==origin)external.push(request.url());

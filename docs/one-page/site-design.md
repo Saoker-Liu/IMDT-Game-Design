@@ -44,3 +44,5 @@ Use case: stylized-concept. Asset type: original cinematic hero key art for the 
 运行 `npm run check:onepage` 使用隔离的无头 Edge 验证：320、390、768、1024、1440、1920 像素布局；本地字体与图片；战术三阶段和自动播放；键盘操作；五舰型切换与快速选择；三张地图入口和原游戏链接；手机导航、动画开关、系统减少动画偏好与无脚本阅读。截图输出至忽略的 `test-results/one-page/`。`ONE_PAGE_URL` 可指定部署后的完整页面 URL 复用验证。
 
 另运行 `npm test` 检查游戏规则及目录索引 HTTP 响应，`npm run build` 验证静态构建。部署后再检查线上资源、交互与试玩链接。
+
+本次验收：49 项规则与 HTTP 测试通过，静态构建通过，宣传页浏览器验证在本地与 GitHub Pages 均通过。[Pages 部署记录](https://github.com/Saoker-Liu/IMDT-Game-Design/actions/runs/43453176696)。线上原游戏会请求一次 `/api/health` 判断是否存在局域网服务；静态托管返回 404 后进入人机模式，验证脚本只豁免这个已知的服务探测响应。
