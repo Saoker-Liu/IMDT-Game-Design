@@ -24,7 +24,7 @@ async function setup(t,mapId='open-sea') {
 test('real peers discover rooms, deploy carriers, keep hands private and restore reef reconnaissance on refresh',async t=>{
   const {host,guest,state,send,raw,api,base,battle,findCard,setClock}=await setup(t,'undertow');
   assert.equal((await fetch(base)).status,200);assert.equal((await fetch(`${base}/cards.mjs`)).status,200);
-  assert.equal((await api('health')).version,'5.0.0');assert.equal((await api('rooms')).rooms[0].mapId,'undertow');
+  assert.equal((await api('health')).version,'5.1.0');assert.equal((await api('rooms')).rooms[0].mapId,'undertow');
   assert.equal((await raw('join',{roomId:host.roomId})).status,409);assert.equal((await raw('state')).status,401);
   await battle();let view=await state(host);assert.equal(view.own.ships.length,11);assert.equal(view.own.hand.length,6);assert.equal(view.players[1].handCount,4);
   assert.equal(view.players[1].hand,undefined);assert.equal(view.players[1].ships,undefined);assert.equal(view.own.deck,undefined);
@@ -32,7 +32,8 @@ test('real peers discover rooms, deploy carriers, keep hands private and restore
   assert.ok(view.own.knownOwnReefs.length>0);assert.ok(view.enemyTerrain.every(t=>t==='deep'));
   const restored=await state(host);assert.deepEqual(restored.own,view.own);assert.equal(restored.deadline,view.deadline);
   const opponent=await state(guest);assert.ok(opponent.enemyTerrain.every(t=>t==='deep'));assert.equal(opponent.players[0].knownOwnReefs,undefined);
-  setClock(view.deadline);view=await state(host);assert.equal(view.turn,1);assert.equal(view.own.actionPoints,0);
+  setClock(65_000);view=await state(host);assert.equal(view.turn,0);assert.equal(view.own.actionPoints,restored.own.actionPoints);assert.deepEqual(view.own.hand,restored.own.hand);assert.equal(view.deadline,null);
+  await send(host,{type:'pass'});assert.equal((await state(guest)).turn,1);
   await api('leave',{},host);const result=await state(guest);assert.equal(result.phase,'result');assert.equal(result.winner,1);
   assert.equal((await raw('state',null,host)).status,401);
 });
@@ -58,12 +59,17 @@ test('two clients enforce carrier bombers, repairs, active air control and tempo
   let v=await send(host,{type:'play-card',cardId:'bomber-1',cell:1});assert.deepEqual(v.enemyCells.slice(0,4),['hit','hit','hit','unknown']);
   await send(host,{type:'pass'});v=await send(guest,{type:'play-card',cardId:'repair-1',cell:0});assert.equal(v.own.ships[0].hits.includes(0),false);
   assert.equal((await state(host)).enemyCells[0],'unknown');await send(guest,{type:'pass'});
-  await send(host,{type:'play-card',cardId:'fighter-1'});await send(host,{type:'pass'});
-  assert.equal((await raw('action',{type:'play-card',cardId:'bomber-1',cell:90},guest)).status,409);
-  assert.equal((await raw('action',{type:'play-card',cardId:'fighter-1'},guest)).status,409);
-  await send(guest,{type:'pass'});v=await send(host,{type:'play-card',cardId:'seaplane-1'});assert.equal(v.enemyVisible.length,100);
+  v=await send(host,{type:'play-card',cardId:'seaplane-1'});assert.equal(v.enemyVisible.length,100);
   const hidden=await state(guest);assert.equal(hidden.enemyVisible.length,0);assert.equal(hidden.players[0].scans,undefined);
   await send(host,{type:'pass'});await send(guest,{type:'pass'});assert.equal((await state(host)).enemyVisible.length,0);
+  await send(host,{type:'play-card',cardId:'fighter-1'});await send(host,{type:'pass'});
+  assert.equal((await raw('action',{type:'play-card',cardId:'bomber-1',cell:90},guest)).status,409);
+  v=await send(guest,{type:'play-card',cardId:'fighter-1'});
+  assert.equal(v.airControl.owner,1);assert.equal(v.airControl.remaining,3);assert.equal(v.own.actionPoints,1);
+  const restored=await state(guest);assert.deepEqual(restored.own,v.own);assert.deepEqual(restored.airControl,v.airControl);
+  await send(guest,{type:'pass'});
+  assert.equal((await raw('action',{type:'play-card',cardId:'seaplane-1'},host)).status,409);
+  v=await send(host,{type:'play-card',cardId:'fighter-1'});assert.equal(v.airControl.owner,0);assert.equal(v.airControl.remaining,3);
 });
 
 test('static traversal, cross-origin writes, malformed requests and anonymous actions remain rejected',async t=>{

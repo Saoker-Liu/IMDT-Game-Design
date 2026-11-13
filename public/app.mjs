@@ -1,13 +1,13 @@
-import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, TURN_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=5.0.0';
-import { vesselArt, shipOverlay, impactArt, boardFurniture } from './art.mjs?v=5.0.0';
+import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=5.1.0';
+import { vesselArt, shipOverlay, impactArt, boardFurniture } from './art.mjs?v=5.1.0';
 
-import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.0.0';
-import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.0.0';
-import { CARD_TYPES, canUseCard, cardContext, sourceMatches, shipAlive } from './cards.mjs?v=5.0.0';
-import { handPanel, cardGuide } from './cards-ui.mjs?v=5.0.0';
-import { radiusCells, reachableMoves, lineCells } from './geometry.mjs?v=5.0.0';
-import { torpedoRows } from './combat.mjs?v=5.0.0';
-import { chooseBotAction } from './bot.mjs?v=5.0.0';
+import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.1.0';
+import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.1.0';
+import { CARD_TYPES, canUseCard, cardContext, sourceMatches, shipAlive } from './cards.mjs?v=5.1.0';
+import { handPanel, cardGuide } from './cards-ui.mjs?v=5.1.0';
+import { radiusCells, reachableMoves, lineCells } from './geometry.mjs?v=5.1.0';
+import { torpedoRows } from './combat.mjs?v=5.1.0';
+import { chooseBotAction } from './bot.mjs?v=5.1.0';
 
 const app = document.querySelector('#app');
 const modal = document.querySelector('#modal');
@@ -120,7 +120,7 @@ function header(inGame = false) {
   </div></header>`;
 }
 function footer() {
-  return `<footer class="footer"><span class="english">FOGBOUND / NAVAL TACTICS</span><span class="footer-links"><button data-action="rules">作战手册</button><a href="${REPO}" target="_blank" rel="noopener">GitHub ↗</a><span class="desktop-nav">IMDT · DEMO 5.0</span></span></footer>`;
+  return `<footer class="footer"><span class="english">FOGBOUND / NAVAL TACTICS</span><span class="footer-links"><button data-action="rules">作战手册</button><a href="${REPO}" target="_blank" rel="noopener">GitHub ↗</a><span class="desktop-nav">IMDT · DEMO 5.1</span></span></footer>`;
 }
 function heroVisual() {
   return `<div class="hero-visual" aria-hidden="true"><span class="visual-coordinate">N 31° 14′ 12″<br>E 121° 28′ 08″</span><div class="radar-map"><div class="radar-circle"><div class="radar-sweep"></div></div><div class="map-ship s1">${vessel({type:'battleship'})}</div><div class="map-ship s2">${vessel({type:'cruiser'})}</div><div class="map-ship s3">${vessel({type:'destroyer'})}</div><div class="map-hit">+</div><div class="map-dot"></div></div><div class="visual-tag t1"><div class="tag-caption">FLEET STATUS</div><div class="tag-value"><i class="dot"></i>舰队集结完毕</div></div><div class="visual-tag t2"><div class="tag-caption">TARGET ACQUIRED</div><div class="tag-value">${icon('target')}发现目标 · D4</div></div><span class="visual-watermark">TACTICAL OCEAN SECTOR / 001</span></div>`;
@@ -130,7 +130,7 @@ function renderLobby() {
   app.innerHTML = `${header()}<main class="wrap">
     <section class="hero"><div><div class="eyebrow">NAVAL TACTICS / 双人策略海战</div><h1>海雾之下，<br>每一步都是<span>博弈。</span></h1><p class="hero-description">部署你的舰队，在未知海域中寻找对手。<br>一枚炮弹，一次抉择。让最后一艘战舰为你而战。</p><div class="hero-actions"><button class="btn primary" data-action="create">${icon('plus')}创建作战房间${icon('arrow')}</button><button class="btn subtle" data-action="practice">${icon('target')}人机演习</button></div><p class="micro">${icon('shield')}无需注册 · ${lan ? '同一局域网，即刻开战' : '浏览器即开即玩，支持局域网部署'}</p></div>${heroVisual()}</section>
     ${mapPicker(selectedMap)}
-    <section class="metrics" aria-label="游戏概览"><div class="metric"><div class="metric-number">10<small>×</small>10</div><div class="metric-label"><b>战术海域</b>双面独立棋盘</div></div><div class="metric"><div class="metric-number">11<small>艘</small></div><div class="metric-label"><b>专属舰队</b>五种舰型，包含航母</div></div><div class="metric"><div class="metric-number">90<small>s</small></div><div class="metric-label"><b>部署时间</b>掌握开战前的主动权</div></div><div class="metric"><div class="metric-number">10<small>s</small></div><div class="metric-label"><b>回合决策</b>3 点行动力，自由出牌</div></div></section>
+    <section class="metrics" aria-label="游戏概览"><div class="metric"><div class="metric-number">10<small>×</small>10</div><div class="metric-label"><b>战术海域</b>双面独立棋盘</div></div><div class="metric"><div class="metric-number">11<small>艘</small></div><div class="metric-label"><b>专属舰队</b>五种舰型，包含航母</div></div><div class="metric"><div class="metric-number">90<small>s</small></div><div class="metric-label"><b>部署时间</b>掌握开战前的主动权</div></div><div class="metric"><div class="metric-number">∞</div><div class="metric-label"><b>回合决策</b>不限时，确认后换手</div></div></section>
     <section aria-label="局域网房间"><div class="section-heading"><h2 class="section-title">${icon('radar')}作战大厅 <span class="count-badge">${rooms.length}</span></h2><button class="text-button" data-action="refresh">${icon('refresh')}刷新房间</button></div><div class="lobby-panel"><div class="lobby-panel-head"><span class="head-label"><i class="dot ${lan ? '' : 'amber'}"></i>${lan ? '局域网公开房间' : '局域网对战'}</span><span>${lan ? '自动发现 · 实时同步' : '在本地启动服务即可开启'}</span></div><div id="room-list">${roomList()}</div></div><div class="lobby-bottom"><span>${icon('info')}${lan ? '连接同一个房间服务器，所有公开房间都将显示在这里。' : '当前为在线试玩版。人机演习可直接体验；局域网对战需运行本地服务。'}</span><button class="text-button" data-action="join-code">通过房间号加入${icon('chevron')}</button></div></section>
     ${footer()}</main>`;
 }
@@ -154,9 +154,9 @@ function renderWaiting() {
 }
 function phaseToolbar() {
   const prep = state.phase === 'placement', mine = state.turn === state.me;
-  const title = prep ? (state.own.confirmed ? '舰队已就绪，等待对手' : '部署舰队，掌控你的海域') : state.phase === 'result' ? '本场作战已结束' : mine ? '轮到你了，指挥官' : '对手正在瞄准';
-  const message = prep ? (state.own.confirmed ? '布阵已锁定；对手确认后立即开战。' : '拖拽舰船至左侧海域，点击选中后可旋转。') : state.phase === 'result' ? '命中与沉没记录已保留，可查看本局战况。' : mine ? `剩余 ${state.own.actionPoints} 点行动力，选择手牌后执行指令，可连续出牌。` : '观察战况与手牌，等待下一次行动机会。';
-  return `<div class="game-toolbar"><div class="phase-message"><span class="phase-icon">${icon(prep ? 'ship' : state.phase === 'result' ? 'flag' : mine ? 'target' : 'radar')}</span><div><h2>${title}</h2><p>${message}</p></div></div><div class="timer"><span class="timer-label">${prep ? '布阵剩余时间' : '回合剩余时间'}<br>${prep ? 'DEPLOYMENT' : `TURN ${String(state.round).padStart(2,'0')}`}</span><span class="timer-ring" id="timer-ring"></span><span class="timer-number" id="timer-number">--<small>s</small></span></div></div>`;
+  const title = prep ? (state.own.confirmed ? '舰队已就绪，等待对手' : '部署舰队，掌控你的海域') : state.phase === 'result' ? '本场作战已结束' : mine ? '轮到你了，指挥官' : '对手行动中';
+  const message = prep ? (state.own.confirmed ? '布阵已锁定；对手确认后立即开战。' : '拖拽舰船至左侧海域，点击选中后可旋转。') : state.phase === 'result' ? '命中与沉没记录已保留，可查看本局战况。' : mine ? `剩余 ${state.own.actionPoints} 点行动力，准备好后点击‘确认结束回合’。` : '观察战况与手牌，等待对手确认结束回合。';
+  return `<div class="game-toolbar"><div class="phase-message"><span class="phase-icon">${icon(prep ? 'ship' : state.phase === 'result' ? 'flag' : mine ? 'target' : 'radar')}</span><div><h2>${title}</h2><p>${message}</p></div></div>${prep?`<div class="timer"><span class="timer-label">布阵剩余时间<br>DEPLOYMENT</span><span class="timer-ring" id="timer-ring"></span><span class="timer-number" id="timer-number">--<small>s</small></span></div>`:`<div class="turn-counter"><small>TURN ${String(state.round).padStart(2,'0')}</small><b>不限时决策</b><span>确认结束后换手</span></div>`}</div>`;
 }
 function vessel(ship, extra = '') {
   return vesselArt(ship, extra);
@@ -204,7 +204,7 @@ function commandCard() {
   const prep=state.phase==='placement',mine=state.turn===state.me,deployed=state.own.ships.filter(s=>s.x!==null).length;
   if(prep)return `<section class="sidebar-card command-card"><h3 class="sidebar-heading">部署指令<small>COMMAND</small></h3><div class="deploy-count"><b>${String(deployed).padStart(2,'0')}</b><span>/ ${TOTAL_SHIPS}</span></div><div class="progress"><span style="width:${deployed/TOTAL_SHIPS*100}%"></span></div><p class="deploy-label">舰艇已部署 · 共 ${TOTAL_CELLS} 个占据单元</p><button class="btn primary full" data-action="confirm" ${deployed!==TOTAL_SHIPS||state.own.confirmed?'disabled':''}>${icon('check')}${state.own.confirmed?'已准备完毕':'确认布阵，准备出航'}</button><p class="sidebar-note">90 秒结束后自动补齐尚未部署的舰艇。</p></section>`;
   const {d,ready}=selection(),receipt=state.own.lastAction,sources=receipt?.sources.map(id=>state.own.ships.find(s=>s.id===id)).filter(Boolean)||[];
-  return `<section class="sidebar-card command-card"><h3 class="sidebar-heading">作战指令<small>COMMAND</small></h3><div class="turn-status ${mine?'':'wait'}"><i class="dot ${mine?'':'amber'}"></i>${mine?`你的回合 · 剩余 ${state.own.actionPoints} 行动力`:`对手回合 · 剩余 ${state.players[state.turn].actionPoints} 行动力`}</div><div class="selected-order">${d?`${d.name} · ${d.cost} 点行动力`:'先从手牌选择一张指令'}<small>${targetHint(d)}</small></div><div class="attack-coordinate">${d?.target==='enemy-many'?`已选 ${pickedTargets.length}/10 格`:d?.target==='enemy-line'?'鱼雷起点 → 终点':d?.target==='none'?'无需指定目标':'目标坐标'}<b>${d?.target==='enemy-line'?`${aimed===null?'—':coord(aimed)} → ${lineEnd===null?'—':coord(lineEnd)}`:d?.target==='enemy-row'&&aimed!==null?`第 ${Math.floor(aimed/10)+1} 行`:aimed===null?'— —':coord(aimed)}</b></div>${d?.target==='enemy-many'?'<button class="text-button" data-action="random-targets">随机选取 10 格</button>':''}<button class="btn primary full" data-action="fire" ${!mine||!ready||busy?'disabled':''}>${icon(d?.icon||'target')}${d?`执行${d.name}`:'选择手牌后执行'}</button><button class="text-button" data-action="pass" ${mine?'':'disabled'}>结束回合${icon('arrow')}</button><p class="sidebar-note">可用零费牌时，0 行动力仍可继续出牌。<br>10 秒到时或主动结束后换手。${sources.length?`<br>上次火力源：${sources.map(ship=>`${typeName(ship.type)} ${ship.id}`).join('、')}`:''}</p></section>`;
+  return `<section class="sidebar-card command-card"><h3 class="sidebar-heading">作战指令<small>COMMAND</small></h3><div class="turn-status ${mine?'':'wait'}"><i class="dot ${mine?'':'amber'}"></i>${mine?`你的回合 · 剩余 ${state.own.actionPoints} 行动力`:`对手回合 · 剩余 ${state.players[state.turn].actionPoints} 行动力`}</div><div class="selected-order">${d?`${d.name} · ${d.cost} 点行动力`:'先从手牌选择一张指令'}<small>${targetHint(d)}</small></div><div class="attack-coordinate">${d?.target==='enemy-many'?`已选 ${pickedTargets.length}/10 格`:d?.target==='enemy-line'?'鱼雷起点 → 终点':d?.target==='none'?'无需指定目标':'目标坐标'}<b>${d?.target==='enemy-line'?`${aimed===null?'—':coord(aimed)} → ${lineEnd===null?'—':coord(lineEnd)}`:d?.target==='enemy-row'&&aimed!==null?`第 ${Math.floor(aimed/10)+1} 行`:aimed===null?'— —':coord(aimed)}</b></div>${d?.target==='enemy-many'?'<button class="text-button" data-action="random-targets">随机选取 10 格</button>':''}<button class="btn primary full" data-action="fire" ${!mine||!ready||busy?'disabled':''}>${icon(d?.icon||'target')}${d?`执行${d.name}`:'选择手牌后执行'}</button><button class="text-button" data-action="pass" ${mine?'':'disabled'}>确认结束回合${icon('arrow')}</button><p class="sidebar-note">本回合不限时，行动力耗尽也不会自动换手。<br>准备好后点击“确认结束回合”。${sources.length?`<br>上次火力源：${sources.map(ship=>`${typeName(ship.type)} ${ship.id}`).join('、')}`:''}</p></section>`;
 }
 function historyLine(event) {
   const mine = event.playerId === state.own.id;
@@ -224,7 +224,6 @@ function historyLine(event) {
     case 'hit': text = `<b>${player}</b> ${event.weapon==='torpedo'?'鱼雷攻击':'炮击'} ${coord(event.cell)} · <span class="hit-label">命中</span>`; break;
     case 'sunk': text = `<b>${player}</b> ${event.weapon==='torpedo'?'鱼雷攻击':'炮击'} ${coord(event.cell)} · <span class="sunk-label">击沉${typeName(event.shipType)}</span>`; break;
     case 'miss': text = `<b>${player}</b> ${event.weapon==='torpedo'?'鱼雷攻击':'炮击'} ${coord(event.cell)} · 未命中`; break;
-    case 'timeout': text = `${player}回合超时，自动换手`; break;
     case 'pass': text = `${player}结束本回合`; break;
     case 'end': text = event.reason === 'left'?'对手离开，作战结束':'舰队已全部击沉，作战结束'; break;
     default: return '';
@@ -247,7 +246,7 @@ function renderGame() {
   if (!state) return;
   app.classList.add('war-room');
   const prep = state.phase==='placement';
-  app.innerHTML = `${header(true)}<main class="game-wrap">${gameHeading()}${connectionLost?'<div class="connection-warning">连接暂时中断，正在重连。倒计时仍以服务器为准。</div>':''}${state.phase==='lobby'?renderWaiting():`${state.phase==='result'?resultCard():phaseToolbar()}${mapBrief(state.mapId,state.me)}${state.phase==='battle'?handPanel(state,selectedCard,icon)+battleEffects():''}${state.phase!=='result'||showAftermath?`<div class="game-layout"><div><div class="boards${prep?'':' battling'}">${board(true)}${board(false)}</div><div class="legend"><span class="legend-item"><i class="legend-square"></i>己方舰船</span><span class="legend-item"><i class="legend-square fog"></i>未知海域</span><span class="legend-item"><i class="legend-square water"></i>落空</span><span class="legend-item"><i class="legend-square fire"></i>命中</span><span class="legend-item"><i class="legend-square wreck"></i>沉没</span></div>${terrainLegend()}${prep?dock():''}</div><aside class="game-sidebar">${state.phase==='result'?'':commandCard()}${fleetCard(false)}${prep?'':fleetCard(true)}${logCard()}</aside></div><div class="keyboard-hint">${prep?'<span><span class="keycap">R</span> 旋转舰船</span><span><span class="keycap">Esc</span> 取消选择</span>':'<span><span class="keycap">Enter</span> 执行卡牌</span><span><span class="keycap">Esc</span> 取消卡牌与瞄准</span>'}</div>`:''}<p class="bottom-note">${mode==='practice'?'人机演习 · 对手按相同牌库与行动力规则出牌':'局域网对战 · 双方棋盘独立，侦察情报仅自己可见'}</p>`}${footer()}</main>`;
+  app.innerHTML = `${header(true)}<main class="game-wrap">${gameHeading()}${connectionLost?'<div class="connection-warning">连接暂时中断，正在重连。回合与布阵进度以服务器为准。</div>':''}${state.phase==='lobby'?renderWaiting():`${state.phase==='result'?resultCard():phaseToolbar()}${mapBrief(state.mapId,state.me)}${state.phase==='battle'?handPanel(state,selectedCard,icon)+battleEffects():''}${state.phase!=='result'||showAftermath?`<div class="game-layout"><div><div class="boards${prep?'':' battling'}">${board(true)}${board(false)}</div><div class="legend"><span class="legend-item"><i class="legend-square"></i>己方舰船</span><span class="legend-item"><i class="legend-square fog"></i>未知海域</span><span class="legend-item"><i class="legend-square water"></i>落空</span><span class="legend-item"><i class="legend-square fire"></i>命中</span><span class="legend-item"><i class="legend-square wreck"></i>沉没</span></div>${terrainLegend()}${prep?dock():''}</div><aside class="game-sidebar">${state.phase==='result'?'':commandCard()}${fleetCard(false)}${prep?'':fleetCard(true)}${logCard()}</aside></div><div class="keyboard-hint">${prep?'<span><span class="keycap">R</span> 旋转舰船</span><span><span class="keycap">Esc</span> 取消选择</span>':'<span><span class="keycap">Enter</span> 执行卡牌</span><span><span class="keycap">Esc</span> 取消卡牌与瞄准</span>'}</div>`:''}<p class="bottom-note">${mode==='practice'?'人机演习 · 对手按相同牌库与行动力规则出牌':'局域网对战 · 双方棋盘独立，侦察情报仅自己可见'}</p>`}${footer()}</main>`;
   updateTimer();
 }
 function updateTimer() {
@@ -255,7 +254,7 @@ function updateTimer() {
   const remaining = Math.max(0,state.deadline-(Date.now()+serverOffset));
   const number = $('#timer-number'), ring = $('#timer-ring');
   if (number) { number.innerHTML=`${String(Math.ceil(remaining/1000)).padStart(2,'0')}<small>s</small>`; number.classList.toggle('urgent',remaining<=5000); }
-  if (ring) { ring.style.setProperty('--progress',Math.min(1,remaining/(state.phase==='placement'?PREP_MS:TURN_MS))); ring.style.background=remaining<=5000?'conic-gradient(var(--red) calc(var(--progress)*360deg),#253647 0)':''; }
+  if (ring) { ring.style.setProperty('--progress',Math.min(1,remaining/PREP_MS)); ring.style.background=remaining<=5000?'conic-gradient(var(--red) calc(var(--progress)*360deg),#253647 0)':''; }
 }
 function acceptState(next, force = false) {
   if (state && next.version < state.version) return;
@@ -358,9 +357,9 @@ function showRules() {
   const rules = [
     ['舰队与布阵','每方 11 艘、26 格，包含一艘 3×2 格航空母舰，可旋转为 2×3。双方准备后有 90 秒布阵，礁石不能部署，超时自动补齐。'],
     ['20 种战术卡','每种 1 张，共 20 张；开战发 4 张，每次自己的回合开始再抓 2 张，包含首回合。使用完的卡牌回到牌库底部；手牌保留，无上限。'],
-    ['行动力与换手','每回合恢复 3 点行动力，10 秒内可连续出牌。后勤补给可突破 3 点。0 点时若有零费卡仍能使用，主动结束或超时则换手；没有零费牌且行动力归零时自动换手。卡牌只在自己的回合使用。'],
+    ['行动力与换手','每回合恢复 3 点行动力，可以不限时思考并连续出牌。后勤补给可突破 3 点，0 点时仍能使用零费卡。只有点击“确认结束回合”才会换手，行动力耗尽也不会自动结束。卡牌只在自己的回合使用。'],
     ['范围、移动与鱼雷','攻击和照明范围按格心直线距离计算。移动按上下左右的合法路径计格，不能穿过礁石、其他舰体和残骸，浅滩会中止移动并搁浅，暗礁可令中途触礁沉没。鱼雷从己方对应行面向敌方的一侧入场，遇舰艇、残骸或礁石停止，每个暗礁格独立判定 25% 受阻。'],
-    ['视野、制空与维修','侦察探查己方暗礁，照明和飞机提供临时实时视野；到期回到迷雾。持续回合按使用者自己的回合计数并包含当前回合。烟幕遮断视野且清除旧情报，修复只针对仍存活舰艇，不能打捞残骸。敌方制空期间飞机卡禁用。'],
+    ['视野、制空与维修','侦察探查己方暗礁，照明和飞机提供临时实时视野；到期回到迷雾。持续回合按使用者自己的回合计数并包含当前回合。烟幕遮断视野且清除旧情报，修复只针对仍存活舰艇，不能打捞残骸。敌方制空期间非战斗机飞机禁用；战斗机仍可起飞并夺取制空权，重新计时 3 回合。'],
   ];
   openModal('作战手册',`<p class="modal-description">用手牌下达指令，在海雾中寻找对手。</p><div class="rule-fleet">${TYPES.map(t=>`<div><b>${t.width?`${t.length}×${t.width}`:t.length} 格 × ${t.count}</b>${t.name}</div>`).join('')}</div><div class="rules-list">${rules.map(([title,text],i)=>`<div class="rule-row"><span class="rule-number">0${i+1}</span><div><h3>${title}</h3><p>${text}</p></div></div>`).join('')}</div>${terrainLegend()}<button class="text-button" data-action="card-guide">查看 20 张卡牌图鉴 ↗</button><button class="btn primary full" data-action="close-modal">收到，指挥官${icon('check')}</button>`);
 }

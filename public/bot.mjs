@@ -1,7 +1,7 @@
 /** Practice AI uses only its hand, own board and filtered enemy vision. */
-import { CARD_TYPES, canUseCard, cardContext, shipAlive, sourceMatches } from './cards.mjs?v=5.0.0';
-import { cells, radiusCells, reachableMoves } from './geometry.mjs?v=5.0.0';
-import { torpedoRows } from './combat.mjs?v=5.0.0';
+import { CARD_TYPES, canUseCard, cardContext, shipAlive, sourceMatches } from './cards.mjs?v=5.1.0';
+import { cells, radiusCells, reachableMoves } from './geometry.mjs?v=5.1.0';
+import { torpedoRows } from './combat.mjs?v=5.1.0';
 export function chooseBotAction(view,rng=Math.random) {
   const options=[],pick=items=>items[Math.min(items.length-1,Math.floor(rng()*items.length))];
   const knownContact=c=>view.enemySight[c]&&!view.enemySight[c].empty&&!view.enemySight[c].damaged&&!view.enemySight[c].sunk;

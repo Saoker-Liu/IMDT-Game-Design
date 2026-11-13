@@ -43,10 +43,14 @@ test('supply exceeds default AP; zero-cost cards remain usable at zero AP and dr
   play(empty,'tactics');assert.equal(q.hand.some(c=>c.type==='tactics'),false);assert.equal(q.hand.length,19);assert.equal(q.deck[0].type,'tactics');conserve(empty);
 });
 
-test('AP zero automatically ends only when no zero-cost cards remain, and timeouts always end the turn',()=>{
+test('zero AP without any zero-cost cards still waits for explicit confirmation, including across long idle periods',()=>{
   const g=fixture();giveHand(g.players[0],['secondary','recon','maneuver']);
-  play(g,'secondary',{cell:90});play(g,'recon',{cell:55});play(g,'maneuver',{id:'FF-3',cell:65});assert.equal(g.turn,1);assert.equal(g.players[1].actionPoints,3);
-  const h=fixture();giveHand(h.players[0],['big','supply']);play(h,'big',{cell:90});assert.equal(h.turn,0);tick(h,h.deadline);assert.equal(h.turn,1);conserve(g);conserve(h);
+  play(g,'secondary',{cell:90});play(g,'recon',{cell:55});play(g,'maneuver',{id:'FF-3',cell:65});
+  assert.equal(g.players[0].actionPoints,0);assert.equal(g.turn,0);assert.equal(g.players[1].hand.length,4);
+  const before=structuredClone(g);assert.equal(tick(g,86_400_000),false);assert.deepEqual(g,before);
+  act(g,'a',{type:'pass'},86_400_000);assert.equal(g.turn,1);assert.equal(g.players[1].actionPoints,3);assert.equal(g.players[1].hand.length,6);conserve(g);
+  const h=fixture();giveHand(h.players[0],['big','supply']);play(h,'big',{cell:90});assert.equal(h.turn,0);
+  assert.equal(tick(h,86_400_000),false);play(h,'supply');assert.equal(h.players[0].actionPoints,2);assert.equal(h.turn,0);conserve(h);
 });
 
 test('all card target validation occurs before spending AP or recycling; client effects cannot override the catalog',()=>{
@@ -152,11 +156,30 @@ test('large illumination lasts four owner turns and full-map seaplane vision las
   }
 });
 
-test('carrier fighters deny all enemy aircraft until the third owner turn expires; ordinary surface cards still work',()=>{
+test('carrier fighters deny enemy non-fighter aircraft for three owner turns while allowing fighter launches',()=>{
   const g=fixture(),[a,b]=g.players;giveHand(a,['fighter']);giveHand(b,['fighter','bomber','seaplane','torpedoPlane','secondary']);play(g,'fighter');act(g,'a',{type:'pass'},1100);
-  for(const type of ['fighter','bomber','seaplane','torpedoPlane'])unchanged(g,()=>play(g,type,{cell:90,end:91},1),/制空权/);
+  for(const type of ['bomber','seaplane','torpedoPlane'])unchanged(g,()=>play(g,type,{cell:90,end:91},1),/制空权/);
+  assert.ok(canUseCard(b,{type:'fighter'},cardContext(viewFor(g,'b'))));
   assert.ok(canUseCard(b,{type:'secondary'},cardContext(viewFor(g,'b'))));
   for(let n=0;n<3;n++)cycle(g);assert.equal(g.airControl,null);act(g,'a',{type:'pass'},1100);assert.ok(canUseCard(b,{type:'bomber'},cardContext(viewFor(g,'b'))));
+});
+
+test('a fighter steals enemy air control, pays its cost, and resets expiry using the new controller’s turns',()=>{
+  const g=fixture(),[a,b]=g.players;
+  giveHand(a,['fighter','seaplane']);giveHand(b,['fighter','bomber','supply']);
+  play(g,'fighter');act(g,'a',{type:'pass'},1100);
+  assert.equal(chooseBotAction(viewFor(g,'b')).cardId,'supply-1');
+  const enemyView=viewFor(g,'b');enemyView.own.hand=enemyView.own.hand.filter(c=>c.type!=='supply');
+  assert.equal(chooseBotAction(enemyView).cardId,'fighter-1');
+  play(g,'fighter',{},1);
+  assert.equal(b.actionPoints,1);assert.equal(g.airControl.owner,1);assert.equal(viewFor(g,'b').airControl.remaining,3);
+  assert.equal(b.hand.some(c=>c.type==='fighter'),false);assert.equal(b.deck.at(-1).type,'fighter');
+  play(g,'supply',{},1);play(g,'bomber',{cell:90},1);
+  act(g,'b',{type:'pass'},1100);
+  unchanged(g,()=>play(g,'seaplane'),/制空权/);
+  cycle(g);assert.equal(viewFor(g,'b').airControl.remaining,2);
+  cycle(g);assert.equal(viewFor(g,'b').airControl.remaining,1);assert.equal(g.airControl.owner,1);
+  cycle(g);assert.equal(g.airControl,null);conserve(g);
 });
 
 test('carrier bombers have radius-one damage, while torpedo bombers follow inclusive straight-line paths',()=>{
@@ -225,4 +248,12 @@ test('stationary smoke hides old damage without repairing it, and expired smoke 
   const g=fixture(),a=g.players[0],ship=a.ships.find(s=>s.id==='DD-2');ship.hits=[43];a.shots=[43];a.shotResults[43]='hit';giveHand(a,['smoke']);
   assert.equal(viewFor(g,'b').enemyCells[43],'hit');play(g,'smoke',{id:ship.id,cell:43});assert.deepEqual(ship.hits,[43]);assert.equal(viewFor(g,'b').enemyCells[43],'unknown');
   cycle(g);assert.equal(a.smoke.length,0);assert.equal(viewFor(g,'b').enemyCells[43],'unknown');assert.deepEqual(ship.hits,[43]);
+});
+
+test('live vision and air control do not expire with wall-clock time while the same battle turn is held',()=>{
+  const g=fixture(),p=g.players[0];giveHand(p,['supply','fighter','seaplane']);play(g,'supply');play(g,'fighter');play(g,'seaplane');
+  assert.equal(p.actionPoints,0);assert.equal(g.turn,0);assert.equal(viewFor(g,'a').enemyVisible.length,100);
+  assert.equal(tick(g,86_400_000),false);assert.equal(viewFor(g,'a').enemyVisible.length,100);assert.equal(viewFor(g,'a').airControl.remaining,3);
+  act(g,'a',{type:'pass'},86_400_000);act(g,'b',{type:'pass'},86_400_001);
+  assert.equal(viewFor(g,'a').enemyVisible.length,0);assert.equal(viewFor(g,'a').airControl.remaining,2);
 });

@@ -1,7 +1,7 @@
 import { giveHand } from '../test-support/cards.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makeFleet, makeGame, makePlayer, act, tick, cells, canPlace, autoPlace, isSunk, viewFor, PREP_MS, TURN_MS } from '../public/engine.mjs';
+import { makeFleet, makeGame, makePlayer, act, tick, cells, canPlace, autoPlace, isSunk, viewFor, PREP_MS } from '../public/engine.mjs';
 
 function game(now=1000) {
   const g=makeGame([makePlayer('a','甲'),makePlayer('b','乙')]);
@@ -43,7 +43,7 @@ test('confirmation requires all ships; a confirmed fleet cannot be changed',()=>
   act(g,'a',{type:'auto'},1001);act(g,'a',{type:'confirm'},1002);assert.equal(g.phase,'placement');
   for(const type of ['clear','auto','remove','place'])assert.throws(()=>act(g,'a',{type,id:'BB-1',x:0,y:0,vertical:false},1003));
   act(g,'b',{type:'auto'},1003);act(g,'b',{type:'confirm'},1004);
-  assert.equal(g.phase,'battle');assert.equal(g.turn,0);assert.equal(g.deadline,1004+TURN_MS);
+  assert.equal(g.phase,'battle');assert.equal(g.turn,0);assert.equal(g.deadline,null);
 });
 test('90 second deadline fills only missing ships and starts battle',()=>{
   const g=game();act(g,'a',{type:'place',id:'BB-1',x:0,y:0,vertical:false},1001);
@@ -60,11 +60,14 @@ test('fog redacts unhit enemy locations in all phases, including results',()=>{
   // Mutating a view must never mutate the game itself.
   v.own.ships[0].x=999;assert.notEqual(g.players[0].ships[0].x,999);
 });
-test('a late card is rejected after timeout without applying its damage or drawing twice',()=>{
-  const g=battle();giveHand(g.players[0],['secondary']);const deadline=g.deadline;
-  assert.throws(()=>act(g,'a',{type:'play-card',cardId:'secondary-1',cell:50},deadline),/等待/);
-  assert.equal(g.turn,1);assert.equal(g.round,2);assert.equal(g.players[1].shots.length,0);
-  const count=g.players[1].hand.length;assert.equal(tick(g,deadline),false);assert.equal(g.players[1].hand.length,count);
+test('battle remains on the same turn after long waits; actions are accepted until the player confirms the end',()=>{
+  const g=battle();giveHand(g.players[0],['secondary']);const opening=structuredClone(g);
+  assert.equal(g.deadline,null);assert.equal(tick(g,3_600_000),false);assert.deepEqual(g,opening);
+  act(g,'a',{type:'play-card',cardId:'secondary-1',cell:50},3_600_000);
+  assert.equal(g.turn,0);assert.equal(g.players[0].actionPoints,2);assert.equal(g.players[1].shots.includes(50),true);
+  const waiting=structuredClone(g);assert.equal(tick(g,7_200_000),false);assert.deepEqual(g,waiting);
+  assert.throws(()=>act(g,'b',{type:'pass'},7_200_000),/等待/);
+  act(g,'a',{type:'pass'},7_200_000);assert.equal(g.turn,1);assert.equal(g.round,2);assert.equal(g.players[1].actionPoints,3);assert.equal(g.deadline,null);
 });
 
 test('the final enemy segment settles immediately, and rematch resets fleet, cards, vision and air control',()=>{
