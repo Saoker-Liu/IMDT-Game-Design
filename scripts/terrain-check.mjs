@@ -1,3 +1,4 @@
+import { cardSessionActions } from '../test-support/cards.mjs';
 /** Exercises the new tactics through real HTTP sessions and an isolated browser. */
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -9,7 +10,7 @@ import { cells, canMove } from '../public/engine.mjs';
 
 const output=path.resolve(process.env.ART_CHECK_OUTPUT||'test-results/terrain');
 await mkdir(output,{recursive:true});
-const server=createGameServer({now:()=>Date.now(),rng:()=>0});
+const server=createGameServer({now:()=>1000,rng:()=>0});
 server.listen(0,'127.0.0.1');await once(server,'listening');
 const base=`http://127.0.0.1:${server.address().port}`;
 const errors=[];
@@ -39,13 +40,20 @@ try {
     const r=await fetch(`${base}/api/${route}`,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(session?{Authorization:`Bearer ${session.token}`}:{})},...(body?{body:JSON.stringify(body)}:{})});
     const data=await r.json();assert.equal(r.status,200,data.error);return data;
   }
-  const action=(s,a)=>api('action',a,s);
+  const matches=new Map();
+  function register(host,guest) {matches.set(host.roomId,cardSessionActions((s,a)=>api('action',a,s),s=>api('state',null,s),[host,guest]));}
+  const action=(s,a)=>['fire','move','recon'].includes(a.type)?matches.get(s.roomId).action(s,a):api('action',a,s);
+  async function choose(page,session,type) {
+    const card=await matches.get(session.roomId).findCard(session,type);
+    await page.waitForSelector(`[data-card="${card.id}"]:not(:disabled)`);await page.locator(`[data-card="${card.id}"]`).click();
+  }
   const state=s=>api('state',null,s);
-  const waitTurn=p=>p.waitForFunction(()=>document.querySelector('#enemy-grid .cell:not(:disabled)'));
+  const waitTurn=p=>p.waitForSelector('[data-action="pass"]:not(:disabled)');
   const placements=[['BB-1',0,0],['CG-1',0,2],['CG-2',5,2],['DD-1',0,4],['DD-2',3,4],['DD-3',6,4],['FF-1',0,6],['FF-2',2,6],['FF-3',4,6],['FF-4',6,6]];
   async function prepared(mapId, coast=false) {
     const host=await api('create',{name:'北海指挥官',roomName:mapId==='undertow'?'暗礁航道 · 海域演习':'远海航线 · 海域演习',mapId});
     const guest=await api('join',{name:'远洋舰队',roomId:host.roomId});
+    register(host,guest);
     await action(host,{type:'ready'});await action(guest,{type:'ready'});
     for(const s of [host,guest])for(const [id,initialX,initialY]of placements){
       const x=coast&&id==='FF-3'?3:initialX,y=coast&&id==='FF-3'?8:initialY;
@@ -68,6 +76,7 @@ try {
   await arch.waitForSelector('.waiting-room');
   const host=await arch.evaluate(()=>JSON.parse(sessionStorage.getItem('deepblue-session')));
   const guest=await api('join',{name:'远洋舰队',roomId:host.roomId});
+  register(host,guest);
   await arch.locator('[data-action="ready"]').click();await action(guest,{type:'ready'});
   await arch.waitForSelector('#own-grid');
   await arch.locator('.dock-piece[data-ship="BB-1"]').click();
@@ -82,22 +91,23 @@ try {
   const own=(await state(host)).own;
   const moves=own.ships.flatMap(s=>[[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dy])=>canMove(own,s.id,dx,dy)).map(([dx,dy])=>({ship:s,dx,dy})));
   const chosen=moves[0];assert.ok(chosen);
+  await choose(arch,host,'move');
   await arch.locator(`#own-grid [data-cell="${cells(chosen.ship)[0]}"]`).click();
   await arch.locator(`[data-action="move"][data-dx="${chosen.dx}"][data-dy="${chosen.dy}"]`).click();
-  await arch.waitForFunction(()=>document.querySelectorAll('#enemy-grid .cell:not(:disabled)').length===0);
+  await arch.waitForFunction(()=>!document.querySelector('.tactical-card.selected'));
   const moved=await state(host),movedShip=moved.own.ships.find(s=>s.id===chosen.ship.id);
   assert.equal(movedShip.x,chosen.ship.x+chosen.dx);assert.equal(movedShip.y,chosen.ship.y+chosen.dy);
-  await action(guest,{type:'pass'});await waitTurn(arch);
+  await action(host,{type:'pass'});await action(guest,{type:'pass'});await waitTurn(arch);
   const foe=(await state(guest)).own,bb=foe.ships.find(s=>s.type==='battleship');
+  await choose(arch,host,'torpedo');
   await arch.locator(`#enemy-grid [data-cell="${cells(bb)[0]}"]`).click();
-  await arch.locator('[data-action="weapon"][data-weapon="torpedo"]').click();
   await arch.locator('[data-action="fire"]').click();await arch.waitForSelector('.hostile-chart .wreck-overlay');
   assert.equal((await state(host)).own.torpedoes,2);
   const hostHull=(await state(host)).own.ships.find(s=>s.type==='battleship');
   await action(guest,{type:'fire',cell:cells(hostHull)[0]});await waitTurn(arch);
   const cruiser=foe.ships.find(s=>s.type==='cruiser');
+  await choose(arch,host,'shell');
   await arch.locator(`#enemy-grid [data-cell="${cells(cruiser)[0]}"]`).click();
-  await arch.locator('[data-action="weapon"][data-weapon="shell"]').click();
   await arch.locator('[data-action="fire"]').click();await arch.waitForSelector('.hostile-chart .impact-hit');
   await screenshot(arch,'archipelago-boards.png','.boards');await screenshot(arch,'archipelago-desktop.png');
   await archContext.close();
@@ -105,6 +115,7 @@ try {
 
   const reef=await prepared('undertow'),reefContext=await context(reef.host),reefPage=await reefContext.newPage();
   await reefPage.goto(base);await reefPage.waitForSelector('#own-grid');await waitTurn(reefPage);
+  await choose(reefPage,reef.host,'move');
   await reefPage.locator('#own-grid [data-cell="64"]').click();
   await reefPage.locator('[data-action="move"][data-dx="1"][data-dy="0"]').click();
   await reefPage.waitForSelector('.friendly-chart .wreck-overlay');
@@ -125,10 +136,11 @@ try {
     const contourX=chart==='friendly-chart'?edge.x+edge.width:edge.x;
     assert.ok(Math.abs(contourX-boundaryCell.x)<1.5,'Depth contour agrees with the logical terrain edge');
   }
+  await choose(coastPage,coast.host,'move');
   await coastPage.locator('#own-grid [data-cell="83"]').click();
   await coastPage.locator('[data-action="move"][data-dx="-1"][data-dy="0"]').click();
   await coastPage.waitForSelector('.ship-status-anchor');
-  await action(coast.guest,{type:'pass'});await waitTurn(coastPage);
+  await action(coast.host,{type:'pass'});await action(coast.guest,{type:'pass'});await waitTurn(coastPage);
   await coastPage.locator('#own-grid [data-cell="82"]').click();
   assert.equal(await coastPage.locator('.move-direction:not(:disabled)').count(),0);
   await screenshot(coastPage,'blue-frontier-boards.png','.boards');

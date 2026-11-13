@@ -34,7 +34,7 @@ export function createGameServer({ now = Date.now, disconnectMs = 90_000, rng = 
   }
   const timer = setInterval(() => {
     for (const room of rooms.values()) {
-      tick(room.game, now());
+      tick(room.game, now(), rng);
       for (const [id, member] of room.members) {
         if (now() - member.lastSeen > disconnectMs) dropMember(room, id);
       }
@@ -70,7 +70,7 @@ export function createGameServer({ now = Date.now, disconnectMs = 90_000, rng = 
       if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}` && req.headers.origin !== `https://${req.headers.host}`) {
         return send(403, { error: '请从房间服务器的地址打开游戏' });
       }
-      if (url.pathname === '/api/health' && req.method === 'GET') return send(200, { ok: true, mode: 'lan', version: '3.3.1' });
+      if (url.pathname === '/api/health' && req.method === 'GET') return send(200, { ok: true, mode: 'lan', version: '4.0.0' });
       if (url.pathname === '/api/rooms' && req.method === 'GET') {
         return send(200, { rooms: [...rooms.values()].map(r => ({
           id: r.id, name: r.name, mapId: r.game.mapId, count: r.members.size, phase: r.game.phase,
@@ -125,7 +125,7 @@ export function createGameServer({ now = Date.now, disconnectMs = 90_000, rng = 
       const member = room?.members.get(session?.playerId);
       if (!room || !member || !equalToken(bearer, member.token)) return send(401, { error: '房间连接已结束，请重新进入' });
       member.lastSeen = now();
-      tick(room.game, now());
+      tick(room.game, now(), rng);
       if (url.pathname === '/api/state' && req.method === 'GET') return send(200, {
         ...viewFor(room.game, session.playerId), roomId: room.id, roomName: room.name, serverNow: now(),
         opponentConnected: room.members.size === 2,

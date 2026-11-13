@@ -1,0 +1,11 @@
+import { CARD_TYPES, DECK_SIZE, ACTIONS_PER_TURN, canUseCard } from './cards.mjs?v=4.0.0';
+
+export function handPanel(state, selected, icon) {
+  const active = state.phase === 'battle' && state.turn === state.me;
+  const player = state.own, opponent = state.players[1 - state.me];
+  return `<section class="hand-panel" aria-label="战术手牌"><div class="hand-heading"><div class="hand-title"><small>TACTICAL ORDERS</small><h3>战术手牌 <span data-hand-count>${player.hand.length}</span></h3></div><div class="action-points" aria-label="行动力 ${player.actionPoints} / ${ACTIONS_PER_TURN}" data-ap="${player.actionPoints}"><span>行动力</span><b>${player.actionPoints}<small> / ${ACTIONS_PER_TURN}</small></b><span class="ap-pips" aria-hidden="true">${Array.from({length:ACTIONS_PER_TURN},(_,i)=>`<i class="${i<player.actionPoints?'filled':''}"></i>`).join('')}</span></div><div class="deck-status"><b>牌库 <span data-deck-count>${player.deckCount}</span><small> / ${DECK_SIZE}</small></b><span>用后回底 · 回合开始抽 2 张</span></div></div><div class="hand-cards" role="group" aria-label="选择一张卡牌">${player.hand.map(card=>{
+    const d = CARD_TYPES[card.type], affordable = canUseCard(player, card);
+    const reason = !active ? '等待自己的回合' : player.actionPoints < d.cost ? '行动力不足' : !affordable ? '鱼雷已用尽' : d.description;
+    return `<button class="tactical-card card-${card.type}${selected===card.id?' selected':''}" data-action="select-card" data-card="${card.id}" data-card-type="${card.type}" aria-pressed="${selected===card.id}" aria-label="${d.name}，消耗 ${d.cost} 点行动力，${reason}" title="${reason}" ${active&&affordable?'':'disabled'}><span class="card-top"><span class="card-cost">${d.cost}</span><span>占位牌 / ${d.tag}</span></span><span class="card-emblem">${icon(d.icon)}</span><strong>${d.name}</strong><span class="card-description">${d.description}</span><span class="card-bottom">${selected===card.id?'已选中 · 选择目标':!active?'等待回合':!affordable?reason:'选择此牌'}<span>↗</span></span></button>`;
+  }).join('')||'<p class="empty-hand">暂无手牌。下个回合从牌库抓取最多 2 张。</p>'}</div><div class="hand-foot"><span>${active?'选择卡牌 → 选择目标 → 确认执行；剩余行动力可继续出牌。':'可查看手牌，等待自己的回合。'} 开局发 4 张，首回合也抽 2 张。</span><span>对手手牌 ${opponent?.handCount??0} · 牌库 ${opponent?.deckCount??DECK_SIZE}</span></div></section>`;
+}

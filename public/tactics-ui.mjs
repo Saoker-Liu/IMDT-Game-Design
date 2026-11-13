@@ -1,6 +1,6 @@
-import { MAPS, TERRAIN, mapInfo, terrainFor } from './terrain.mjs?v=3.3.1';
-import { canMove, isSunk } from './engine.mjs?v=3.3.1';
-import { terrainChart } from './chart-art.mjs?v=3.3.1';
+import { MAPS, TERRAIN, mapInfo, terrainFor } from './terrain.mjs?v=4.0.0';
+import { canMove, isSunk } from './engine.mjs?v=4.0.0';
+import { terrainChart } from './chart-art.mjs?v=4.0.0';
 
 export { terrainChart };
 
@@ -17,11 +17,11 @@ export function terrainLegend() {
   return `<div class="terrain-legend" aria-label="地形效果">${Object.entries(TERRAIN).map(([type, t]) => `<button data-action="terrain-guide" class="terrain-key"><span class="terrain-swatch chart-thumb-${type}"></span><span><b>${t.name}</b><small>${({deep:'鱼雷命中整舰沉没',rock:'禁止部署与航行',reef:'驶入 25% 触礁沉没',shoal:'驶入后永久搁浅'})[type]}</small></span></button>`).join('')}</div>`;
 }
 export function terrainGuide() {
-  return `<p class="modal-description">格线用于定位，轮廓标明礁石与浅滩范围。暗礁始终与深海外观一致；仅在己舰触礁后，对应格子的悬停说明才变为暗礁。敌舰仍隐蔽。</p><div class="terrain-guide">${Object.entries(TERRAIN).map(([type, t]) => `<div class="terrain-guide-card"><div class="terrain-guide-art">${terrainChart(terrainFor(guideMaps[type]), true, {mapId:guideMaps[type],side:0})}</div><div><small>${t.tag}</small><h3>${t.name}</h3><p>${t.effect}</p></div><span class="terrain-map-caption caption-${type}"><i></i>${regionNotes[type]}</span></div>`).join('')}</div><p class="terrain-rules-note">每回合可开火一次或平移一格，完成后立即换手。每方 3 枚鱼雷；炮弹无限。已中弹舰船与残骸不能航行。落空标记是历史情报，敌方机动后可复查。仅进入新的暗礁/浅滩格时触发效果，初始部署不会触发。</p><button class="btn primary full" data-action="close-modal">了解海况</button>`;
+  return `<p class="modal-description">格线用于定位，轮廓标明礁石与浅滩范围。暗礁始终与深海外观一致；仅在己舰触礁后，对应格子的悬停说明才变为暗礁。敌舰仍隐蔽。</p><div class="terrain-guide">${Object.entries(TERRAIN).map(([type, t]) => `<div class="terrain-guide-card"><div class="terrain-guide-art">${terrainChart(terrainFor(guideMaps[type]), true, {mapId:guideMaps[type],side:0})}</div><div><small>${t.tag}</small><h3>${t.name}</h3><p>${t.effect}</p></div><span class="terrain-map-caption caption-${type}"><i></i>${regionNotes[type]}</span></div>`).join('')}</div><p class="terrain-rules-note">每回合抽 2 张、恢复 3 点行动力，侦察、移动与攻击必须使用卡牌。行动力用尽、主动结束或 10 秒到时换手。每方仍有 3 枚鱼雷。已中弹舰船与残骸不能航行。落空标记是历史情报，敌方机动后可复查。仅进入新的暗礁/浅滩格时触发效果，初始部署不会触发。</p><button class="btn primary full" data-action="close-modal">了解海况</button>`;
 }
-export function mobilityControls(player, selected, active) {
+export function mobilityControls(player, selected, active, cardReady = false) {
   const ship = player.ships.find(s => s.id === selected);
   const name = ship ? ({battleship:'战列舰',cruiser:'巡洋舰',destroyer:'驱逐舰',frigate:'护卫舰'})[ship.type] : '';
-  const locked = ship && (isSunk(player, ship) ? '已沉没，残骸不能航行' : ship.grounded ? '已搁浅，无法再次航行' : ship.hits.length ? '舰体受损，无法航行' : '选择方向，整舰平移一格并结束回合');
-  return `<div class="mobility-panel"><div><small>FLEET MANEUVER</small><b>${ship ? `${name} ${ship.id}` : '舰队机动'}</b><span>${!active ? '等待自己的回合后可选择舰船' : locked || '点选己方舰船，再选择航行方向'}</span></div><div class="move-pad" role="group" aria-label="舰船航行方向">${[[0,-1,'↑','向上航行'],[-1,0,'←','向左航行'],[1,0,'→','向右航行'],[0,1,'↓','向下航行']].map(([dx,dy,glyph,label]) => `<button data-action="move" data-dx="${dx}" data-dy="${dy}" class="move-direction ${dy < 0 ? 'north' : dy > 0 ? 'south' : dx < 0 ? 'west' : 'east'}" aria-label="${label}" ${!active || !ship || !canMove(player, ship.id, dx, dy) ? 'disabled' : ''}>${glyph}</button>`).join('')}<span class="move-center">✥</span></div></div>`;
+  const locked = ship && (isSunk(player, ship) ? '已沉没，残骸不能航行' : ship.grounded ? '已搁浅，无法再次航行' : ship.hits.length ? '舰体受损，无法航行' : '选择方向，消耗机动卡与 1 点行动力，平移一格');
+  return `<div class="mobility-panel"><div><small>FLEET MANEUVER</small><b>${ship ? `${name} ${ship.id}` : '舰队机动'}</b><span>${!active ? '等待自己的回合后可选择舰船' : !cardReady ? '先选择一张机动指令卡' : locked || '点选己方舰船，再选择航行方向'}</span></div><div class="move-pad" role="group" aria-label="舰船航行方向">${[[0,-1,'↑','向上航行'],[-1,0,'←','向左航行'],[1,0,'→','向右航行'],[0,1,'↓','向下航行']].map(([dx,dy,glyph,label]) => `<button data-action="move" data-dx="${dx}" data-dy="${dy}" class="move-direction ${dy < 0 ? 'north' : dy > 0 ? 'south' : dx < 0 ? 'west' : 'east'}" aria-label="${label}" ${!active || !cardReady || !ship || !canMove(player, ship.id, dx, dy) ? 'disabled' : ''}>${glyph}</button>`).join('')}<span class="move-center">✥</span></div></div>`;
 }

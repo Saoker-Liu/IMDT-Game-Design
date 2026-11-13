@@ -1,3 +1,4 @@
+import { cardSessionActions } from '../test-support/cards.mjs';
 /** Isolated browser QA using real game APIs; never connects to a personal browser profile. */
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -76,7 +77,7 @@ try {
   }
   const host = await api('create', { name: '北海指挥官', roomName: '北纬 31° · 雾海演习' });
   const guest = await api('join', { name: '远洋舰队', roomId: host.roomId });
-  const action = (session, body) => api('action', body, session);
+  const {action,findCard}=cardSessionActions((s,a)=>api('action',a,s),s=>api('state',null,s),[host,guest]);
   await action(host, { type: 'ready' });
   await action(guest, { type: 'ready' });
   const placements = [
@@ -112,6 +113,8 @@ try {
   assert.equal(await desktop.locator('.hostile-chart .ship-art').count(), 2, 'Only the two fully sunk ships have hull art');
   assert.equal(await desktop.locator('.hostile-chart .impact-sunk').count(), 5);
   assert.equal(await desktop.locator('.hostile-chart .impact-miss').count(), 1);
+  const shell=await findCard(host,'shell');
+  await desktop.waitForSelector(`[data-card="${shell.id}"]:not(:disabled)`);await desktop.locator(`[data-card="${shell.id}"]`).click();
   await desktop.locator('#enemy-grid [data-cell="55"]').click();
   await capture(desktop, 'battle-desktop.png');
   await capture(desktop, 'boards-battle.png', '.boards');
@@ -120,7 +123,9 @@ try {
   await desktop.waitForFunction(() => document.querySelectorAll('.hostile-chart .impact-miss').length === 2);
   const fired = await api('state', null, host);
   assert.equal(fired.enemyCells[55], 'miss');
-  assert.equal(fired.turn, 1, 'UI fire still ends the turn');
+  assert.equal(fired.turn, 0, 'UI card fire preserves the turn while AP remain');
+  assert.equal(fired.own.actionPoints,2);
+  await action(host,{type:'pass'});
   await action(guest, { type: 'pass' });
   console.log('PASS: hit/smoke, sunk hulls, water splash, aim and fire through the UI');
 

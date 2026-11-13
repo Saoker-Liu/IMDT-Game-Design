@@ -1,5 +1,6 @@
 /** Authoritative, transport-independent rules. Shared by the LAN server and practice mode. */
-import { terrainFor, terrainAt, MAPS, REEF_RISK, TORPEDO_COUNT } from './terrain.mjs?v=3.3.1';
+import { terrainFor, terrainAt, MAPS, REEF_RISK, TORPEDO_COUNT } from './terrain.mjs?v=4.0.0';
+import { CARD_TYPES, ACTIONS_PER_TURN, makeDeck, dealCards, drawCards } from './cards.mjs?v=4.0.0';
 export const SIZE = 10;
 export const PREP_MS = 90_000;
 export const TURN_MS = 10_000;
@@ -18,7 +19,8 @@ export function makeFleet() {
   })));
 }
 export function makePlayer(id, name) {
-  return { id, name, ready: false, confirmed: false, rematch: false, ships: makeFleet(), shots: [], shotRounds: {}, lastMove: 0, torpedoes: TORPEDO_COUNT, knownOwnReefs: [] };
+  return { id, name, ready: false, confirmed: false, rematch: false, ships: makeFleet(), shots: [], shotRounds: {}, lastMove: 0, torpedoes: TORPEDO_COUNT, knownOwnReefs: [],
+    deck: makeDeck(), hand: [], actionPoints: 0, turns: 0, recon: {} };
 }
 export function makeGame(players, mapId = 'open-sea') {
   if (!MAPS.some(m => m.id === mapId)) throw new Error('未知的作战地图');
@@ -80,6 +82,9 @@ export function canFireAt(player, c) {
   if (player.ships.some(s => s.hits.includes(c))) return false;
   return !player.shots.includes(c) || player.shotRounds[c] < player.lastMove;
 }
+export function canReconAt(player, target, c) {
+  return canFireAt(target, c) && (!player.recon[c] || player.recon[c].round < target.lastMove);
+}
 function sink(player, ship, cause) {
   ship.hits = cells(ship);
   ship.sunkBy = cause;
@@ -88,17 +93,26 @@ function sink(player, ship, cause) {
 function log(game, event, now) {
   game.history.push({ id: game.history.length + 1, at: now, ...event });
 }
-function startBattle(game, now) {
+function beginTurn(game, now) {
+  const player = game.players[game.turn];
+  player.actionPoints = ACTIONS_PER_TURN;
+  player.turns++;
+  drawCards(player);
+  game.deadline = now + TURN_MS;
+}
+function startBattle(game, now, rng) {
   game.phase = 'battle';
   game.turn = 0;
-  game.deadline = now + TURN_MS;
   game.startedAt = now;
+  for (const player of game.players) dealCards(player, rng);
+  beginTurn(game, now);
   log(game, { type: 'start' }, now);
 }
 function advance(game, now) {
+  game.players[game.turn].actionPoints = 0;
   game.turn = 1 - game.turn;
   game.round++;
-  game.deadline = now + TURN_MS;
+  beginTurn(game, now);
 }
 export function finish(game, winner, now, reason = 'destroyed') {
   game.phase = 'result';
@@ -108,14 +122,14 @@ export function finish(game, winner, now, reason = 'destroyed') {
   log(game, { type: 'end', winner, reason }, now);
   game.version++;
 }
-export function tick(game, now = Date.now()) {
+export function tick(game, now = Date.now(), rng = Math.random) {
   if (game.deadline === null || now < game.deadline) return false;
   if (game.phase === 'placement') {
     for (const p of game.players) {
-      if (!p.confirmed) { autoPlace(p, true); p.confirmed = true; }
+      if (!p.confirmed) { autoPlace(p, true, rng); p.confirmed = true; }
     }
     log(game, { type: 'autoplaced' }, now);
-    startBattle(game, now);
+    startBattle(game, now, rng);
   } else if (game.phase === 'battle') {
     log(game, { type: 'timeout', playerId: game.players[game.turn].id }, now);
     advance(game, now);
@@ -125,7 +139,7 @@ export function tick(game, now = Date.now()) {
 }
 function requireRule(value, message) { if (!value) throw new Error(message); }
 export function act(game, playerId, action, now = Date.now(), rng = Math.random) {
-  tick(game, now);
+  tick(game, now, rng);
   const p = game.players.find(p => p.id === playerId);
   requireRule(p, '你不在这个房间中');
   const index = game.players.indexOf(p);
@@ -174,54 +188,71 @@ export function act(game, playerId, action, now = Date.now(), rng = Math.random)
       requireRule(game.phase === 'placement' && !p.confirmed, '当前无法确认布阵');
       requireRule(p.ships.every(s => s.x !== null), '请先部署全部 10 艘舰船');
       p.confirmed = true;
-      if (game.players.every(p => p.confirmed)) startBattle(game, now);
+      if (game.players.every(p => p.confirmed)) startBattle(game, now, rng);
       break;
     }
-    case 'move': {
+    case 'play-card': {
       requireRule(game.phase === 'battle' && index === game.turn, '请等待你的回合');
-      requireRule(canMove(p, action.id, action.dx, action.dy), '无法航行：舰船中弹、搁浅，或目标越界、存在礁石/其他舰船');
-      const ship = p.ships.find(s => s.id === action.id);
-      const old = cells(ship);
-      ship.x += action.dx; ship.y += action.dy;
-      const entered = cells(ship).filter(c => !old.includes(c));
-      p.lastMove = game.round;
-      const reefs = entered.filter(c => terrainAt(p.terrain, c) === 'reef');
-      if (reefs.length && rng() < REEF_RISK) {
-        for (const c of reefs) if (!p.knownOwnReefs.includes(c)) p.knownOwnReefs.push(c);
-        sink(p, ship, 'reef');
-        log(game, { type: 'reef-sunk', playerId, shipType: ship.type }, now);
+      const handIndex = p.hand.findIndex(c => c.id === action.cardId);
+      requireRule(handIndex !== -1, '这张卡牌不在你的手牌中');
+      const card = p.hand[handIndex], definition = CARD_TYPES[card.type];
+      requireRule(p.actionPoints >= definition.cost, '行动力不足，无法使用这张卡牌');
+      const target = game.players[1 - index], c = action.cell;
+      // Validate every target before spending either the card or action points.
+      if (definition.effect === 'move') {
+        requireRule(canMove(p, action.id, action.dx, action.dy), '无法航行：舰船中弹、搁浅，或目标越界、存在礁石/其他舰船');
       } else {
-        ship.grounded = entered.some(c => terrainAt(p.terrain, c) === 'shoal');
-        // Do not disclose ship identity, coordinates, or displacement to the opponent.
-        log(game, { type: ship.grounded ? 'grounded' : 'move', playerId }, now);
+        requireRule(Number.isInteger(c) && c >= 0 && c < SIZE * SIZE, '无效坐标');
+        if (definition.effect === 'recon') {
+          requireRule(canReconAt(p, target, c), '该坐标为礁石、已受损，或已有未过期的情报');
+        } else {
+          requireRule(canFireAt(target, c), '该坐标为礁石或已经攻击过；敌方机动后才可复查落空格');
+          requireRule(definition.weapon !== 'torpedo' || p.torpedoes > 0, '鱼雷已用尽');
+        }
       }
-      if (p.ships.every(s => isSunk(p, s))) finish(game, 1 - index, now, 'destroyed');
-      else advance(game, now);
+      p.hand.splice(handIndex, 1);
+      p.deck.push(card);
+      p.actionPoints -= definition.cost;
+      if (definition.effect === 'move') {
+        const ship = p.ships.find(s => s.id === action.id);
+        const old = cells(ship);
+        ship.x += action.dx; ship.y += action.dy;
+        const entered = cells(ship).filter(c => !old.includes(c));
+        p.lastMove = game.round;
+        const reefs = entered.filter(c => terrainAt(p.terrain, c) === 'reef');
+        if (reefs.length && rng() < REEF_RISK) {
+          for (const c of reefs) if (!p.knownOwnReefs.includes(c)) p.knownOwnReefs.push(c);
+          sink(p, ship, 'reef');
+          log(game, { type: 'reef-sunk', playerId, shipType: ship.type }, now);
+        } else {
+          ship.grounded = entered.some(c => terrainAt(p.terrain, c) === 'shoal');
+          // Do not disclose ship identity, coordinates, or displacement to the opponent.
+          log(game, { type: ship.grounded ? 'grounded' : 'move', playerId }, now);
+        }
+      } else if (definition.effect === 'recon') {
+        p.recon[c] = { contact: target.ships.some(s => cells(s).includes(c)), round: game.round };
+        // Reconnaissance coordinates and results are private to the card's owner.
+        log(game, { type: 'recon', playerId }, now);
+      } else {
+        const weapon = definition.weapon;
+        if (weapon === 'torpedo') p.torpedoes--;
+        if (!target.shots.includes(c)) target.shots.push(c);
+        target.shotRounds[c] = game.round;
+        const ship = target.ships.find(s => cells(s).includes(c));
+        if (ship) {
+          ship.hits.push(c);
+          if (weapon === 'torpedo' && terrainAt(target.terrain, c) === 'deep') sink(target, ship, 'torpedo');
+        }
+        const result = ship ? (isSunk(target, ship) ? 'sunk' : 'hit') : 'miss';
+        log(game, { type: result, playerId, cell: c, weapon, ...(result === 'sunk' ? { shipType: ship.type } : {}) }, now);
+      }
+      if (p.ships.every(s => isSunk(p, s))) finish(game, 1 - index, now);
+      else if (target.ships.every(s => isSunk(target, s))) finish(game, index, now);
+      else if (p.actionPoints === 0) advance(game, now);
       break;
     }
-    case 'fire': {
-      requireRule(game.phase === 'battle' && index === game.turn, '请等待你的回合');
-      const c = action.cell;
-      requireRule(Number.isInteger(c) && c >= 0 && c < SIZE * SIZE, '无效坐标');
-      const target = game.players[1 - index];
-      const weapon = action.weapon ?? 'shell';
-      requireRule(weapon === 'shell' || weapon === 'torpedo', '无效武器');
-      requireRule(canFireAt(target, c), '该坐标为礁石或已经攻击过；敌方机动后才可复查落空格');
-      requireRule(weapon !== 'torpedo' || p.torpedoes > 0, '鱼雷已用尽');
-      if (weapon === 'torpedo') p.torpedoes--;
-      if (!target.shots.includes(c)) target.shots.push(c);
-      target.shotRounds[c] = game.round;
-      const ship = target.ships.find(s => cells(s).includes(c));
-      if (ship) {
-        ship.hits.push(c);
-        if (weapon === 'torpedo' && terrainAt(target.terrain, c) === 'deep') sink(target, ship, 'torpedo');
-      }
-      const result = ship ? (isSunk(target, ship) ? 'sunk' : 'hit') : 'miss';
-      log(game, { type: result, playerId, cell: c, weapon, ...(result === 'sunk' ? { shipType: ship.type } : {}) }, now);
-      if (target.ships.every(s => isSunk(target, s))) finish(game, index, now);
-      else advance(game, now);
-      break;
-    }
+    case 'fire': case 'move': case 'recon':
+      throw new Error('请使用对应的手牌完成侦察、移动或攻击');
     case 'pass': {
       requireRule(game.phase === 'battle' && index === game.turn, '请等待你的回合');
       log(game, { type: 'pass', playerId }, now);
@@ -241,7 +272,7 @@ export function act(game, playerId, action, now = Date.now(), rng = Math.random)
   game.version++;
   return game;
 }
-/** Never send unhit enemy locations, ship IDs or enemy incoming-shot arrays to a client. */
+/** Expose only private recon snapshots, confirmed damage and wrecks, never unhit full hulls or enemy hands. */
 export function viewFor(game, playerId) {
   const me = game.players.findIndex(p => p.id === playerId);
   requireRule(me !== -1, '你不在这个房间中');
@@ -252,16 +283,21 @@ export function viewFor(game, playerId) {
     const ship = other.ships.find(s => s.hits.includes(c));
     enemyCells[c] = ship ? (isSunk(other, ship) ? 'sunk' : 'hit') : 'miss';
   }
-  const publicPlayer = p => ({ id: p.id, name: p.name, ready: p.ready, confirmed: p.confirmed, rematch: p.rematch });
+  const publicPlayer = p => ({ id: p.id, name: p.name, ready: p.ready, confirmed: p.confirmed, rematch: p.rematch,
+    actionPoints: p.actionPoints, handCount: p.hand.length, deckCount: p.deck.length });
   const knownTerrain = (terrain, known) => terrain.map((type, cell) => type === 'reef' && !known.includes(cell) ? 'deep' : type);
   const ownView = structuredClone(own);
   ownView.terrain = knownTerrain(own.terrain, own.knownOwnReefs);
+  ownView.deckCount = own.deck.length;
+  delete ownView.deck; // Even the owner's draw order stays face down.
   return {
     phase: game.phase, mapId: game.mapId, turn: game.turn, deadline: game.deadline, winner: game.winner,
     round: game.round, version: game.version, startedAt: game.startedAt, endedAt: game.endedAt,
     me, players: game.players.map(publicPlayer), own: ownView, enemyCells,
     enemySunk: other ? other.ships.filter(s => isSunk(other, s)).map(s => s.type) : [],
     enemyTerrain: knownTerrain(other ? other.terrain : terrainFor(game.mapId, 1 - me), []),
+    enemyRecon: Object.entries(own.recon).map(([cell, info]) => ({ cell: Number(cell), contact: info.contact,
+      stale: !!other && info.round < other.lastMove })),
     rescanCells: other ? other.shots.filter(c => canFireAt(other, c)) : [],
     // Cannon damage, torpedoes and a visible grounding wreck can reveal complete hulls.
     enemyWrecks: other ? other.ships.filter(s => isSunk(other, s)).map(s => ({

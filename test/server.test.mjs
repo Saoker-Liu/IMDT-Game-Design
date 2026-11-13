@@ -1,3 +1,4 @@
+import { cardSessionActions } from '../test-support/cards.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -20,7 +21,8 @@ test('two real HTTP clients play a private-board game with room discovery, timeo
   assert.equal((await req('state')).status,401);
   const guest=(await req('join',{roomId:host.roomId,name:'乙'})).data;
   assert.equal((await req('join',{roomId:host.roomId,name:'丙'})).status,409);
-  const action=(token,body)=>req('action',body,token);
+  const {action: play}=cardSessionActions(async(s,body)=>{const r=await req('action',body,s.token);assert.equal(r.status,200,r.data.error);return r.data;},async s=>(await req('state',null,s.token)).data,[host,guest]);
+  const action=async(token,body)=>({status:200,data:await play([host,guest].find(s=>s.token===token),body)});
   await action(host.token,{type:'ready'});const prep=await action(guest.token,{type:'ready'});
   assert.equal(prep.data.phase,'placement');
   await action(host.token,{type:'place',id:'BB-1',x:0,y:0,vertical:false});
@@ -30,12 +32,12 @@ test('two real HTTP clients play a private-board game with room discovery, timeo
   await action(host.token,{type:'confirm'});await action(guest.token,{type:'confirm'});
   const battle=(await req('state',null,host.token)).data;assert.equal(battle.phase,'battle');
   clock=battle.deadline;
-  assert.equal((await action(host.token,{type:'fire',cell:0})).status,409);
+  assert.equal((await req('action',{type:'play-card',cardId:battle.own.hand[0].id,cell:0},host.token)).status,409);
   let view=(await action(guest.token,{type:'fire',cell:0})).data;
   assert.equal(view.enemyCells[0],'hit');assert.equal(view.turn,0);
   // Reconnect uses the same bearer token and restores state without joining again.
   const restored=(await req('state',null,guest.token)).data;assert.equal(restored.own.id,view.own.id);assert.equal(restored.enemyCells[0],'hit');
-  assert.equal((await action(guest.token,{type:'fire',cell:0})).status,409);
+  assert.equal((await req('action',{type:'fire',cell:0},guest.token)).status,409);
   await req('leave',{},host.token);
   view=(await req('state',null,guest.token)).data;assert.equal(view.phase,'result');assert.equal(view.winner,1);assert.equal(view.opponentConnected,false);
   assert.equal((await req('state',null,host.token)).status,401);
@@ -64,7 +66,7 @@ test('two HTTP peers share the selected terrain map and enforce torpedoes, maneu
   assert.equal((await req('create',{mapId:'invalid'})).status,400);
   const host=(await req('create',{name:'甲',mapId:'blue-frontier'})).data;
   const guest=(await req('join',{name:'乙',roomId:host.roomId})).data;
-  const action=async(s,a)=>{const r=await req('action',a,s);assert.equal(r.status,200,r.data.error);return r.data;};
+  const {action}=cardSessionActions(async(s,a)=>{const r=await req('action',a,s);assert.equal(r.status,200,r.data.error);return r.data;},async s=>(await req('state',null,s)).data,[host,guest]);
   assert.equal((await req('rooms')).data.rooms[0].mapId,'blue-frontier');
   const before=(await req('state',null,guest)).data;
   assert.deepEqual(before.own.terrain,terrainFor('blue-frontier',1));
@@ -97,7 +99,8 @@ test('HTTP sessions reveal reefs only after collisions and restore the resulting
   }
   const host=await req('create',{name:'甲',mapId:'undertow'});
   const guest=await req('join',{name:'乙',roomId:host.roomId});
-  const action=(s,a)=>req('action',a,s),state=s=>req('state',null,s);
+  const state=s=>req('state',null,s);
+  const {action}=cardSessionActions((s,a)=>req('action',a,s),state,[host,guest]);
   for(const s of [host,guest]) {
     const v=await state(s);assert.ok(v.own.terrain.every(t=>t==='deep'));assert.ok(v.enemyTerrain.every(t=>t==='deep'));
     await action(s,{type:'ready'});
