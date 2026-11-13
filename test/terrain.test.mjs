@@ -163,7 +163,6 @@ test('undiscovered reefs are deep water in both player views, including placemen
     assert.ok(view.own.terrain.every(t=>t==='deep'));
     assert.ok(view.enemyTerrain.every(t=>t==='deep'));
     assert.deepEqual(view.own.knownOwnReefs,[]);
-    assert.deepEqual(view.own.knownEnemyReefs,[]);
   }
   assert.ok(g.players.every(p=>p.terrain.includes('reef')));
   const safe=battle('undertow');
@@ -172,25 +171,27 @@ test('undiscovered reefs are deep water in both player views, including placemen
   assert.deepEqual(safe.players[0].knownOwnReefs,[]);
 });
 
-test('cannon and torpedo reconnaissance reveal only their target reef to the acting player',()=>{
+test('cannon and torpedo attacks never identify reefs, on hits or misses',()=>{
   const g=battle(),target=g.players[1];
   for(const c of [0,1,90,91]) target.terrain[c]='reef';
   act(g,'a',{type:'fire',cell:90},1200);
   let view=viewFor(g,'a');
-  assert.equal(view.enemyCells[90],'miss');assert.equal(view.enemyTerrain[90],'reef');
+  assert.equal(view.enemyCells[90],'miss');assert.equal(view.enemyTerrain[90],'deep');
   for(const c of [0,1,91]) assert.equal(view.enemyTerrain[c],'deep');
   assert.equal(viewFor(g,'b').own.terrain[90],'deep');
   assert.throws(()=>act(g,'a',{type:'fire',cell:91},1201),/等待/);
-  assert.deepEqual(g.players[0].knownEnemyReefs,[90]);
+  assert.deepEqual(g.players[0].knownOwnReefs,[]);
   act(g,'b',{type:'pass'},1201);
   act(g,'a',{type:'fire',cell:0,weapon:'torpedo'},1202);
   view=viewFor(g,'a');
-  assert.equal(view.enemyTerrain[0],'reef');assert.equal(view.enemyTerrain[1],'deep');
+  assert.equal(view.enemyTerrain[0],'deep');assert.equal(view.enemyTerrain[1],'deep');
   assert.equal(view.enemyCells[0],'hit');assert.deepEqual(target.ships[0].hits,[0]);
   assert.equal(view.own.torpedoes,2);
-  view.enemyTerrain[1]='reef';view.own.knownEnemyReefs.push(1);
+  assert.ok(view.enemyTerrain.every(t=>t==='deep'));
+  assert.ok(viewFor(g,'b').own.terrain.every(t=>t==='deep'));
+  view.enemyTerrain[1]='reef';view.own.knownOwnReefs.push(1);
   assert.equal(viewFor(g,'a').enemyTerrain[1],'deep');
-  assert.deepEqual(g.players[0].knownEnemyReefs,[90,0]);
+  assert.deepEqual(g.players[0].knownOwnReefs,[]);
 });
 
 test('reef collision confirms only newly entered reef cells, without revealing a whole wreck footprint or opponent intel',()=>{
@@ -215,14 +216,14 @@ test('reef knowledge survives later views and resets on rematch without changing
   act(g,'a',{type:'fire',cell:target},1200);
   act(g,'b',{type:'pass'},1201);
   act(g,'a',move('FF-3',1,0),1202,()=>0);
-  assert.equal(viewFor(g,'a').enemyTerrain[target],'reef');
+  assert.equal(viewFor(g,'a').enemyTerrain[target],'deep');
   assert.equal(viewFor(g,'a').own.terrain[65],'reef');
   g.phase='result';
   act(g,'a',{type:'rematch'},1203);act(g,'b',{type:'rematch'},1204);
   assert.equal(g.mapId,'undertow');
   for(const id of ['a','b']) {
     const v=viewFor(g,id);
-    assert.deepEqual(v.own.knownOwnReefs,[]);assert.deepEqual(v.own.knownEnemyReefs,[]);
+    assert.deepEqual(v.own.knownOwnReefs,[]);
     assert.ok(v.own.terrain.every(t=>t==='deep'));assert.ok(v.enemyTerrain.every(t=>t==='deep'));
   }
   assert.deepEqual(g.players[0].terrain,terrainFor('undertow'));

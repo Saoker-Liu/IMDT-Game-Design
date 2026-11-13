@@ -1,8 +1,8 @@
-import { TYPES, TOTAL_CELLS, PREP_MS, TURN_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=3.3.0';
+import { TYPES, TOTAL_CELLS, PREP_MS, TURN_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=3.3.1';
 import { vesselArt, shipOverlay, impactArt, boardFurniture } from './art.mjs?v=3.0.0';
 
-import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=3.3.0';
-import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=3.3.0';
+import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=3.3.1';
+import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=3.3.1';
 
 const app = document.querySelector('#app');
 const modal = document.querySelector('#modal');
@@ -342,7 +342,7 @@ function openModal(title,content) {
   modal.showModal();
 }
 function showRules() {
-  openModal('作战手册',`<p class="modal-description">部署舰队、利用地形，在海雾中寻找对手。</p><div class="rule-fleet">${TYPES.map(t=>`<div><b>${t.length} 格 × ${t.count}</b>${t.name}</div>`).join('')}</div><div class="rules-list"><div class="rule-row"><span class="rule-number">01</span><div><h3>选图与布阵</h3><p>大厅选择海域进行演习，或创建房间时选择地图。双方准备后有 90 秒布阵，拖拽放置、R 旋转；礁石不能部署。超时保留已放置舰船并随机补齐。</p></div></div><div class="rule-row"><span class="rule-number">02</span><div><h3>每回合一个行动</h3><p>10 秒内攻击一次，或选中己方舰船向上下左右平移一格。炮弹无限，每方有 3 枚鱼雷。攻击、移动或超时后立即换手；中弹舰船、搁浅舰船和沉船不能移动，交战中不能旋转。</p></div></div><div class="rule-row"><span class="rule-number">03</span><div><h3>地形改变战术</h3><p>进入新的暗礁格，每次机动有 25% 概率整舰沉没；进入新的浅滩格会永久搁浅。初始部署不会触发航行效果。鱼雷命中深海格中的舰船，整舰沉没；命中其他可航地形只损伤一个部位。</p></div></div><div class="rule-row"><span class="rule-number">04</span><div><h3>机动与侦察</h3><p>礁石与浅滩可见；暗礁外观始终与深海相同，炮击侦察或触礁后悬停确认对应格。未命中的敌舰位置和移动坐标不公开。落空是历史情报，敌方机动后允许再次侦察。命中格不能重复攻击；已击中舰船全部部位或利用地形击沉，均计为沉没。消灭对方全部舰船获胜。</p></div></div></div>${terrainLegend()}<button class="btn primary full" data-action="close-modal">收到，指挥官${icon('check')}</button>`);
+  openModal('作战手册',`<p class="modal-description">部署舰队、利用地形，在海雾中寻找对手。</p><div class="rule-fleet">${TYPES.map(t=>`<div><b>${t.length} 格 × ${t.count}</b>${t.name}</div>`).join('')}</div><div class="rules-list"><div class="rule-row"><span class="rule-number">01</span><div><h3>选图与布阵</h3><p>大厅选择海域进行演习，或创建房间时选择地图。双方准备后有 90 秒布阵，拖拽放置、R 旋转；礁石不能部署。超时保留已放置舰船并随机补齐。</p></div></div><div class="rule-row"><span class="rule-number">02</span><div><h3>每回合一个行动</h3><p>10 秒内攻击一次，或选中己方舰船向上下左右平移一格。炮弹无限，每方有 3 枚鱼雷。攻击、移动或超时后立即换手；中弹舰船、搁浅舰船和沉船不能移动，交战中不能旋转。</p></div></div><div class="rule-row"><span class="rule-number">03</span><div><h3>地形改变战术</h3><p>进入新的暗礁格，每次机动有 25% 概率整舰沉没；进入新的浅滩格会永久搁浅。初始部署不会触发航行效果。鱼雷命中深海格中的舰船，整舰沉没；命中其他可航地形只损伤一个部位。</p></div></div><div class="rule-row"><span class="rule-number">04</span><div><h3>机动与侦察</h3><p>礁石与浅滩可见；暗礁外观始终与深海相同，仅己舰触礁后悬停确认对应格。未命中的敌舰位置和移动坐标不公开。落空是历史情报，敌方机动后允许再次侦察。命中格不能重复攻击；已击中舰船全部部位或利用地形击沉，均计为沉没。消灭对方全部舰船获胜。</p></div></div></div>${terrainLegend()}<button class="btn primary full" data-action="close-modal">收到，指挥官${icon('check')}</button>`);
 }
 function showLanHelp() {
   openModal('与伙伴在局域网开战',`<p class="modal-description">GitHub Pages 提供人机试玩。双人房间由随项目附带的本地服务运行，只需一位玩家启动。</p><ol class="setup-steps"><li>安装 Node.js 22 或更新版本，然后下载项目。</li><li>在项目目录打开终端，运行：</li></ol><div class="code-block">git clone ${REPO}.git\ncd IMDT-Game-Design\nnpm start</div><ol class="setup-steps" start="3"><li>终端会显示 <code>http://你的局域网IP:3000</code>。两位玩家连接同一 Wi-Fi，并打开这个<strong>相同地址</strong>。</li><li>创建 / 加入公开房间，双方准备，即可开战。</li></ol><p class="checkbox-note">服务运行期间房间保持可用；重启后清空。如无法连接，请检查两台设备可互访，且主机允许 TCP 3000 端口的入站连接。</p><div class="form-actions"><a class="btn subtle" href="${REPO}#局域网双人对战" target="_blank" rel="noopener">查看完整说明 ↗</a><button class="btn primary" data-action="practice-modal">先试人机演习</button></div>`);

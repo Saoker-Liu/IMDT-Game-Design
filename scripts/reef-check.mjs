@@ -32,6 +32,7 @@ try {
   }
   const title=(page,board,c)=>page.locator(`#${board}-grid [data-cell="${c}"]`).getAttribute('title');
   const waitTitle=(page,board,c)=>page.waitForFunction(({board,c})=>document.querySelector(`#${board}-grid [data-cell="${c}"]`)?.title.startsWith('暗礁'),{board,c});
+  const waitShot=(page,c)=>page.waitForFunction(c=>['miss','hit','sunk'].some(status=>document.querySelector(`#enemy-grid [data-cell="${c}"]`)?.classList.contains(status)),c);
   const waitTurn=page=>page.waitForSelector('#enemy-grid .cell:not(:disabled)');
   async function seaStyle(page) {
     return page.locator('.friendly-chart .sea-paint').evaluate(el=>({image:getComputedStyle(el).backgroundImage,size:getComputedStyle(el).backgroundSize,position:getComputedStyle(el).backgroundPosition}));
@@ -69,16 +70,16 @@ try {
   await checkSea(own,style);await capture(own,'reef-undiscovered.png');
 
   await own.locator(`#enemy-grid [data-cell="${reef}"]`).click();
-  await own.locator('[data-action="fire"]').click();await waitTitle(own,'enemy',reef);
+  await own.locator('[data-action="fire"]').click();await waitShot(own,reef);
   await own.locator(`#enemy-grid [data-cell="${reef}"]`).hover({force:true});
-  assert.ok((await title(own,'enemy',reef)).startsWith('暗礁'));
-  assert.equal(await own.locator('#enemy-grid .terrain-reef').count(),1);
+  assert.ok((await title(own,'enemy',reef)).startsWith('深海'));
+  assert.equal(await own.locator('#enemy-grid .terrain-reef').count(),0);
   assert.ok((await title(other,'own',reef)).startsWith('深海'));
   await checkSea(own,style);
   await own.reload();await own.waitForSelector('#own-grid');
-  assert.ok((await title(own,'enemy',reef)).startsWith('暗礁'));
+  assert.ok((await title(own,'enemy',reef)).startsWith('深海'));
   await checkSea(own,style);
-  console.log('PASS: shell reconnaissance changes only the target hover text; other player and sea appearance stay unchanged');
+  console.log('PASS: shell attacks keep reef hover text as deep water, including after refresh');
 
   await action(guest,{type:'pass'});await waitTurn(own);
   await own.locator('#own-grid [data-cell="64"]').click();
@@ -87,6 +88,7 @@ try {
   assert.ok((await title(own,'own',64)).startsWith('深海'));
   assert.ok((await title(other,'enemy',65)).startsWith('深海'));
   await checkSea(own,style);await capture(own,'reef-discovered.png');
+  await own.reload();await waitTitle(own,'own',65);await checkSea(own,style);
   await own.locator('[data-action="terrain-guide"]').first().click();
   const guideStyles=await own.locator('.terrain-guide-art .sea-paint').evaluateAll(nodes=>nodes.map(node=>getComputedStyle(node).backgroundImage));
   assert.equal(guideStyles[0],guideStyles[2]);
@@ -107,10 +109,12 @@ try {
   const target=terrainFor('undertow',1).findIndex(type=>type==='reef');
   assert.ok((await title(practice,'enemy',target)).startsWith('深海'));
   await practice.locator(`#enemy-grid [data-cell="${target}"]`).click();await practice.locator('[data-action="fire"]').click();
-  await waitTitle(practice,'enemy',target);await checkSea(practice,style);
+  await waitShot(practice,target);await checkSea(practice,style);
+  assert.ok((await title(practice,'enemy',target)).startsWith('深海'));
+  assert.equal(await practice.locator('#enemy-grid .terrain-reef').count(),0);
   assert.ok(!requests.some(url=>/chart-undertow|terrain-atlas|shoal-variants/.test(url)));
   assert.deepEqual(errors,[]);
-  console.log(`PASS: map previews and practice use deep-water art; practice reconnaissance updates hover information. Screenshots: ${output}`);
+  console.log(`PASS: map previews and practice use deep-water art; practice attacks never identify reefs. Screenshots: ${output}`);
 } finally {
   if(browser)await browser.close();
   await new Promise(resolve=>server.close(resolve));

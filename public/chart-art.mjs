@@ -1,4 +1,4 @@
-import { MAPS, terrainFor } from './terrain.mjs?v=3.3.0';
+import { MAPS, terrainFor } from './terrain.mjs?v=3.3.1';
 
 const charts = MAPS.flatMap(map => [0, 1].map(side => ({ mapId: map.id, side, terrain: terrainFor(map.id, side) })));
 
