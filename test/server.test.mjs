@@ -86,3 +86,35 @@ test('two HTTP peers share the selected terrain map and enforce torpedoes, maneu
   await action(guest,{type:'pass'});
   assert.equal((await req('action',{type:'move',id:'FF-3',dx:1,dy:0},host)).status,409);
 });
+
+test('HTTP sessions keep reef reconnaissance private and restore discovered hover information',async t=>{
+  const server=createGameServer({now:()=>1000,rng:()=>0});server.listen(0,'127.0.0.1');await once(server,'listening');
+  t.after(()=>new Promise(resolve=>server.close(resolve)));
+  const base=`http://127.0.0.1:${server.address().port}`;
+  async function req(route,body,session){
+    const response=await fetch(`${base}/api/${route}`,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(session?{Authorization:`Bearer ${session.token}`}:{})},...(body?{body:JSON.stringify(body)}:{})});
+    const data=await response.json();assert.equal(response.status,200,data.error);return data;
+  }
+  const host=await req('create',{name:'甲',mapId:'undertow'});
+  const guest=await req('join',{name:'乙',roomId:host.roomId});
+  const action=(s,a)=>req('action',a,s),state=s=>req('state',null,s);
+  for(const s of [host,guest]) {
+    const v=await state(s);assert.ok(v.own.terrain.every(t=>t==='deep'));assert.ok(v.enemyTerrain.every(t=>t==='deep'));
+    await action(s,{type:'ready'});
+  }
+  const placements=[['BB-1',0,0],['CG-1',0,2],['CG-2',5,2],['DD-1',0,4],['DD-2',3,4],['DD-3',6,4],['FF-1',0,6],['FF-2',2,6],['FF-3',4,6],['FF-4',6,6]];
+  for(const s of [host,guest]) {
+    for(const [id,x,y]of placements)await action(s,{type:'place',id,x,y,vertical:false});
+    await action(s,{type:'confirm'});
+  }
+  const cell=terrainFor('undertow',1).findIndex(t=>t==='reef');
+  let v=await action(host,{type:'fire',cell});
+  assert.equal(v.enemyTerrain[cell],'reef');assert.equal(v.enemyTerrain.filter(t=>t==='reef').length,1);
+  assert.equal((await state(guest)).own.terrain[cell],'deep');
+  await action(guest,{type:'pass'});
+  v=await action(host,{type:'move',id:'FF-3',dx:1,dy:0});
+  assert.equal(v.own.terrain[65],'reef');assert.equal(v.own.ships.find(s=>s.id==='FF-3').sunkBy,'reef');
+  assert.equal((await state(guest)).enemyTerrain[65],'deep');
+  const restored=await state(host);assert.equal(restored.own.terrain[65],'reef');assert.equal(restored.enemyTerrain[cell],'reef');
+  assert.equal(restored.players[1].terrain,undefined);assert.equal(restored.players[1].knownEnemyReefs,undefined);
+});

@@ -1,4 +1,4 @@
-import { MAPS, terrainFor } from './terrain.mjs?v=3.0.0';
+import { MAPS, terrainFor } from './terrain.mjs?v=3.3.0';
 
 const charts = MAPS.flatMap(map => [0, 1].map(side => ({ mapId: map.id, side, terrain: terrainFor(map.id, side) })));
 
@@ -43,9 +43,10 @@ export function regionContours(terrain, type) {
   return contours;
 }
 
-export function terrainChart(terrain, small = false) {
-  const { mapId, side } = chartFor(terrain);
-  const regions = ['rock', 'reef', 'shoal'].map(type => {
+export function terrainChart(terrain, small = false, chart = chartFor(terrain)) {
+  const { mapId, side } = chart;
+  // Reefs never get a texture, tint, outline or marker, even after they are discovered.
+  const regions = ['rock', 'shoal'].map(type => {
     const d = regionContours(terrain, type).join('');
     return d ? `<path class="terrain-region region-${type}" data-terrain="${type}" d="${d}" vector-effect="non-scaling-stroke"/>` : '';
   }).join('');

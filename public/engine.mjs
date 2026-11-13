@@ -1,5 +1,5 @@
 /** Authoritative, transport-independent rules. Shared by the LAN server and practice mode. */
-import { terrainFor, terrainAt, MAPS, REEF_RISK, TORPEDO_COUNT } from './terrain.mjs?v=3.0.0';
+import { terrainFor, terrainAt, MAPS, REEF_RISK, TORPEDO_COUNT } from './terrain.mjs?v=3.3.0';
 export const SIZE = 10;
 export const PREP_MS = 90_000;
 export const TURN_MS = 10_000;
@@ -18,7 +18,7 @@ export function makeFleet() {
   })));
 }
 export function makePlayer(id, name) {
-  return { id, name, ready: false, confirmed: false, rematch: false, ships: makeFleet(), shots: [], shotRounds: {}, lastMove: 0, torpedoes: TORPEDO_COUNT };
+  return { id, name, ready: false, confirmed: false, rematch: false, ships: makeFleet(), shots: [], shotRounds: {}, lastMove: 0, torpedoes: TORPEDO_COUNT, knownOwnReefs: [], knownEnemyReefs: [] };
 }
 export function makeGame(players, mapId = 'open-sea') {
   if (!MAPS.some(m => m.id === mapId)) throw new Error('未知的作战地图');
@@ -185,7 +185,9 @@ export function act(game, playerId, action, now = Date.now(), rng = Math.random)
       ship.x += action.dx; ship.y += action.dy;
       const entered = cells(ship).filter(c => !old.includes(c));
       p.lastMove = game.round;
-      if (entered.some(c => terrainAt(p.terrain, c) === 'reef') && rng() < REEF_RISK) {
+      const reefs = entered.filter(c => terrainAt(p.terrain, c) === 'reef');
+      if (reefs.length && rng() < REEF_RISK) {
+        for (const c of reefs) if (!p.knownOwnReefs.includes(c)) p.knownOwnReefs.push(c);
         sink(p, ship, 'reef');
         log(game, { type: 'reef-sunk', playerId, shipType: ship.type }, now);
       } else {
@@ -206,6 +208,8 @@ export function act(game, playerId, action, now = Date.now(), rng = Math.random)
       requireRule(weapon === 'shell' || weapon === 'torpedo', '无效武器');
       requireRule(canFireAt(target, c), '该坐标为礁石或已经攻击过；敌方机动后才可复查落空格');
       requireRule(weapon !== 'torpedo' || p.torpedoes > 0, '鱼雷已用尽');
+      // A successful cannon/torpedo reconnaissance confirms only its target cell, for its actor.
+      if (terrainAt(target.terrain, c) === 'reef' && !p.knownEnemyReefs.includes(c)) p.knownEnemyReefs.push(c);
       if (weapon === 'torpedo') p.torpedoes--;
       if (!target.shots.includes(c)) target.shots.push(c);
       target.shotRounds[c] = game.round;
@@ -251,12 +255,15 @@ export function viewFor(game, playerId) {
     enemyCells[c] = ship ? (isSunk(other, ship) ? 'sunk' : 'hit') : 'miss';
   }
   const publicPlayer = p => ({ id: p.id, name: p.name, ready: p.ready, confirmed: p.confirmed, rematch: p.rematch });
+  const knownTerrain = (terrain, known) => terrain.map((type, cell) => type === 'reef' && !known.includes(cell) ? 'deep' : type);
+  const ownView = structuredClone(own);
+  ownView.terrain = knownTerrain(own.terrain, own.knownOwnReefs);
   return {
     phase: game.phase, mapId: game.mapId, turn: game.turn, deadline: game.deadline, winner: game.winner,
     round: game.round, version: game.version, startedAt: game.startedAt, endedAt: game.endedAt,
-    me, players: game.players.map(publicPlayer), own: structuredClone(own), enemyCells,
+    me, players: game.players.map(publicPlayer), own: ownView, enemyCells,
     enemySunk: other ? other.ships.filter(s => isSunk(other, s)).map(s => s.type) : [],
-    enemyTerrain: other ? [...other.terrain] : terrainFor(game.mapId, 1 - me),
+    enemyTerrain: knownTerrain(other ? other.terrain : terrainFor(game.mapId, 1 - me), own.knownEnemyReefs),
     rescanCells: other ? other.shots.filter(c => canFireAt(other, c)) : [],
     // Cannon damage, torpedoes and a visible grounding wreck can reveal complete hulls.
     enemyWrecks: other ? other.ships.filter(s => isSunk(other, s)).map(s => ({

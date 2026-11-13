@@ -57,7 +57,8 @@ try {
           for (const [u, v] of [[.5,.5], [.12,.12], [.88,.12], [.12,.88], [.88,.88]]) {
             const p = new DOMPoint(rect.x + rect.width * u, rect.y + rect.height * v);
             const matches = svg ? regions.filter(region => region.isPointInFill(p.matrixTransform(svg.getScreenCTM().inverse()))).map(region => region.dataset.terrain) : [];
-            const target = expected[side][c];
+            const actual = expected[side][c];
+            const target = actual === 'reef' ? 'deep' : actual;
             if ((target === 'deep' && matches.length) || (target !== 'deep' && (matches.length !== 1 || matches[0] !== target))) problems.push(`${selector}: ${c} ${u},${v} expected ${target}, got ${matches}`);
           }
         }

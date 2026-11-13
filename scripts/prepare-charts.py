@@ -1,9 +1,9 @@
-"""Encode complete map paintings; no tile extraction or per-cell texturing."""
+"""Encode visible complete map paintings. Reefs always reuse the deep-ocean artwork."""
 from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-for map_id in ('archipelago', 'undertow'):
+for map_id in ('archipelago',):
     for side in (0, 1):
         stem = f'chart-{map_id}-{side}-v3'
         source = Image.open(ROOT / 'art-source' / f'{stem}.png').convert('RGB')
