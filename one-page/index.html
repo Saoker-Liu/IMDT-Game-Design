@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN" data-motion="off">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#081b1e">
+  <meta name="description" content="海面之下是未知，手牌之中是选择。雾海对弈 FOGBOUND，卡牌驱动的海战策略游戏。读懂迷雾，打出胜机。">
+  <meta property="og:title" content="雾海对弈 FOGBOUND — 读懂迷雾，打出胜机。">
+  <meta property="og:description" content="部署舰队，以侦察寻找线索，用一张牌改写战局。即刻进入雾海。">
+  <meta property="og:image" content="https://saoker-liu.github.io/IMDT-Game-Design/one-page/assets/hero.webp">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <link rel="canonical" href="https://saoker-liu.github.io/IMDT-Game-Design/one-page/">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="./assets/hero.webp" as="image" fetchpriority="high">
+  <link rel="preload" href="./assets/serif-cn.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/display.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./site.css?v=1.0.0">
+  <script type="module" src="./site.mjs?v=1.0.0"></script>
+  <title>雾海对弈 FOGBOUND｜读懂迷雾，打出胜机。</title>
+</head>
+<body>
+  <a class="skip-link" href="#tactics">跳至游戏介绍</a>
+  <header class="site-header" id="site-header">
+    <a class="brand" href="#home" aria-label="雾海对弈，返回顶部">
+      <svg class="brand-emblem" viewBox="0 0 40 48" fill="none" aria-hidden="true"><path d="M20 2 37 10v17L20 45 3 27V10Z"/><circle cx="20" cy="13" r="3"/><path d="M20 16v19M13 21h14M9 27c0 6 5 9 11 9s11-3 11-9m-25 1 3-3 4 2m14 0 4-2 3 3"/></svg>
+      <span><b>雾海对弈</b><small>F O G B O U N D</small></span>
+    </a>
+    <nav class="main-nav" id="main-nav" aria-label="页面导航">
+      <a href="#tactics">战术交锋</a><a href="#fleet">舰队档案</a><a href="#waters">多变海域</a>
+    </nav>
+    <div class="header-actions">
+      <button class="motion-toggle" id="motion-toggle" aria-pressed="true" title="关闭动态效果"><span class="motion-bars" aria-hidden="true"><i></i><i></i><i></i></span><span id="motion-label">动态 开</span></button>
+      <a class="header-play" href="../">进入游戏 <span aria-hidden="true">↗</span></a>
+      <button class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="展开导航"><i></i><i></i></button>
+    </div>
+    <div class="reading-progress" aria-hidden="true"><i id="reading-progress"></i></div>
+  </header>
+
+  <main>
+    <section class="hero" id="home" aria-labelledby="hero-title">
+      <div class="hero-media" id="hero-media"><img class="hero-art" src="./assets/hero.webp" width="1672" height="941" alt="微光与海雾中的航母、战列舰和远处护航舰" fetchpriority="high"></div>
+      <div class="hero-shade"></div><div class="sea-mist mist-one" aria-hidden="true"></div><div class="sea-mist mist-two" aria-hidden="true"></div>
+      <div class="hero-bearing" aria-hidden="true">N 31° 14′ &nbsp; E 121° 28′<span>NAVAL OPERATIONS / UNKNOWN WATERS</span></div>
+      <div class="hero-content">
+        <div class="eyebrow hero-eyebrow"><i></i> A GAME OF HIDDEN INTENT</div>
+        <h1 id="hero-title">雾海对弈</h1>
+        <p class="hero-wordmark" aria-hidden="true">FOGBOUND</p>
+        <div class="hero-rule"><i></i><span>读懂迷雾，打出胜机。</span></div>
+        <p class="hero-copy">海面之下是未知，<br class="mobile-break">手牌之中是选择。</p>
+        <div class="hero-actions"><a class="button button-primary" href="../">即刻出航 <span aria-hidden="true">↗</span></a><a class="button button-watch" href="#tactics"><span class="play-icon" aria-hidden="true">▷</span> 体验战术交锋</a></div>
+        <p class="hero-meta">卡牌策略 <i>·</i> 隐藏信息 <i>·</i> 回合制海战</p>
+      </div>
+      <div class="hero-foot"><span><i class="status-light"></i> 人机演习现已开放</span><a href="#tactics" class="scroll-cue">向下探索 <span aria-hidden="true">↓</span></a><span class="hero-foot-note">每一个决定，都有回响。</span></div>
+    </section>
+
+    <section class="tactics section-shell" id="tactics" aria-labelledby="tactics-title">
+      <div class="section-heading" data-reveal><span class="eyebrow">01 / THE ART OF ANTICIPATION</span><span class="section-index" aria-hidden="true">TACTICS</span></div>
+      <div class="tactics-layout">
+        <div class="tactics-copy" data-reveal>
+          <h2 id="tactics-title">看不见的，<br><em>才是战场。</em></h2>
+          <p class="section-lead">以侦察换取确定。<br>用一张牌，改写下一步。</p>
+          <div class="tactic-tabs" role="tablist" aria-label="体验一次战术交锋">
+            <button class="tactic-tab active" id="tab-recon" role="tab" aria-selected="true" aria-controls="tactical-display" data-stage="0"><span class="tab-number">01</span><span><b>拨开迷雾</b><small>看见，才有胜算。</small></span><span class="tab-arrow" aria-hidden="true">↗</span></button>
+            <button class="tactic-tab" id="tab-move" role="tab" aria-selected="false" aria-controls="tactical-display" tabindex="-1" data-stage="1"><span class="tab-number">02</span><span><b>虚实之间</b><small>旧情报，新的局面。</small></span><span class="tab-arrow" aria-hidden="true">↗</span></button>
+            <button class="tactic-tab" id="tab-strike" role="tab" aria-selected="false" aria-controls="tactical-display" tabindex="-1" data-stage="2"><span class="tab-number">03</span><span><b>一击定局</b><small>把判断，变成火力。</small></span><span class="tab-arrow" aria-hidden="true">↗</span></button>
+          </div>
+        </div>
+        <div class="tactical-display" id="tactical-display" role="tabpanel" aria-labelledby="tab-recon" data-stage="0" data-reveal>
+          <div class="demo-topline"><span><i class="status-light"></i> 战术演示 <small>/ 机制示意</small></span><button id="demo-play" class="demo-play" aria-pressed="true" aria-label="暂停自动演示">Ⅱ</button></div>
+          <div class="chart-frame">
+            <div class="chart-axis axis-top" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span></div>
+            <div class="chart-axis axis-left" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+            <div class="demo-board" id="demo-board" role="img" aria-label="侦察照亮局部海域，发现敌方巡洋舰">
+              <div class="demo-ocean"></div><div class="demo-grid"></div>
+              <div class="demo-hidden-fleet"><img class="demo-cruiser" src="../assets/fleet-cruiser.webp" alt="" width="512" height="102"><img class="demo-battleship" src="../assets/fleet-battleship.webp" alt="" width="512" height="92"></div>
+              <div class="demo-fog"></div><div class="radar-sweep"></div><div class="scan-ring"></div>
+              <div class="movement-track"></div><div class="movement-arrow" aria-hidden="true">→</div>
+              <div class="strike-zone" aria-hidden="true"><i style="--x:5;--y:4"></i><i style="--x:4;--y:5"></i><i style="--x:5;--y:5"></i><i style="--x:6;--y:5"></i><i style="--x:5;--y:6"></i></div>
+              <div class="target-reticle" aria-hidden="true"><i></i></div><div class="impact-flash"></div>
+              <div class="demo-fires" aria-hidden="true"><img src="../assets/impact-fire.webp" alt="" width="256" height="256"><img src="../assets/impact-fire.webp" alt="" width="256" height="256"><img src="../assets/impact-fire.webp" alt="" width="256" height="256"></div>
+              <div class="board-coordinates" aria-hidden="true">SECTOR 07<br>VISIBILITY: LIMITED</div>
+              <svg class="board-compass" viewBox="0 0 100 100" fill="none" aria-hidden="true"><circle cx="50" cy="50" r="34"/><circle cx="50" cy="50" r="26"/><path d="M50 7 56 44 93 50 56 56 50 93 44 56 7 50 44 44Z"/><path d="M26 26 74 74m0-48L26 74"/><text x="50" y="10" text-anchor="middle">N</text></svg>
+            </div>
+            <div class="chart-footer"><span>FOGBOUND / TACTICAL WATERS</span><span id="demo-event">CONTACT DETECTED</span></div>
+          </div>
+          <div class="demo-hand" aria-label="本次演示的三张战术卡">
+            <button class="demo-card selected" data-stage="0" aria-pressed="true"><span class="card-corner">01 / INTEL</span><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="17"/><circle cx="24" cy="24" r="9"/><path d="m24 24 13-13M24 4v5M4 24h5m15 15v5m15-20h5"/><circle cx="19" cy="29" r="2"/></svg><b>信号弹</b><span class="card-effect">照亮未知</span></button>
+            <button class="demo-card" data-stage="1" aria-pressed="false"><span class="card-corner">02 / MANEUVER</span><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M7 15h30m-8-8 8 8-8 8M41 33H11m8-8-8 8 8 8"/></svg><b>战术机动</b><span class="card-effect">改变局面</span></button>
+            <button class="demo-card" data-stage="2" aria-pressed="false"><span class="card-corner">03 / FIREPOWER</span><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="15"/><circle cx="24" cy="24" r="5"/><path d="M24 2v12m0 20v12M2 24h12m20 0h12"/></svg><b>主炮轰击</b><span class="card-effect">锁定胜机</span></button>
+          </div>
+          <p class="sr-only" id="demo-announcement" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="fleet" id="fleet" aria-labelledby="fleet-title">
+      <div class="fleet-sea" aria-hidden="true"></div>
+      <div class="section-shell fleet-inner">
+        <div class="section-heading" data-reveal><span class="eyebrow">02 / COMMAND YOUR FLEET</span><span class="section-index" aria-hidden="true">FLEET</span></div>
+        <div class="fleet-header" data-reveal><h2 id="fleet-title">你的舰队，<br><em>你的底牌。</em></h2><p>各司其职，互为锋芒。</p></div>
+        <div class="fleet-stage" data-ship="carrier" data-reveal>
+          <span class="fleet-monogram" id="fleet-monogram" aria-hidden="true">CV</span>
+          <div class="fleet-ship-wrap"><div class="fleet-waterline"></div><img class="fleet-hero-ship" id="fleet-hero-ship" src="../assets/fleet-carrier.webp" alt="航空母舰俯视微缩模型，木质飞行甲板与舰载机" width="1024" height="352" loading="lazy"></div>
+          <div class="fleet-caption" aria-live="polite"><span id="fleet-class">CV / AIRCRAFT CARRIER</span><h3 id="fleet-name">航空母舰</h3><p id="fleet-line">掌握天空，照亮未知。</p></div>
+          <span class="fleet-scale" aria-hidden="true"><i></i> FLEET ARCHIVE / 01 — 05 <i></i></span>
+        </div>
+        <div class="fleet-selector" role="group" aria-label="查看不同舰型" data-reveal>
+          <button class="selected" data-fleet="carrier" aria-pressed="true"><span>CV</span><img src="../assets/fleet-carrier.webp" alt="" width="1024" height="352" loading="lazy"><b>航空母舰</b></button>
+          <button data-fleet="battleship" aria-pressed="false"><span>BB</span><img src="../assets/fleet-battleship.webp" alt="" width="512" height="92" loading="lazy"><b>战列舰</b></button>
+          <button data-fleet="cruiser" aria-pressed="false"><span>CG</span><img src="../assets/fleet-cruiser.webp" alt="" width="512" height="102" loading="lazy"><b>巡洋舰</b></button>
+          <button data-fleet="destroyer" aria-pressed="false"><span>DD</span><img src="../assets/fleet-destroyer.webp" alt="" width="384" height="86" loading="lazy"><b>驱逐舰</b></button>
+          <button data-fleet="frigate" aria-pressed="false"><span>FF</span><img src="../assets/fleet-frigate.webp" alt="" width="256" height="99" loading="lazy"><b>护卫舰</b></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="waters section-shell" id="waters" aria-labelledby="waters-title">
+      <div class="section-heading" data-reveal><span class="eyebrow">03 / EVERY SEA TELLS A DIFFERENT STORY</span><span class="section-index" aria-hidden="true">WATERS</span></div>
+      <div class="waters-heading" data-reveal><h2 id="waters-title">同一片海，<br class="mobile-break"><em>不同的棋局。</em></h2><p>让海况，成为你的战术。</p></div>
+      <div class="map-gallery">
+        <a class="map-panel map-islands" href="../" data-map="archipelago" data-reveal><img src="../assets/chart-archipelago-0-v3.webp" alt="深蓝海面上散布的礁群" width="1024" height="1024" loading="lazy"><span class="map-grid" aria-hidden="true"></span><span class="map-number">I / ARCHIPELAGO</span><span class="map-caption"><small>礁群交错，航道有界。</small><b>星罗棋布</b><span>驶入海域 <i aria-hidden="true">↗</i></span></span></a>
+        <a class="map-panel map-undertow" href="../" data-map="undertow" data-reveal><img src="../assets/ocean-chart.webp" alt="表面平静、暗藏礁石的深海" width="1024" height="1024" loading="lazy"><span class="map-grid" aria-hidden="true"></span><span class="map-number">II / THE UNDERTOW</span><span class="map-caption"><small>平静之下，暗藏变数。</small><b>暗流涌动</b><span>驶入海域 <i aria-hidden="true">↗</i></span></span></a>
+        <a class="map-panel map-shoal" href="../" data-map="blue-frontier" data-reveal><img src="../assets/coast-west-v2.webp" alt="浅色沙洲逐渐过渡到深蓝海面" width="1024" height="1024" loading="lazy"><span class="map-grid" aria-hidden="true"></span><span class="map-number">III / INTO THE BLUE</span><span class="map-caption"><small>走出浅滩，迎向深蓝。</small><b>走向深海</b><span>驶入海域 <i aria-hidden="true">↗</i></span></span></a>
+      </div>
+    </section>
+
+    <section class="final-call" id="sail" aria-labelledby="sail-title">
+      <div class="final-art" aria-hidden="true"></div><div class="final-inner" data-reveal><span class="eyebrow">THE NEXT MOVE IS YOURS</span><h2 id="sail-title">轮到你了，<em>指挥官。</em></h2><p>让最后一艘战舰，为你而战。</p><a class="button button-primary" href="../">进入雾海 <span aria-hidden="true">↗</span></a><small>浏览器即玩 · 人机演习 / 局域网对战</small></div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><a class="footer-wordmark" href="#home">FOGBOUND <span>雾海对弈</span></a><div><a href="../">试玩游戏 ↗</a><a href="https://github.com/Saoker-Liu/IMDT-Game-Design/blob/main/docs/one-page/fogbound-one-page.pdf" target="_blank" rel="noopener noreferrer">One Page PDF ↗</a><a href="https://github.com/Saoker-Liu/IMDT-Game-Design" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div><small>IMDT GAME DESIGN / © 2026<br>人机演习可直接体验；双人局域网需运行本地服务。</small></footer>
+</body>
+</html>
