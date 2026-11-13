@@ -1,12 +1,11 @@
 /** Authoritative, transport-independent rules. Shared by the LAN server and practice mode. */
-import { terrainFor, terrainAt, MAPS } from './terrain.mjs?v=5.0.0';
-import { CARD_TYPES, ACTIONS_PER_TURN, makeDeck, dealCards, drawCards, canUseCard } from './cards.mjs?v=5.0.0';
-import { cells, shape, isSunk, canPlace, canMove, validCell } from './geometry.mjs?v=5.0.0';
-import { prepareCard, resolveCard, visibleCells } from './combat.mjs?v=5.0.0';
+import { terrainFor, terrainAt, MAPS } from './terrain.mjs?v=5.1.0';
+import { ACTIONS_PER_TURN, makeDeck, dealCards, drawCards } from './cards.mjs?v=5.1.0';
+import { cells, shape, isSunk, canPlace, canMove } from './geometry.mjs?v=5.1.0';
+import { prepareCard, resolveCard, visibleCells } from './combat.mjs?v=5.1.0';
 export { cells, shape, isSunk, canPlace, canMove };
 export const SIZE = 10;
 export const PREP_MS = 90_000;
-export const TURN_MS = 10_000;
 export const TYPES = [
   { type: 'battleship', name: '战列舰', length: 4, count: 1, code: 'BB' },
   { type: 'cruiser', name: '巡洋舰', length: 3, count: 2, code: 'CG' },
@@ -75,7 +74,7 @@ function beginTurn(game, now) {
   player.smoke=player.smoke.filter(effect=>player.turns<effect.expiresTurn);
   if(game.airControl&&game.players[game.airControl.owner].turns>=game.airControl.expiresTurn)game.airControl=null;
   drawCards(player);
-  game.deadline = now + TURN_MS;
+  game.deadline = null;
 }
 function startBattle(game, now, rng) {
   game.phase = 'battle';
@@ -100,17 +99,12 @@ export function finish(game, winner, now, reason = 'destroyed') {
   game.version++;
 }
 export function tick(game, now = Date.now(), rng = Math.random) {
-  if (game.deadline === null || now < game.deadline) return false;
-  if (game.phase === 'placement') {
-    for (const p of game.players) {
-      if (!p.confirmed) { autoPlace(p, true, rng); p.confirmed = true; }
-    }
-    log(game, { type: 'autoplaced' }, now);
-    startBattle(game, now, rng);
-  } else if (game.phase === 'battle') {
-    log(game, { type: 'timeout', playerId: game.players[game.turn].id }, now);
-    advance(game, now);
-  } else return false;
+  if (game.phase !== 'placement' || game.deadline === null || now < game.deadline) return false;
+  for (const p of game.players) {
+    if (!p.confirmed) { autoPlace(p, true, rng); p.confirmed = true; }
+  }
+  log(game, { type: 'autoplaced' }, now);
+  startBattle(game, now, rng);
   game.version++;
   return true;
 }
@@ -179,7 +173,6 @@ export function act(game, playerId, action, now = Date.now(), rng = Math.random)
       const target=game.players[1-index];
       if(p.ships.every(s=>isSunk(p,s)))finish(game,1-index,now);
       else if(target.ships.every(s=>isSunk(target,s)))finish(game,index,now);
-      else if(p.actionPoints===0&&!p.hand.some(c=>CARD_TYPES[c.type].cost===0&&canUseCard(p,c)))advance(game,now);
       break;
     }
     case 'fire': case 'move': case 'recon':

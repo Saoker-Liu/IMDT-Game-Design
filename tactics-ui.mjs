@@ -1,6 +1,6 @@
-import { MAPS, TERRAIN, mapInfo, terrainFor } from './terrain.mjs?v=5.0.0';
-import { canMove, isSunk } from './engine.mjs?v=5.0.0';
-import { terrainChart } from './chart-art.mjs?v=5.0.0';
+import { MAPS, TERRAIN, mapInfo, terrainFor } from './terrain.mjs?v=5.1.0';
+import { canMove, isSunk } from './engine.mjs?v=5.1.0';
+import { terrainChart } from './chart-art.mjs?v=5.1.0';
 
 export { terrainChart };
 
@@ -17,7 +17,7 @@ export function terrainLegend() {
   return `<div class="terrain-legend" aria-label="地形效果">${Object.entries(TERRAIN).map(([type, t]) => `<button data-action="terrain-guide" class="terrain-key"><span class="terrain-swatch chart-thumb-${type}"></span><span><b>${t.name}</b><small>${({deep:'鱼雷命中整舰沉没',rock:'禁止部署与航行',reef:'驶入 25% 触礁沉没',shoal:'驶入后永久搁浅'})[type]}</small></span></button>`).join('')}</div>`;
 }
 export function terrainGuide() {
-  return `<p class="modal-description">格线用于定位，轮廓标明礁石与浅滩范围。暗礁始终与深海外观一致；己方侦察或触礁后，相应格子的悬停说明才变为暗礁；临时敌方视野内也可查看地形。敌舰仍隐蔽。</p><div class="terrain-guide">${Object.entries(TERRAIN).map(([type, t]) => `<div class="terrain-guide-card"><div class="terrain-guide-art">${terrainChart(terrainFor(guideMaps[type]), true, {mapId:guideMaps[type],side:0})}</div><div><small>${t.tag}</small><h3>${t.name}</h3><p>${t.effect}</p></div><span class="terrain-map-caption caption-${type}"><i></i>${regionNotes[type]}</span></div>`).join('')}</div><p class="terrain-rules-note">每回合抽 2 张、恢复 3 点行动力，侦察、移动与攻击必须使用卡牌。行动力用尽、主动结束或 10 秒到时换手。鱼雷用卡牌发射，没有独立弹药上限。已中弹舰船与残骸不能航行。落空标记是历史情报，敌方机动后可复查。仅进入新的暗礁/浅滩格时触发效果，初始部署不会触发。</p><button class="btn primary full" data-action="close-modal">了解海况</button>`;
+  return `<p class="modal-description">格线用于定位，轮廓标明礁石与浅滩范围。暗礁始终与深海外观一致；己方侦察或触礁后，相应格子的悬停说明才变为暗礁；临时敌方视野内也可查看地形。敌舰仍隐蔽。</p><div class="terrain-guide">${Object.entries(TERRAIN).map(([type, t]) => `<div class="terrain-guide-card"><div class="terrain-guide-art">${terrainChart(terrainFor(guideMaps[type]), true, {mapId:guideMaps[type],side:0})}</div><div><small>${t.tag}</small><h3>${t.name}</h3><p>${t.effect}</p></div><span class="terrain-map-caption caption-${type}"><i></i>${regionNotes[type]}</span></div>`).join('')}</div><p class="terrain-rules-note">每回合抽 2 张、恢复 3 点行动力，侦察、移动与攻击必须使用卡牌。回合不限时，仅主动确认结束后换手。鱼雷用卡牌发射，没有独立弹药上限。已中弹舰船与残骸不能航行。落空标记是历史情报，敌方机动后可复查。仅进入新的暗礁/浅滩格时触发效果，初始部署不会触发。</p><button class="btn primary full" data-action="close-modal">了解海况</button>`;
 }
 export function mobilityControls(player, selected, active, cardReady = false) {
   const ship = player.ships.find(s => s.id === selected);

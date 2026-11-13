@@ -1,6 +1,6 @@
-import { CARD_TYPES, shipAlive, sourceMatches, unavailableReason, drawCards } from './cards.mjs?v=5.0.0';
-import { cells, isSunk, validCell, radiusCells, hullRadius, reachableMoves, lineCells } from './geometry.mjs?v=5.0.0';
-import { REEF_RISK } from './terrain.mjs?v=5.0.0';
+import { CARD_TYPES, shipAlive, sourceMatches, unavailableReason, drawCards } from './cards.mjs?v=5.1.0';
+import { cells, isSunk, validCell, radiusCells, hullRadius, reachableMoves, lineCells } from './geometry.mjs?v=5.1.0';
+import { REEF_RISK } from './terrain.mjs?v=5.1.0';
 
 const rule=(ok,message)=>{if(!ok)throw new Error(message);};
 const emit=(game,event,now)=>game.history.push({id:game.history.length+1,at:now,...event});
