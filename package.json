@@ -1,6 +1,6 @@
 {
   "name": "imdt-game-design",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "private": true,
   "type": "module",
   "description": "雾海对弈 — 双人局域网海战棋 Demo",
@@ -10,7 +10,8 @@
     "test": "node --test",
     "build": "node scripts/build.mjs",
     "check:art": "node scripts/art-check.mjs",
-    "check:terrain": "node scripts/terrain-check.mjs"
+    "check:terrain": "node scripts/terrain-check.mjs",
+    "check:charts": "node scripts/chart-check.mjs"
   },
   "engines": {
     "node": ">=22"

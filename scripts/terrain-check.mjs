@@ -27,8 +27,8 @@ try {
     await p.waitForFunction(()=>[...document.images].every(i=>i.complete&&i.naturalWidth>0));
     await p.evaluate(async()=>{
       await document.fonts.ready;
-      const urls=new Set(['./assets/terrain-atlas.webp?v=3.0.0']);
-      for(const node of document.querySelectorAll('.coastal-water,.terrain-guide-art.terrain-shoal'))
+      const urls=new Set();
+      for(const node of document.querySelectorAll('.sea-paint,.terrain-swatch,.map-seal'))
         for(const match of getComputedStyle(node).backgroundImage.matchAll(/url\(["']?([^"')]+)["']?\)/g)) urls.add(match[1]);
       await Promise.all([...urls].map(async src=>{const img=new Image();img.src=src;await img.decode();}));
     });
@@ -77,7 +77,7 @@ try {
   await arch.locator('[data-action="auto"]').click();
   await action(guest,{type:'auto'});await action(guest,{type:'confirm'});
   await arch.locator('[data-action="confirm"]').click();await waitTurn(arch);
-  assert.equal(await arch.locator('.friendly-chart .terrain-layer .terrain-rock').count(),16);
+  assert.equal(await arch.locator('#own-grid .terrain-rock').count(),16);
   assert.equal(await arch.locator('.hostile-chart .ship-art').count(),0);
   const own=(await state(host)).own;
   const moves=own.ships.flatMap(s=>[[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dy])=>canMove(own,s.id,dx,dy)).map(([dx,dy])=>({ship:s,dx,dy})));
@@ -112,17 +112,18 @@ try {
   await action(reef.guest,{type:'fire',cell:0});await waitTurn(reefPage);
   await screenshot(reefPage,'undertow-boards.png','.boards');
   await reefPage.locator('[data-action="terrain-guide"]').first().click();
-  assert.equal(await reefPage.locator('.terrain-guide-card').count(),4);assert.equal(await reefPage.locator('.terrain-variants i').count(),16);
+  assert.equal(await reefPage.locator('.terrain-guide-card').count(),4);assert.equal(await reefPage.locator('.terrain-guide-art .sea-paint').count(),4);
   await screenshot(reefPage,'terrain-guide.png','#modal');await reefContext.close();
-  console.log('PASS: deterministic reef wreck through UI, private movement, four terrain types and sixteen variants');
+  console.log('PASS: deterministic reef wreck through UI, private movement and four complete chart guides');
 
   const coast=await prepared('blue-frontier',true),coastContext=await context(coast.host),coastPage=await coastContext.newPage();
   await coastPage.goto(base);await waitTurn(coastPage);
   // The painted depth fade must not shift the actual boundary players use to move.
   for(const [chart,cell]of [['friendly-chart',3],['hostile-chart',7]]) {
-    const edge=await coastPage.locator(`.${chart} .shoal-edge`).boundingBox();
+    const edge=await coastPage.locator(`.${chart} .region-shoal`).boundingBox();
     const boundaryCell=await coastPage.locator(`.${chart} [data-cell="${cell}"]`).boundingBox();
-    assert.ok(Math.abs(edge.x-boundaryCell.x)<1.5,'Depth contour agrees with the logical terrain edge');
+    const contourX=chart==='friendly-chart'?edge.x+edge.width:edge.x;
+    assert.ok(Math.abs(contourX-boundaryCell.x)<1.5,'Depth contour agrees with the logical terrain edge');
   }
   await coastPage.locator('#own-grid [data-cell="83"]').click();
   await coastPage.locator('[data-action="move"][data-dx="-1"][data-dy="0"]').click();

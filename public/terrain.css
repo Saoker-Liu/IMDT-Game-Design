@@ -1,52 +1,32 @@
 /* FOGBOUND · public terrain charts, map library and tactical controls */
-.terrain-tile, .terrain-swatch, .terrain-guide-art, .terrain-variants i, .map-seal {
-  background-image: url('./assets/terrain-atlas.webp?v=3.0.0');
-  background-size: 400% 400%;
-  background-position: calc(var(--tile-col) * 100% / 3) calc(var(--tile-row) * 100% / 3);
-  background-repeat: no-repeat;
-}
-.terrain-layer, .map-mini { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(10, 1fr); }
+.chart-scene { position: relative; overflow: hidden; --chart-art: url('./assets/ocean-chart.webp?v=2.0.1'); }
+.chart-archipelago-0 { --chart-art: url('./assets/chart-archipelago-0-v3.webp?v=3.2.0'); }
+.chart-archipelago-1 { --chart-art: url('./assets/chart-archipelago-1-v3.webp?v=3.2.0'); }
+.chart-undertow-0 { --chart-art: url('./assets/chart-undertow-0-v3.webp?v=3.2.0'); }
+.chart-undertow-1 { --chart-art: url('./assets/chart-undertow-1-v3.webp?v=3.2.0'); }
+.chart-blue-frontier-0 { --chart-art: url('./assets/coast-west-v2.webp?v=3.1.0'); }
+.chart-blue-frontier-1 { --chart-art: url('./assets/coast-east-v2.webp?v=3.1.0'); }
 .terrain-layer { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-.terrain-tile { display: block; min-width: 0; min-height: 0; }
-.terrain-tile.terrain-shoal, .terrain-swatch.terrain-shoal,
-.terrain-guide-art.terrain-shoal, .terrain-variants .terrain-shoal, .map-seal.terrain-shoal {
-  background-image: url('./assets/shoal-variants-v2.webp?v=3.1.0');
-  background-size: 400% 100%;
-  background-position: calc(var(--tile-col) * 100% / 3) 0;
-}
-.terrain-layer .terrain-deep, .map-mini .terrain-deep { background-image: none; }
-.map-mini { background: url('./assets/ocean-chart.webp?v=2.0.1') center / cover; }
-.coastal-water.coast-west { --coastal-art: url('./assets/coast-west-v2.webp?v=3.1.0'); }
-.coastal-water.coast-east { --coastal-art: url('./assets/coast-east-v2.webp?v=3.1.0'); }
-.terrain-layer.coastal-water, .map-mini.coastal-water {
-  background-image: linear-gradient(145deg, #163f4b05, #071e32a6), var(--coastal-art);
+.sea-paint {
+  display: block;
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(145deg, #163f4b05, #071e32a6), var(--chart-art);
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
 }
-.coastal-water > .terrain-tile { background-image: none; }
-.shoal-edge {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 0;
-  border-left: 1px dashed #cfdbbd55;
-  pointer-events: none;
-}
-.coast-west > .shoal-edge { left: 30%; }
-.coast-east > .shoal-edge { left: 70%; }
-.shoal-edge::before, .shoal-edge::after {
-  content: '';
-  position: absolute;
-  left: -3px;
-  width: 5px;
-  height: 2px;
-  background: #c7d2b8a6;
-}
-.shoal-edge::before { top: 0; }
-.shoal-edge::after { bottom: 0; }
-.map-mini > .shoal-edge { display: none; }
-.terrain-layer .terrain-rock { mask-image: radial-gradient(ellipse, #000 48%, #000 72%, transparent 100%); }
+.terrain-boundaries { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
+.terrain-region { fill-rule: evenodd; stroke-width: 1; stroke-linejoin: round; }
+.region-rock { fill: #b6ad8f0a; stroke: #e0ceb089; }
+.region-reef { fill: #90b8ad08; stroke: #b3d0c378; stroke-dasharray: 3 3; }
+.region-shoal { fill: none; stroke: #d4d9b87a; stroke-dasharray: 7 4; }
+.map-card .terrain-boundaries { opacity: .25; }
+.map-seal, .terrain-swatch { background-repeat: no-repeat; }
+.chart-thumb-deep { background: url('./assets/ocean-chart.webp?v=2.0.1') 50% 50% / 200% 200%; }
+.chart-thumb-rock { background: url('./assets/chart-archipelago-0-v3.webp?v=3.2.0') 18% 18% / 400% 400%; }
+.chart-thumb-reef { background: url('./assets/chart-undertow-0-v3.webp?v=3.2.0') 50% 50% / 200% 200%; }
+.chart-thumb-shoal { background: url('./assets/coast-west-v2.webp?v=3.1.0') 0 50% / 400% 400%; }
 .chart-furniture { z-index: 1; opacity: .24; }
 .board-grid { z-index: 2; }
 .ship-layer { z-index: 3; }
@@ -67,7 +47,7 @@
 .map-card { position: relative; isolation: isolate; height: 214px; overflow: hidden; text-align: left; border: 1px solid #4b6261; border-radius: 5px; padding: 0; background: #16323f; transition: transform .2s, border-color .2s; }
 .map-card:hover { border-color: #d1c796; transform: translateY(-3px); }
 .map-card.selected { border-color: #e2cc91; box-shadow: 0 0 0 2px #e2cc9124, 0 8px 24px #0003; }
-.map-card .map-mini { position: absolute; inset: -18%; transform: rotate(-10deg); filter: brightness(.82) saturate(.85); }
+.map-card .map-mini { position: absolute; width: 136%; aspect-ratio: 1; left: -18%; top: 50%; transform: translateY(-50%) rotate(-10deg); filter: brightness(.82) saturate(.85); }
 .map-card-shade { position: absolute; inset: 0; background: linear-gradient(180deg, #071b2c77, transparent 33%, #071b2c77 56%, #091d2af7); }
 .map-card-number { position: absolute; left: 14px; top: 13px; font: 7px var(--mono); letter-spacing: .8px; color: #d4d9c2; }
 .map-card-body { position: absolute; left: 17px; right: 14px; bottom: 18px; }
@@ -94,13 +74,18 @@
 .terrain-key small { display: block; font-size: 8px; color: #94a79a; margin-top: 2px; line-height: 1.5; }
 dialog:has(.terrain-guide) { width: min(740px, calc(100% - 30px)); max-width: 740px; }
 .terrain-guide { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; margin-top: 20px; }
-.terrain-guide-card { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 12px; border: 1px solid #4a6358; border-radius: 5px; background: #192f36; padding: 13px; }
-.terrain-guide-art { display: block; width: 80px; height: 80px; border: 1px solid #92a88b66; border-radius: 3px; }
+.terrain-guide-card { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; border: 1px solid #4a6358; border-radius: 5px; background: #192f36; padding: 13px; }
+.terrain-guide-art { position: relative; width: 110px; height: 110px; border: 1px solid #92a88b66; border-radius: 3px; overflow: hidden; }
+.terrain-guide-art .map-mini { width: 100%; height: 100%; }
+.terrain-guide-art::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), #b6c6b124 calc(10% - 1px) 10%), repeating-linear-gradient(0deg, transparent 0 calc(10% - 1px), #b6c6b124 calc(10% - 1px) 10%); }
 .terrain-guide-card small { font: 7px var(--mono); letter-spacing: 1.2px; color: #a2b99f; }
 .terrain-guide-card h3 { font-size: 16px; color: #e6d7b0; font-weight: 500; letter-spacing: 2px; margin: 5px 0; }
 .terrain-guide-card p { font-size: 10px; color: #a9bbaf; line-height: 1.8; }
-.terrain-variants { grid-column: 1 / -1; display: flex; gap: 6px; padding-top: 1px; }
-.terrain-variants i { display: block; flex: 1; height: 35px; border-radius: 2px; border: 1px solid #b1c1a629; }
+.terrain-map-caption { grid-column: 1 / -1; display: flex; gap: 7px; align-items: center; color: #aabbb0; font-size: 9px; }
+.terrain-map-caption i { width: 19px; border-top: 1px solid #e0ceb0; }
+.caption-reef i { border-top: 1px dashed #b3d0c3; }
+.caption-shoal i { border-top: 1px dashed #d4d9b8; width: 25px; }
+.caption-deep i { border-color: #688e99; opacity: .65; }
 .terrain-rules-note { color: #9aac9f; font-size: 11px; line-height: 2; margin: 18px 0; }
 .mobility-panel { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 15px 0 3px; padding: 12px 14px; border: 1px solid #69765b75; background: linear-gradient(120deg, #2d3e35b0, #142b33); border-radius: 5px; }
 .mobility-panel > div:first-child { min-width: 0; }
@@ -169,7 +154,7 @@ select { width: 100%; border: 1px solid #415b56; background: #142b31; border-rad
   .weapon-switch button { padding: 5px; }
   .mobility-panel { margin-top: 13px; }
   .terrain-guide { grid-template-columns: 1fr; }
-  .terrain-guide-card { grid-template-columns: 75px minmax(0, 1fr); padding: 11px; }
-  .terrain-guide-art { width: 75px; height: 75px; }
+  .terrain-guide-card { grid-template-columns: 100px minmax(0, 1fr); padding: 11px; }
+  .terrain-guide-art { width: 100px; height: 100px; }
   .terrain-guide-card p { font-size: 10px; }
 }

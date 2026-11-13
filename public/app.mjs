@@ -2,7 +2,7 @@ import { TYPES, TOTAL_CELLS, PREP_MS, TURN_MS, makePlayer, makeGame, cells, isSu
 import { vesselArt, shipOverlay, impactArt, boardFurniture } from './art.mjs?v=3.0.0';
 
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=3.0.0';
-import { terrainTiles, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=3.1.0';
+import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=3.2.0';
 
 const app = document.querySelector('#app');
 const modal = document.querySelector('#modal');
@@ -155,7 +155,7 @@ function board(own = false) {
       <div class="board-matrix">
         <div class="axis-x">${'ABCDEFGHIJ'.split('').map(x=>`<span>${x}</span>`).join('')}</div>
         <div class="axis-y">${Array.from({length:10},(_,n)=>`<span>${n+1}</span>`).join('')}</div>
-        ${boardFurniture(own)}${terrainTiles(terrain)}
+        ${boardFurniture(own)}${terrainChart(terrain)}
         <div class="board-grid" id="${own?'own':'enemy'}-grid" role="group" aria-label="${own?'己方':'敌方'} 10 乘 10 海域">${grid}</div>
         <div class="ship-layer">${ships}</div><div class="own-effects board-effects">${effects}</div>
       </div>
