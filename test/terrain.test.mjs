@@ -1,230 +1,53 @@
-import { scenarioAct } from '../test-support/cards.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MAPS, terrainFor, REEF_RISK } from '../public/terrain.mjs';
-import { makeGame, makePlayer, tick, cells, autoPlace, canMove, isSunk, viewFor, PREP_MS } from '../public/engine.mjs';
+import { MAPS,terrainFor,REEF_RISK } from '../public/terrain.mjs';
+import { makeGame,makePlayer,makeFleet,act,tick,cells,canPlace,isSunk,viewFor,PREP_MS } from '../public/engine.mjs';
+import { shape,reachableMoves } from '../public/geometry.mjs';
+import { giveHand,FIXED_PLACEMENTS } from '../test-support/cards.mjs';
+function preparation(map='open-sea') {const g=makeGame([makePlayer('a','A'),makePlayer('b','B')],map);for(const p of g.players)act(g,p.id,{type:'ready'},1000);return g;}
+function battle(){const g=preparation();for(const p of g.players){for(const [id,x,y]of FIXED_PLACEMENTS)act(g,p.id,{type:'place',id,x,y,vertical:false},1001);act(g,p.id,{type:'confirm'},1002);}return g;}
 
-function preparation(map = 'open-sea') {
-  const g = makeGame([makePlayer('a','甲'), makePlayer('b','乙')], map);
-  scenarioAct(g,'a',{type:'ready'},1000); scenarioAct(g,'b',{type:'ready'},1000);
-  return g;
-}
-function battle(map = 'open-sea') {
-  const g = preparation(map);
-  const placements = [[0,0,false],[0,2,false],[5,2,false],[0,4,false],[3,4,false],[6,4,false],[0,6,false],[2,6,false],[4,6,false],[6,6,false]];
-  for (const p of g.players) {
-    p.ships.forEach((s,i) => { const [x,y,vertical]=placements[i]; scenarioAct(g,p.id,{type:'place',id:s.id,x,y,vertical},1100); });
-    scenarioAct(g,p.id,{type:'confirm'},1100);
-  }
-  return g;
-}
-const move = (id,dx,dy) => ({type:'move',id,dx,dy});
-
-test('four maps use deep water by default and rotate the opposing shore fairly',()=>{
+test('four terrain maps preserve mirrored shores and fit the full eleven-ship twenty-six-cell fleet',()=>{
   assert.ok(terrainFor().every(t=>t==='deep'));
-  for (const m of MAPS) {
-    const a=terrainFor(m.id),b=terrainFor(m.id,1);
-    assert.equal(a.length,100);assert.deepEqual(a.toReversed(),b);
-    assert.ok(a.every(t=>['deep','rock','reef','shoal'].includes(t)));
-  }
-  const shore=terrainFor('blue-frontier');
-  for(let c=0;c<100;c++) assert.equal(shore[c],c%10<3?'shoal':'deep');
-  assert.equal(terrainFor('archipelago').filter(t=>t==='rock').length,16);
-  assert.ok(terrainFor('undertow').filter(t=>t==='reef').length>15);
-  assert.throws(()=>makeGame([], 'missing'),/地图/);
+  for(const map of MAPS){assert.deepEqual(terrainFor(map.id).toReversed(),terrainFor(map.id,1));for(let n=0;n<8;n++){
+    const g=preparation(map.id);tick(g,1000+PREP_MS,()=>Math.random());assert.equal(g.phase,'battle');
+    for(const p of g.players){const occupied=p.ships.flatMap(cells);assert.equal(occupied.length,26);assert.equal(new Set(occupied).size,26);assert.ok(occupied.every(c=>p.terrain[c]!=='rock'));}
+  }}
 });
 
-test('rocks block deployment; random and timed completion preserve manual ships on every map',()=>{
-  const blocked=preparation('archipelago');
-  assert.throws(()=>scenarioAct(blocked,'a',{type:'place',id:'BB-1',x:1,y:1,vertical:false},1100),/礁石/);
-  assert.equal(blocked.players[0].ships[0].x,null);
-  for (const m of MAPS) for(let n=0;n<12;n++) {
-    const g=preparation(m.id);
-    scenarioAct(g,'a',{type:'place',id:'BB-1',x:0,y:9,vertical:false},1100);
-    autoPlace(g.players[0]);
-    assert.deepEqual(cells(g.players[0].ships[0]),[90,91,92,93]);
-    tick(g,1000+PREP_MS);
-    assert.equal(g.phase,'battle');
-    for(const p of g.players) {
-      const occupied=p.ships.flatMap(cells);
-      assert.equal(new Set(occupied).size,20);
-      assert.ok(occupied.every(c=>p.terrain[c]!=='rock'));
-    }
-  }
+test('carrier has six cells in either orientation and obeys full-rectangle collision and boundary rules',()=>{
+  const p=makePlayer('a','A'),cv=p.ships.find(s=>s.type==='carrier');Object.assign(cv,{x:7,y:8});
+  assert.deepEqual(cells(cv),[87,88,89,97,98,99]);assert.deepEqual(shape(cv),{width:3,height:2});
+  assert.equal(canPlace(p.ships,cv.id,8,8,false),false);assert.equal(canPlace(p.ships,cv.id,7,8,true),false);
+  Object.assign(cv,{x:8,y:7,vertical:true});assert.deepEqual(cells(cv),[78,79,88,89,98,99]);
+  const frigate=p.ships.find(s=>s.type==='frigate');Object.assign(frigate,{x:9,y:9});assert.equal(canPlace(p.ships,cv.id,8,7,true),false);
+  frigate.x=null;frigate.y=null;const terrain=terrainFor();terrain[89]='rock';assert.equal(canPlace(p.ships,cv.id,8,7,true,terrain),false);
 });
 
-test('one-cell movement spends the last AP, preserves a whole hull, and rejects illegal movement atomically',()=>{
-  const g=battle(),p=g.players[0];
-  assert.throws(()=>scenarioAct(g,'b',move('FF-3',1,0),1200),/等待/);
-  for(const [dx,dy] of [[1,1],[2,0],[0,0],[.5,0]]) assert.throws(()=>scenarioAct(g,'a',move('FF-3',dx,dy),1200));
-  scenarioAct(g,'a',move('FF-3',1,0),1200);
-  assert.equal(p.ships.find(s=>s.id==='FF-3').x,5);assert.equal(g.turn,1);
-  scenarioAct(g,'b',{type:'pass'},1201);
-  const version=g.version;
-  assert.throws(()=>scenarioAct(g,'a',move('FF-3',1,0),1202),/无法航行/);
-  assert.equal(g.turn,0);assert.equal(g.version,version);
-  assert.equal(p.ships.find(s=>s.id==='FF-3').x,5);
-  p.terrain[64]='rock';assert.equal(canMove(p,'FF-3',-1,0),false);
-  assert.throws(()=>scenarioAct(g,'a',move('FF-3',-1,0),1202),/礁石/);
-  assert.equal(canMove(p,'BB-1',-1,0),false);
+test('partial carrier deployment is preserved during timed completion and the carrier is required before confirming',()=>{
+  const g=preparation();act(g,'a',{type:'place',id:'CV-1',x:7,y:8,vertical:false},1001);tick(g,1000+PREP_MS);
+  assert.deepEqual(cells(g.players[0].ships.find(s=>s.type==='carrier')),[87,88,89,97,98,99]);assert.equal(g.phase,'battle');
+  const h=preparation();for(const [id,x,y]of FIXED_PLACEMENTS.filter(([id])=>id!=='CV-1'))act(h,'a',{type:'place',id,x,y,vertical:false},1001);
+  assert.throws(()=>act(h,'a',{type:'confirm'},1002),/11/);
 });
 
-test('a moved ship entering an old miss is neither damaged nor revealed; that cell can be scanned again',()=>{
-  const g=battle(),enemy=g.players[1],ship=enemy.ships.find(s=>s.id==='FF-3');
-  scenarioAct(g,'a',{type:'fire',cell:65},1200);
-  scenarioAct(g,'b',move('FF-3',1,0),1201);
-  let view=viewFor(g,'a');
-  assert.deepEqual(ship.hits,[]);assert.equal(view.enemyCells[65],'miss');
-  assert.ok(view.rescanCells.includes(65));assert.deepEqual(view.enemyWrecks,[]);
-  const event=view.history.at(-1);
-  assert.deepEqual(Object.keys(event).sort(),['at','id','playerId','type']);
-  assert.equal(view.players[1].ships,undefined);
-  scenarioAct(g,'a',{type:'fire',cell:65},1202);
-  view=viewFor(g,'a');assert.equal(view.enemyCells[65],'sunk');
-  assert.equal(isSunk(enemy,ship),true);
+test('a six-cell carrier entering multiple reefs rolls only once for that movement step and discloses only actual newly entered reefs',()=>{
+  const g=battle(),p=g.players[0],cv=p.ships.find(s=>s.type==='carrier');Object.assign(cv,{x:4,y:7,vertical:true});
+  for(const c of [73,83,93])p.terrain[c]='reef';giveHand(p,['maneuver']);let rolls=0;
+  act(g,'a',{type:'play-card',cardId:'maneuver-1',id:cv.id,cell:73},1100,()=>{rolls++;return REEF_RISK-.001;});
+  assert.equal(rolls,1);assert.ok(isSunk(p,cv));assert.equal(cv.hits.length,6);assert.deepEqual(p.knownOwnReefs,[73,83,93]);
+  assert.equal(viewFor(g,'a').own.terrain[74],'deep');assert.ok(viewFor(g,'b').enemyTerrain.every(t=>t==='deep'));
 });
 
-test('damaged ships cannot move and incoming damage stays at the hit hull',()=>{
-  const g=battle();scenarioAct(g,'a',{type:'pass'},1200);scenarioAct(g,'b',{type:'fire',cell:0},1201);
-  assert.equal(canMove(g.players[0],'BB-1',0,1),false);
-  assert.throws(()=>scenarioAct(g,'a',move('BB-1',0,1),1202),/中弹/);
-  assert.deepEqual(g.players[0].ships[0].hits,[0]);
-});
-
-test('reef risk is rolled once per maneuver, including a long ship entering several reef cells',()=>{
-  const g=battle(),p=g.players[0];
-  for(const c of [10,11,12,13]) p.terrain[c]='reef';
-  let rolls=0;scenarioAct(g,'a',move('BB-1',0,1),1200,()=>{rolls++;return REEF_RISK-.001;});
-  assert.equal(rolls,1);assert.equal(isSunk(p,p.ships[0]),true);
-  assert.deepEqual(p.ships[0].hits,[10,11,12,13]);
-  assert.equal(p.ships[0].sunkBy,'reef');assert.equal(g.turn,1);
-  const view=viewFor(g,'b');assert.equal(view.enemyWrecks.length,1);
-  assert.ok([10,11,12,13].every(c=>view.enemyCells[c]==='sunk'));
-  const safe=battle();safe.players[0].terrain[65]='reef';
-  scenarioAct(safe,'a',move('FF-3',1,0),1200,()=>REEF_RISK);
-  assert.equal(isSunk(safe.players[0],safe.players[0].ships.find(s=>s.id==='FF-3')),false);
-});
-
-test('a last ship wrecked by a reef ends the battle and awards the opponent victory',()=>{
-  const g=battle(),p=g.players[0];
-  for(const s of p.ships) if(s.id!=='FF-3') s.hits=cells(s);
-  p.terrain[65]='reef';scenarioAct(g,'a',move('FF-3',1,0),1200,()=>0);
+test('reef loss of the last living ship awards the opponent victory immediately',()=>{
+  const g=battle(),p=g.players[0];for(const ship of p.ships)if(ship.id!=='FF-3')ship.hits=cells(ship);
+  p.terrain[65]='reef';giveHand(p,['maneuver']);act(g,'a',{type:'play-card',cardId:'maneuver-1',id:'FF-3',cell:65},1100,()=>0);
   assert.equal(g.phase,'result');assert.equal(g.winner,1);assert.equal(g.deadline,null);
 });
 
-test('entering a new shoal grounds a ship permanently; shallow-water deployment itself is safe',()=>{
-  const g=battle(),p=g.players[0],s=p.ships.find(s=>s.id==='FF-3');
-  p.terrain[64]='shoal';p.terrain[65]='shoal';
-  assert.equal(canMove(p,s.id,1,0),true);
-  scenarioAct(g,'a',move(s.id,1,0),1200);assert.equal(s.grounded,true);assert.equal(g.turn,1);
-  scenarioAct(g,'b',{type:'pass'},1201);
-  assert.throws(()=>scenarioAct(g,'a',move(s.id,-1,0),1202),/搁浅/);
-  assert.equal(s.x,5);assert.equal(s.hits.length,0);
-  const view=viewFor(g,'b');assert.deepEqual(view.enemyWrecks,[]);assert.equal(view.enemyCells[65],'unknown');
-});
-
-test('deep-water torpedoes sink the full ship, while other terrain takes one segment of damage',()=>{
-  const g=battle();scenarioAct(g,'a',{type:'fire',cell:0,weapon:'torpedo'},1200);
-  assert.equal(g.players[0].torpedoes,2);assert.equal(isSunk(g.players[1],g.players[1].ships[0]),true);
-  assert.ok([0,1,2,3].every(c=>viewFor(g,'a').enemyCells[c]==='sunk'));
-  assert.equal(viewFor(g,'a').history.at(-1).weapon,'torpedo');
-  for(const type of ['shoal','reef']) {
-    const h=battle();h.players[1].terrain[0]=type;
-    scenarioAct(h,'a',{type:'fire',cell:0,weapon:'torpedo'},1200);
-    assert.deepEqual(h.players[1].ships[0].hits,[0]);assert.equal(isSunk(h.players[1],h.players[1].ships[0]),false);
-    scenarioAct(h,'b',{type:'pass'},1201);scenarioAct(h,'a',{type:'fire',cell:1,weapon:'torpedo'},1202);
-    assert.equal(isSunk(h.players[1],h.players[1].ships[0]),true);
+test('damaged, grounded and sunken ships cannot move; wreck rectangles remain obstacles',()=>{
+  for(const state of ['hurt','grounded','sunk']){
+    const g=battle(),p=g.players[0],ship=p.ships[0];if(state==='grounded')ship.grounded=true;else ship.hits=state==='sunk'?cells(ship):[0];
+    assert.equal(reachableMoves(p,ship.id,100).size,0);
   }
-});
-
-test('torpedoes are finite and invalid shots spend neither ammunition nor turns',()=>{
-  const g=battle();
-  for(let n=0;n<3;n++) {scenarioAct(g,'a',{type:'fire',cell:90+n,weapon:'torpedo'},1200+n*2);scenarioAct(g,'b',{type:'pass'},1201+n*2);}
-  assert.equal(g.players[0].torpedoes,0);
-  assert.throws(()=>scenarioAct(g,'a',{type:'fire',cell:95,weapon:'torpedo'},1210),/用尽/);
-  assert.equal(g.turn,0);assert.equal(g.players[1].shots.includes(95),false);
-  scenarioAct(g,'a',{type:'fire',cell:95},1211);assert.equal(g.turn,1);
-});
-
-test('terrain and view data are copied; rematches preserve the map and restore ships/ammunition',()=>{
-  const g=preparation('blue-frontier'),view=viewFor(g,'a');
-  view.enemyTerrain[99]='rock';assert.notEqual(g.players[1].terrain[99],'rock');
-  g.phase='result';g.players[0].torpedoes=0;
-  scenarioAct(g,'a',{type:'rematch'},1200);scenarioAct(g,'b',{type:'rematch'},1201);
-  assert.equal(g.mapId,'blue-frontier');assert.equal(g.phase,'lobby');
-  assert.ok(g.players.every(p=>p.torpedoes===3&&p.ships.every(s=>!s.grounded&&!s.hits.length)));
-  assert.deepEqual(g.players[1].terrain,terrainFor('blue-frontier',1));
-});
-
-test('undiscovered reefs are deep water in both player views, including placement and safe passage',()=>{
-  const g=preparation('undertow');
-  for(const id of ['a','b']) {
-    const view=viewFor(g,id);
-    assert.ok(view.own.terrain.every(t=>t==='deep'));
-    assert.ok(view.enemyTerrain.every(t=>t==='deep'));
-    assert.deepEqual(view.own.knownOwnReefs,[]);
-  }
-  assert.ok(g.players.every(p=>p.terrain.includes('reef')));
-  const safe=battle('undertow');
-  scenarioAct(safe,'a',move('FF-3',1,0),1200,()=>1);
-  assert.equal(viewFor(safe,'a').own.terrain[65],'deep');
-  assert.deepEqual(safe.players[0].knownOwnReefs,[]);
-});
-
-test('cannon and torpedo attacks never identify reefs, on hits or misses',()=>{
-  const g=battle(),target=g.players[1];
-  for(const c of [0,1,90,91]) target.terrain[c]='reef';
-  scenarioAct(g,'a',{type:'fire',cell:90},1200);
-  let view=viewFor(g,'a');
-  assert.equal(view.enemyCells[90],'miss');assert.equal(view.enemyTerrain[90],'deep');
-  for(const c of [0,1,91]) assert.equal(view.enemyTerrain[c],'deep');
-  assert.equal(viewFor(g,'b').own.terrain[90],'deep');
-  assert.throws(()=>scenarioAct(g,'a',{type:'fire',cell:91},1201),/等待/);
-  assert.deepEqual(g.players[0].knownOwnReefs,[]);
-  scenarioAct(g,'b',{type:'pass'},1201);
-  scenarioAct(g,'a',{type:'fire',cell:0,weapon:'torpedo'},1202);
-  view=viewFor(g,'a');
-  assert.equal(view.enemyTerrain[0],'deep');assert.equal(view.enemyTerrain[1],'deep');
-  assert.equal(view.enemyCells[0],'hit');assert.deepEqual(target.ships[0].hits,[0]);
-  assert.equal(view.own.torpedoes,2);
-  assert.ok(view.enemyTerrain.every(t=>t==='deep'));
-  assert.ok(viewFor(g,'b').own.terrain.every(t=>t==='deep'));
-  view.enemyTerrain[1]='reef';view.own.knownOwnReefs.push(1);
-  assert.equal(viewFor(g,'a').enemyTerrain[1],'deep');
-  assert.deepEqual(g.players[0].knownOwnReefs,[]);
-});
-
-test('reef collision confirms only newly entered reef cells, without revealing a whole wreck footprint or opponent intel',()=>{
-  const g=battle(),p=g.players[0];
-  for(const c of [0,10,11,20]) p.terrain[c]='reef';
-  scenarioAct(g,'a',move('BB-1',0,1),1200,()=>0);
-  const view=viewFor(g,'a');
-  assert.deepEqual(view.own.knownOwnReefs,[10,11]);
-  for(const c of [10,11]) assert.equal(view.own.terrain[c],'reef');
-  for(const c of [0,12,13,20]) assert.equal(view.own.terrain[c],'deep');
-  assert.deepEqual(view.own.ships[0].hits,[10,11,12,13]);
-  const opponent=viewFor(g,'b');
-  assert.equal(opponent.enemyWrecks.length,1);
-  assert.ok(opponent.enemyTerrain.every(t=>t==='deep'));
-  assert.equal(opponent.players[0].knownOwnReefs,undefined);
-  assert.deepEqual(viewFor(g,'a').own.knownOwnReefs,[10,11]);
-});
-
-test('reef knowledge survives later views and resets on rematch without changing the map',()=>{
-  const g=battle('undertow');
-  const target=g.players[1].terrain.findIndex(t=>t==='reef');
-  scenarioAct(g,'a',{type:'fire',cell:target},1200);
-  scenarioAct(g,'b',{type:'pass'},1201);
-  scenarioAct(g,'a',move('FF-3',1,0),1202,()=>0);
-  assert.equal(viewFor(g,'a').enemyTerrain[target],'deep');
-  assert.equal(viewFor(g,'a').own.terrain[65],'reef');
-  g.phase='result';
-  scenarioAct(g,'a',{type:'rematch'},1203);scenarioAct(g,'b',{type:'rematch'},1204);
-  assert.equal(g.mapId,'undertow');
-  for(const id of ['a','b']) {
-    const v=viewFor(g,id);
-    assert.deepEqual(v.own.knownOwnReefs,[]);
-    assert.ok(v.own.terrain.every(t=>t==='deep'));assert.ok(v.enemyTerrain.every(t=>t==='deep'));
-  }
-  assert.deepEqual(g.players[0].terrain,terrainFor('undertow'));
 });

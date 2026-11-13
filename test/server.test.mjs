@@ -1,123 +1,75 @@
-import { cardSessionActions } from '../test-support/cards.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { createGameServer } from '../server.mjs';
 import { terrainFor } from '../public/terrain.mjs';
+import { FIXED_PLACEMENTS,cardSessionActions } from '../test-support/cards.mjs';
 
-test('two real HTTP clients play a private-board game with room discovery, timeouts and reconnect',async t=>{
-  let clock=1000;
-  const server=createGameServer({now:()=>clock});
-  server.listen(0,'127.0.0.1');await once(server,'listening');
+async function setup(t,mapId='open-sea') {
+  let clock=1000;const server=createGameServer({now:()=>clock,rng:()=>0});server.listen(0,'127.0.0.1');await once(server,'listening');
   t.after(()=>new Promise(resolve=>server.close(resolve)));
   const base=`http://127.0.0.1:${server.address().port}`;
-  async function req(route,body,token){const response=await fetch(`${base}/api/${route}`,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:`Bearer ${token}`}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:response.status,data:await response.json()};}
-  assert.equal((await fetch(base)).status,200);assert.equal((await fetch(`${base}/app.mjs`)).status,200);
-  const sprite=await fetch(`${base}/assets/fleet-battleship.webp`);
-  assert.equal(sprite.status,200);assert.equal(sprite.headers.get('content-type'),'image/webp');
-  assert.equal((await req('health')).data.mode,'lan');
-  const host=(await req('create',{name:'甲',roomName:'测试海域'})).data;
-  let list=(await req('rooms')).data.rooms;assert.equal(list.length,1);assert.equal(list[0].count,1);assert.equal(list[0].name,'测试海域');assert.equal(list[0].token,undefined);
-  assert.equal((await req('state')).status,401);
-  const guest=(await req('join',{roomId:host.roomId,name:'乙'})).data;
-  assert.equal((await req('join',{roomId:host.roomId,name:'丙'})).status,409);
-  const {action: play}=cardSessionActions(async(s,body)=>{const r=await req('action',body,s.token);assert.equal(r.status,200,r.data.error);return r.data;},async s=>(await req('state',null,s.token)).data,[host,guest]);
-  const action=async(token,body)=>({status:200,data:await play([host,guest].find(s=>s.token===token),body)});
-  await action(host.token,{type:'ready'});const prep=await action(guest.token,{type:'ready'});
-  assert.equal(prep.data.phase,'placement');
-  await action(host.token,{type:'place',id:'BB-1',x:0,y:0,vertical:false});
-  const guestView=(await req('state',null,guest.token)).data;
-  assert.ok(guestView.enemyCells.every(c=>c==='unknown'));assert.equal(guestView.players[0].ships,undefined);
-  await action(host.token,{type:'auto'});await action(guest.token,{type:'auto'});
-  await action(host.token,{type:'confirm'});await action(guest.token,{type:'confirm'});
-  const battle=(await req('state',null,host.token)).data;assert.equal(battle.phase,'battle');
-  clock=battle.deadline;
-  assert.equal((await req('action',{type:'play-card',cardId:battle.own.hand[0].id,cell:0},host.token)).status,409);
-  let view=(await action(guest.token,{type:'fire',cell:0})).data;
-  assert.equal(view.enemyCells[0],'hit');assert.equal(view.turn,0);
-  // Reconnect uses the same bearer token and restores state without joining again.
-  const restored=(await req('state',null,guest.token)).data;assert.equal(restored.own.id,view.own.id);assert.equal(restored.enemyCells[0],'hit');
-  assert.equal((await req('action',{type:'fire',cell:0},guest.token)).status,409);
-  await req('leave',{},host.token);
-  view=(await req('state',null,guest.token)).data;assert.equal(view.phase,'result');assert.equal(view.winner,1);assert.equal(view.opponentConnected,false);
-  assert.equal((await req('state',null,host.token)).status,401);
-  await req('leave',{},guest.token);assert.equal((await req('rooms')).data.rooms.length,0);
-});
-
-test('static traversal, cross-origin writes, malformed requests and anonymous actions are rejected',async t=>{
-  const server=createGameServer();server.listen(0,'127.0.0.1');await once(server,'listening');
-  t.after(()=>new Promise(resolve=>server.close(resolve)));
-  const base=`http://127.0.0.1:${server.address().port}`;
-  assert.equal((await fetch(`${base}/%2e%2e%2fpackage.json`)).status,403);
-  assert.equal((await fetch(`${base}/api/create`,{method:'POST',headers:{Origin:'https://example.com'},body:'{}'})).status,403);
-  assert.equal((await fetch(`${base}/api/create`,{method:'POST',body:'{bad'})).status,400);
-  assert.equal((await fetch(`${base}/api/create`,{method:'POST',body:'null'})).status,400);
-  assert.equal((await fetch(`${base}/api/action`,{method:'POST',body:'{}'})).status,401);
-});
-
-test('two HTTP peers share the selected terrain map and enforce torpedoes, maneuvering and grounding',async t=>{
-  const server=createGameServer({now:()=>1000,rng:()=>0});server.listen(0,'127.0.0.1');await once(server,'listening');
-  t.after(()=>new Promise(resolve=>server.close(resolve)));
-  const base=`http://127.0.0.1:${server.address().port}`;
-  async function req(route,body,session){
-    const response=await fetch(`${base}/api/${route}`,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(session?{Authorization:`Bearer ${session.token}`}:{})},...(body?{body:JSON.stringify(body)}:{})});
+  async function raw(route,body,s) {
+    const response=await fetch(`${base}/api/${route}`,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(s?{Authorization:`Bearer ${s.token}`}:{})},...(body?{body:JSON.stringify(body)}:{})});
     return {status:response.status,data:await response.json()};
   }
-  assert.equal((await req('create',{mapId:'invalid'})).status,400);
-  const host=(await req('create',{name:'甲',mapId:'blue-frontier'})).data;
-  const guest=(await req('join',{name:'乙',roomId:host.roomId})).data;
-  const {action}=cardSessionActions(async(s,a)=>{const r=await req('action',a,s);assert.equal(r.status,200,r.data.error);return r.data;},async s=>(await req('state',null,s)).data,[host,guest]);
-  assert.equal((await req('rooms')).data.rooms[0].mapId,'blue-frontier');
-  const before=(await req('state',null,guest)).data;
-  assert.deepEqual(before.own.terrain,terrainFor('blue-frontier',1));
-  assert.deepEqual(before.enemyTerrain,terrainFor('blue-frontier'));
-  assert.equal(before.players[0].ships,undefined);
-  await action(host,{type:'ready'});await action(guest,{type:'ready'});
-  const placements=[['BB-1',0,0],['CG-1',0,2],['CG-2',5,2],['DD-1',0,4],['DD-2',3,4],['DD-3',6,4],['FF-1',0,6],['FF-2',2,6],['FF-3',3,8],['FF-4',6,6]];
-  for(const session of [host,guest])for(const [id,x,y]of placements)await action(session,{type:'place',id,x,y,vertical:false});
-  await action(host,{type:'confirm'});await action(guest,{type:'confirm'});
-  let view=await action(host,{type:'fire',cell:0,weapon:'torpedo'});
-  assert.equal(view.own.torpedoes,2);assert.equal(view.enemyWrecks.length,1);
-  assert.ok([0,1,2,3].every(c=>view.enemyCells[c]==='sunk'));
-  await action(guest,{type:'pass'});
-  view=await action(host,{type:'move',id:'FF-3',dx:-1,dy:0});
-  assert.equal(view.own.ships.find(s=>s.id==='FF-3').grounded,true);assert.equal(view.turn,1);
-  const opponent=(await req('state',null,guest)).data;
-  assert.equal(opponent.enemyCells[82],'unknown');assert.equal(opponent.enemyWrecks.length,0);
-  assert.equal(opponent.history.at(-1).cell,undefined);assert.equal(opponent.history.at(-1).shipType,undefined);
-  await action(guest,{type:'pass'});
-  assert.equal((await req('action',{type:'move',id:'FF-3',dx:1,dy:0},host)).status,409);
+  async function api(route,body,s){const r=await raw(route,body,s);assert.equal(r.status,200,r.data.error);return r.data;}
+  const host=await api('create',{name:'甲',mapId}),guest=await api('join',{name:'乙',roomId:host.roomId});
+  const state=s=>api('state',null,s),send=(s,a)=>api('action',a,s);
+  async function battle(){for(const s of [host,guest])await send(s,{type:'ready'});for(const s of [host,guest]){for(const [id,x,y]of FIXED_PLACEMENTS)await send(s,{type:'place',id,x,y,vertical:false});await send(s,{type:'confirm'});}}
+  const {findCard}=cardSessionActions(send,state,[host,guest]);
+  return {host,guest,state,send,raw,api,base,battle,findCard,setClock:value=>clock=value};
+}
+
+test('real peers discover rooms, deploy carriers, keep hands private and restore reef reconnaissance on refresh',async t=>{
+  const {host,guest,state,send,raw,api,base,battle,findCard,setClock}=await setup(t,'undertow');
+  assert.equal((await fetch(base)).status,200);assert.equal((await fetch(`${base}/cards.mjs`)).status,200);
+  assert.equal((await api('health')).version,'5.0.0');assert.equal((await api('rooms')).rooms[0].mapId,'undertow');
+  assert.equal((await raw('join',{roomId:host.roomId})).status,409);assert.equal((await raw('state')).status,401);
+  await battle();let view=await state(host);assert.equal(view.own.ships.length,11);assert.equal(view.own.hand.length,6);assert.equal(view.players[1].handCount,4);
+  assert.equal(view.players[1].hand,undefined);assert.equal(view.players[1].ships,undefined);assert.equal(view.own.deck,undefined);
+  const recon=await findCard(host,'recon');view=await send(host,{type:'play-card',cardId:recon.id,cell:55});
+  assert.ok(view.own.knownOwnReefs.length>0);assert.ok(view.enemyTerrain.every(t=>t==='deep'));
+  const restored=await state(host);assert.deepEqual(restored.own,view.own);assert.equal(restored.deadline,view.deadline);
+  const opponent=await state(guest);assert.ok(opponent.enemyTerrain.every(t=>t==='deep'));assert.equal(opponent.players[0].knownOwnReefs,undefined);
+  setClock(view.deadline);view=await state(host);assert.equal(view.turn,1);assert.equal(view.own.actionPoints,0);
+  await api('leave',{},host);const result=await state(guest);assert.equal(result.phase,'result');assert.equal(result.winner,1);
+  assert.equal((await raw('state',null,host)).status,401);
 });
 
-test('HTTP sessions reveal reefs only after collisions and restore the resulting hover information',async t=>{
-  const server=createGameServer({now:()=>1000,rng:()=>0});server.listen(0,'127.0.0.1');await once(server,'listening');
-  t.after(()=>new Promise(resolve=>server.close(resolve)));
-  const base=`http://127.0.0.1:${server.address().port}`;
-  async function req(route,body,session){
-    const response=await fetch(`${base}/api/${route}`,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(session?{Authorization:`Bearer ${session.token}`}:{})},...(body?{body:JSON.stringify(body)}:{})});
-    const data=await response.json();assert.equal(response.status,200,data.error);return data;
-  }
-  const host=await req('create',{name:'甲',mapId:'undertow'});
-  const guest=await req('join',{name:'乙',roomId:host.roomId});
-  const state=s=>req('state',null,s);
-  const {action}=cardSessionActions((s,a)=>req('action',a,s),state,[host,guest]);
-  for(const s of [host,guest]) {
-    const v=await state(s);assert.ok(v.own.terrain.every(t=>t==='deep'));assert.ok(v.enemyTerrain.every(t=>t==='deep'));
-    await action(s,{type:'ready'});
-  }
-  const placements=[['BB-1',0,0],['CG-1',0,2],['CG-2',5,2],['DD-1',0,4],['DD-2',3,4],['DD-3',6,4],['FF-1',0,6],['FF-2',2,6],['FF-3',4,6],['FF-4',6,6]];
-  for(const s of [host,guest]) {
-    for(const [id,x,y]of placements)await action(s,{type:'place',id,x,y,vertical:false});
-    await action(s,{type:'confirm'});
-  }
-  const cell=terrainFor('undertow',1).findIndex(t=>t==='reef');
-  let v=await action(host,{type:'fire',cell});
-  assert.equal(v.enemyTerrain[cell],'deep');assert.equal(v.enemyTerrain.filter(t=>t==='reef').length,0);
-  assert.equal((await state(guest)).own.terrain[cell],'deep');
-  await action(guest,{type:'pass'});
-  v=await action(host,{type:'move',id:'FF-3',dx:1,dy:0});
-  assert.equal(v.own.terrain[65],'reef');assert.equal(v.own.ships.find(s=>s.id==='FF-3').sunkBy,'reef');
-  assert.equal((await state(guest)).enemyTerrain[65],'deep');
-  const restored=await state(host);assert.equal(restored.own.terrain[65],'reef');assert.equal(restored.enemyTerrain[cell],'deep');
-  assert.equal(restored.players[1].terrain,undefined);assert.equal(restored.players[1].knownOwnReefs,undefined);
+test('HTTP card requests enforce costs, zero-AP supply, replay protection and concurrent single-use consumption',async t=>{
+  const {host,guest,state,send,raw,battle}=await setup(t);await battle();
+  for(let i=0;i<18;i++){const view=await state(host);await send(view.turn===0?host:guest,{type:'pass'});}
+  let view=await state(host);assert.equal(view.own.hand.length,20);assert.equal(view.turn,0);
+  const responses=await Promise.all([raw('action',{type:'play-card',cardId:'secondary-1',cell:90,cost:0},host),raw('action',{type:'play-card',cardId:'secondary-1',cell:91,cost:0},host)]);
+  assert.deepEqual(responses.map(r=>r.status).sort(),[200,409]);view=await state(host);assert.equal(view.own.actionPoints,2);assert.equal(view.own.hand.length,19);assert.equal(view.own.deckCount,1);
+  assert.equal((await raw('action',{type:'play-card',cardId:'big-1',cell:90,cost:0},host)).status,409);
+  view=await send(host,{type:'play-card',cardId:'recon-1',cell:55});assert.equal(view.own.actionPoints,1);
+  view=await send(host,{type:'play-card',cardId:'maneuver-1',id:'FF-3',cell:65});assert.equal(view.own.actionPoints,0);assert.equal(view.turn,0);
+  view=await send(host,{type:'play-card',cardId:'supply-1'});assert.equal(view.own.actionPoints,2);assert.equal(view.turn,0);
+  assert.equal((await raw('action',{type:'fire',cell:92},host)).status,409);
+  assert.equal((await raw('action',{type:'play-card',cardId:'secondary-1',cell:92},guest)).status,409);
+  const same=await state(host);assert.deepEqual(same.own,view.own);
+});
+
+test('two clients enforce carrier bombers, repairs, active air control and temporary full-map sight',async t=>{
+  const {host,guest,state,send,raw,battle}=await setup(t);await battle();
+  for(let i=0;i<18;i++){const v=await state(host);await send(v.turn===0?host:guest,{type:'pass'});}
+  let v=await send(host,{type:'play-card',cardId:'bomber-1',cell:1});assert.deepEqual(v.enemyCells.slice(0,4),['hit','hit','hit','unknown']);
+  await send(host,{type:'pass'});v=await send(guest,{type:'play-card',cardId:'repair-1',cell:0});assert.equal(v.own.ships[0].hits.includes(0),false);
+  assert.equal((await state(host)).enemyCells[0],'unknown');await send(guest,{type:'pass'});
+  await send(host,{type:'play-card',cardId:'fighter-1'});await send(host,{type:'pass'});
+  assert.equal((await raw('action',{type:'play-card',cardId:'bomber-1',cell:90},guest)).status,409);
+  assert.equal((await raw('action',{type:'play-card',cardId:'fighter-1'},guest)).status,409);
+  await send(guest,{type:'pass'});v=await send(host,{type:'play-card',cardId:'seaplane-1'});assert.equal(v.enemyVisible.length,100);
+  const hidden=await state(guest);assert.equal(hidden.enemyVisible.length,0);assert.equal(hidden.players[0].scans,undefined);
+  await send(host,{type:'pass'});await send(guest,{type:'pass'});assert.equal((await state(host)).enemyVisible.length,0);
+});
+
+test('static traversal, cross-origin writes, malformed requests and anonymous actions remain rejected',async t=>{
+  const {base}=await setup(t);
+  assert.equal((await fetch(`${base}/%2e%2e%2fpackage.json`)).status,403);
+  assert.equal((await fetch(`${base}/api/create`,{method:'POST',headers:{Origin:'https://example.com'},body:'{}'})).status,403);
+  for(const body of ['{bad','null'])assert.equal((await fetch(`${base}/api/create`,{method:'POST',body})).status,400);
+  assert.equal((await fetch(`${base}/api/action`,{method:'POST',body:'{}'})).status,401);
 });

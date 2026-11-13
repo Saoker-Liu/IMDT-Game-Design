@@ -12,25 +12,6 @@ export function giveHand(player, types) {
   player.deck = pile;
 }
 
-// Existing terrain/fog scenarios exercise an action on its last affordable AP.
-// Full multi-card turns and unmodified dealing are covered in cards.test.mjs.
-export function scenarioAct(game, id, action, now, rng) {
-  if (!['fire','move'].includes(action.type)) return act(game,id,action,now,rng);
-  const player = game.players.find(p=>p.id===id);
-  const type = action.type === 'move' ? 'move' : action.weapon || 'shell';
-  let card = player.hand.find(c=>c.type===type);
-  if (game.phase==='battle' && game.players[game.turn]===player && now<game.deadline) {
-    if (!card) {
-      const index = player.deck.findIndex(c=>c.type===type);
-      assert.notEqual(index,-1,`Missing fixture card: ${type}`);
-      [card] = player.deck.splice(index,1);
-      player.hand.push(card);
-    }
-    player.actionPoints = CARD_TYPES[type].cost;
-  }
-  return act(game,id,{...action,type:'play-card',cardId:card?.id||'unavailable'},now,rng);
-}
-
 /** Reach a real shuffled card using only public actions; no server state injection. */
 export function cardSessionActions(send, state, peers) {
   async function findCard(session, type) {
@@ -44,13 +25,7 @@ export function cardSessionActions(send, state, peers) {
     }
     throw new Error(`Could not draw ${type} card`);
   }
-  async function action(session, body) {
-    if (!['fire','move','recon'].includes(body.type)) return send(session,body);
-    const type = body.type==='fire' ? body.weapon||'shell' : body.type;
-    const card = await findCard(session,type);
-    let view = await send(session,{...body,type:'play-card',cardId:card.id});
-    if (view.phase==='battle' && view.turn===view.me) view = await send(session,{type:'pass'});
-    return view;
-  }
-  return { action, findCard };
+  return { action:send, findCard };
 }
+
+export const FIXED_PLACEMENTS=[['BB-1',0,0],['CG-1',0,2],['CG-2',5,2],['DD-1',0,4],['DD-2',3,4],['DD-3',6,4],['FF-1',0,6],['FF-2',2,6],['FF-3',4,6],['FF-4',6,6],['CV-1',7,8]];
