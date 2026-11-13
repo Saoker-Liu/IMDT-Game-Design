@@ -1,6 +1,9 @@
 /** Authoritative, transport-independent rules. Shared by the LAN server and practice mode. */
-import { terrainFor, terrainAt, MAPS, REEF_RISK, TORPEDO_COUNT } from './terrain.mjs?v=4.0.0';
-import { CARD_TYPES, ACTIONS_PER_TURN, makeDeck, dealCards, drawCards } from './cards.mjs?v=4.0.0';
+import { terrainFor, terrainAt, MAPS } from './terrain.mjs?v=5.0.0';
+import { CARD_TYPES, ACTIONS_PER_TURN, makeDeck, dealCards, drawCards, canUseCard } from './cards.mjs?v=5.0.0';
+import { cells, shape, isSunk, canPlace, canMove, validCell } from './geometry.mjs?v=5.0.0';
+import { prepareCard, resolveCard, visibleCells } from './combat.mjs?v=5.0.0';
+export { cells, shape, isSunk, canPlace, canMove };
 export const SIZE = 10;
 export const PREP_MS = 90_000;
 export const TURN_MS = 10_000;
@@ -9,46 +12,31 @@ export const TYPES = [
   { type: 'cruiser', name: '巡洋舰', length: 3, count: 2, code: 'CG' },
   { type: 'destroyer', name: '驱逐舰', length: 2, count: 3, code: 'DD' },
   { type: 'frigate', name: '护卫舰', length: 1, count: 4, code: 'FF' },
+  { type: 'carrier', name: '航空母舰', length: 3, width: 2, count: 1, code: 'CV' },
 ];
-export const TOTAL_CELLS = 20;
+export const TOTAL_CELLS = 26;
+export const TOTAL_SHIPS = TYPES.reduce((n,t)=>n+t.count,0);
 
 export function makeFleet() {
   return TYPES.flatMap(t => Array.from({ length: t.count }, (_, i) => ({
-    id: `${t.code}-${i + 1}`, type: t.type, length: t.length,
+    id: `${t.code}-${i + 1}`, type: t.type, length: t.length, width: t.width || 1,
     x: null, y: null, vertical: false, hits: [], grounded: false,
   })));
 }
 export function makePlayer(id, name) {
-  return { id, name, ready: false, confirmed: false, rematch: false, ships: makeFleet(), shots: [], shotRounds: {}, lastMove: 0, torpedoes: TORPEDO_COUNT, knownOwnReefs: [],
-    deck: makeDeck(), hand: [], actionPoints: 0, turns: 0, recon: {} };
+  return { id, name, ready:false, confirmed:false, rematch:false, ships:makeFleet(), shots:[], shotRounds:{}, shotResults:{}, lastMove:0, knownOwnReefs:[],
+    deck:makeDeck(), hand:[], actionPoints:0, turns:0, scans:[], smoke:[], concealed:[], lastAction:null, stats:{attacks:0,hits:0} };
 }
 export function makeGame(players, mapId = 'open-sea') {
   if (!MAPS.some(m => m.id === mapId)) throw new Error('未知的作战地图');
   players.forEach((p, i) => { p.terrain = terrainFor(mapId, i); });
   return { phase: 'lobby', players, mapId, turn: 0, deadline: null, winner: null,
-    round: 1, history: [], version: 0, startedAt: null, endedAt: null };
-}
-export function cells(ship) {
-  if (ship.x === null || ship.y === null) return [];
-  return Array.from({ length: ship.length }, (_, n) =>
-    (ship.y + (ship.vertical ? n : 0)) * SIZE + ship.x + (ship.vertical ? 0 : n));
-}
-export function isSunk(player, ship) {
-  const occupied = cells(ship);
-  return occupied.length > 0 && occupied.every(c => ship.hits.includes(c));
-}
-export function canPlace(ships, id, x, y, vertical, terrain = null) {
-  const ship = ships.find(s => s.id === id);
-  if (!ship || !Number.isInteger(x) || !Number.isInteger(y) || typeof vertical !== 'boolean') return false;
-  if (x < 0 || y < 0 || x + (vertical ? 1 : ship.length) > SIZE || y + (vertical ? ship.length : 1) > SIZE) return false;
-  const next = cells({ ...ship, x, y, vertical });
-  if (next.some(c => terrainAt(terrain, c) === 'rock')) return false;
-  return !ships.some(s => s.id !== id && cells(s).some(c => next.includes(c)));
+    round: 1, history: [], version: 0, startedAt: null, endedAt: null, airControl:null };
 }
 export function autoPlace(player, preserve = true, rng = Math.random) {
   if (!preserve) player.ships = makeFleet();
   // Backtrack around terrain instead of committing to an unlucky greedy packing.
-  const pending = player.ships.filter(s => s.x === null).sort((a, b) => b.length - a.length);
+  const pending = player.ships.filter(s => s.x === null).sort((a, b) => b.length*(b.width||1) - a.length*(a.width||1));
   function fill(index) {
     if (index === pending.length) return true;
     const ship = pending[index];
@@ -71,24 +59,10 @@ export function autoPlace(player, preserve = true, rng = Math.random) {
   }
   if (!fill(0)) throw new Error('当前布阵无法容纳剩余舰船，请调整位置');
 }
-export function canMove(player, id, dx, dy) {
-  const ship = player.ships.find(s => s.id === id);
-  return !!ship && ship.x !== null && !ship.grounded && ship.hits.length === 0
-    && Number.isInteger(dx) && Number.isInteger(dy) && Math.abs(dx) + Math.abs(dy) === 1
-    && canPlace(player.ships, id, ship.x + dx, ship.y + dy, ship.vertical, player.terrain);
-}
 export function canFireAt(player, c) {
   if (!Number.isInteger(c) || c < 0 || c >= 100 || terrainAt(player.terrain, c) === 'rock') return false;
   if (player.ships.some(s => s.hits.includes(c))) return false;
   return !player.shots.includes(c) || player.shotRounds[c] < player.lastMove;
-}
-export function canReconAt(player, target, c) {
-  return canFireAt(target, c) && (!player.recon[c] || player.recon[c].round < target.lastMove);
-}
-function sink(player, ship, cause) {
-  ship.hits = cells(ship);
-  ship.sunkBy = cause;
-  for (const c of ship.hits) if (!player.shots.includes(c)) player.shots.push(c);
 }
 function log(game, event, now) {
   game.history.push({ id: game.history.length + 1, at: now, ...event });
@@ -97,6 +71,9 @@ function beginTurn(game, now) {
   const player = game.players[game.turn];
   player.actionPoints = ACTIONS_PER_TURN;
   player.turns++;
+  player.scans=player.scans.filter(effect=>player.turns<effect.expiresTurn);
+  player.smoke=player.smoke.filter(effect=>player.turns<effect.expiresTurn);
+  if(game.airControl&&game.players[game.airControl.owner].turns>=game.airControl.expiresTurn)game.airControl=null;
   drawCards(player);
   game.deadline = now + TURN_MS;
 }
@@ -186,69 +163,23 @@ export function act(game, playerId, action, now = Date.now(), rng = Math.random)
     }
     case 'confirm': {
       requireRule(game.phase === 'placement' && !p.confirmed, '当前无法确认布阵');
-      requireRule(p.ships.every(s => s.x !== null), '请先部署全部 10 艘舰船');
+      requireRule(p.ships.every(s => s.x !== null), `请先部署全部 ${TOTAL_SHIPS} 艘舰船`);
       p.confirmed = true;
       if (game.players.every(p => p.confirmed)) startBattle(game, now, rng);
       break;
     }
     case 'play-card': {
-      requireRule(game.phase === 'battle' && index === game.turn, '请等待你的回合');
-      const handIndex = p.hand.findIndex(c => c.id === action.cardId);
-      requireRule(handIndex !== -1, '这张卡牌不在你的手牌中');
-      const card = p.hand[handIndex], definition = CARD_TYPES[card.type];
-      requireRule(p.actionPoints >= definition.cost, '行动力不足，无法使用这张卡牌');
-      const target = game.players[1 - index], c = action.cell;
-      // Validate every target before spending either the card or action points.
-      if (definition.effect === 'move') {
-        requireRule(canMove(p, action.id, action.dx, action.dy), '无法航行：舰船中弹、搁浅，或目标越界、存在礁石/其他舰船');
-      } else {
-        requireRule(Number.isInteger(c) && c >= 0 && c < SIZE * SIZE, '无效坐标');
-        if (definition.effect === 'recon') {
-          requireRule(canReconAt(p, target, c), '该坐标为礁石、已受损，或已有未过期的情报');
-        } else {
-          requireRule(canFireAt(target, c), '该坐标为礁石或已经攻击过；敌方机动后才可复查落空格');
-          requireRule(definition.weapon !== 'torpedo' || p.torpedoes > 0, '鱼雷已用尽');
-        }
-      }
-      p.hand.splice(handIndex, 1);
-      p.deck.push(card);
-      p.actionPoints -= definition.cost;
-      if (definition.effect === 'move') {
-        const ship = p.ships.find(s => s.id === action.id);
-        const old = cells(ship);
-        ship.x += action.dx; ship.y += action.dy;
-        const entered = cells(ship).filter(c => !old.includes(c));
-        p.lastMove = game.round;
-        const reefs = entered.filter(c => terrainAt(p.terrain, c) === 'reef');
-        if (reefs.length && rng() < REEF_RISK) {
-          for (const c of reefs) if (!p.knownOwnReefs.includes(c)) p.knownOwnReefs.push(c);
-          sink(p, ship, 'reef');
-          log(game, { type: 'reef-sunk', playerId, shipType: ship.type }, now);
-        } else {
-          ship.grounded = entered.some(c => terrainAt(p.terrain, c) === 'shoal');
-          // Do not disclose ship identity, coordinates, or displacement to the opponent.
-          log(game, { type: ship.grounded ? 'grounded' : 'move', playerId }, now);
-        }
-      } else if (definition.effect === 'recon') {
-        p.recon[c] = { contact: target.ships.some(s => cells(s).includes(c)), round: game.round };
-        // Reconnaissance coordinates and results are private to the card's owner.
-        log(game, { type: 'recon', playerId }, now);
-      } else {
-        const weapon = definition.weapon;
-        if (weapon === 'torpedo') p.torpedoes--;
-        if (!target.shots.includes(c)) target.shots.push(c);
-        target.shotRounds[c] = game.round;
-        const ship = target.ships.find(s => cells(s).includes(c));
-        if (ship) {
-          ship.hits.push(c);
-          if (weapon === 'torpedo' && terrainAt(target.terrain, c) === 'deep') sink(target, ship, 'torpedo');
-        }
-        const result = ship ? (isSunk(target, ship) ? 'sunk' : 'hit') : 'miss';
-        log(game, { type: result, playerId, cell: c, weapon, ...(result === 'sunk' ? { shipType: ship.type } : {}) }, now);
-      }
-      if (p.ships.every(s => isSunk(p, s))) finish(game, 1 - index, now);
-      else if (target.ships.every(s => isSunk(target, s))) finish(game, index, now);
-      else if (p.actionPoints === 0) advance(game, now);
+      requireRule(game.phase==='battle'&&index===game.turn,'请等待你的回合');
+      const plan=prepareCard(game,index,action);
+      p.hand.splice(p.hand.findIndex(c=>c.id===plan.card.id),1);
+      p.actionPoints-=plan.d.cost;
+      resolveCard(game,index,plan,now,rng);
+      // Resolve draw effects before returning the used card, preventing self-draw loops.
+      p.deck.push(plan.card);
+      const target=game.players[1-index];
+      if(p.ships.every(s=>isSunk(p,s)))finish(game,1-index,now);
+      else if(target.ships.every(s=>isSunk(target,s)))finish(game,index,now);
+      else if(p.actionPoints===0&&!p.hand.some(c=>CARD_TYPES[c.type].cost===0&&canUseCard(p,c)))advance(game,now);
       break;
     }
     case 'fire': case 'move': case 'recon':
@@ -272,37 +203,36 @@ export function act(game, playerId, action, now = Date.now(), rng = Math.random)
   game.version++;
   return game;
 }
-/** Expose only private recon snapshots, confirmed damage and wrecks, never unhit full hulls or enemy hands. */
-export function viewFor(game, playerId) {
-  const me = game.players.findIndex(p => p.id === playerId);
-  requireRule(me !== -1, '你不在这个房间中');
-  const own = game.players[me];
-  const other = game.players[1 - me];
-  const enemyCells = Array(SIZE * SIZE).fill('unknown');
-  if (other) for (const c of other.shots) {
-    const ship = other.ships.find(s => s.hits.includes(c));
-    enemyCells[c] = ship ? (isSunk(other, ship) ? 'sunk' : 'hit') : 'miss';
+/** Enemy hulls are sent only as individual cells in live vision, or fully revealed wrecks. */
+export function viewFor(game,playerId) {
+  const me=game.players.findIndex(p=>p.id===playerId);requireRule(me!==-1,'你不在这个房间中');
+  const own=game.players[me],other=game.players[1-me];
+  const visible=other?visibleCells(own,other):new Set(),enemyCells=Array(100).fill('unknown'),enemySight=Array(100).fill(null);
+  if(other) {
+    for(const c of other.shots)if(!other.concealed.includes(c)) {
+      const ship=other.ships.find(s=>s.hits.includes(c));
+      enemyCells[c]=ship?(isSunk(other,ship)?'sunk':'hit'):(['immune','blocked'].includes(other.shotResults[c])?other.shotResults[c]:'miss');
+    }
+    for(const c of visible) {
+      const ship=other.ships.find(s=>cells(s).includes(c));
+      enemyCells[c]=ship?(isSunk(other,ship)?'sunk':ship.hits.includes(c)?'hit':'contact'):'clear';
+      enemySight[c]=ship?{type:ship.type,damaged:ship.hits.includes(c),sunk:isSunk(other,ship)}:{empty:true};
+    }
   }
-  const publicPlayer = p => ({ id: p.id, name: p.name, ready: p.ready, confirmed: p.confirmed, rematch: p.rematch,
-    actionPoints: p.actionPoints, handCount: p.hand.length, deckCount: p.deck.length });
-  const knownTerrain = (terrain, known) => terrain.map((type, cell) => type === 'reef' && !known.includes(cell) ? 'deep' : type);
-  const ownView = structuredClone(own);
-  ownView.terrain = knownTerrain(own.terrain, own.knownOwnReefs);
-  ownView.deckCount = own.deck.length;
-  delete ownView.deck; // Even the owner's draw order stays face down.
+  const knownTerrain=(terrain,known)=>terrain.map((t,c)=>t==='reef'&&!known.has(c)?'deep':t);
+  const ownView=structuredClone(own);ownView.terrain=knownTerrain(own.terrain,new Set(own.knownOwnReefs));ownView.deckCount=own.deck.length;delete ownView.deck;
+  const publicPlayer=p=>({id:p.id,name:p.name,ready:p.ready,confirmed:p.confirmed,rematch:p.rematch,actionPoints:p.actionPoints,handCount:p.hand.length,deckCount:p.deck.length});
+  const enemyWrecks=other?other.ships.filter(s=>isSunk(other,s)&&cells(s).every(c=>!other.concealed.includes(c)||visible.has(c)))
+    .map(s=>({type:s.type,length:s.length,width:s.width,x:s.x,y:s.y,vertical:s.vertical})):[];
   return {
-    phase: game.phase, mapId: game.mapId, turn: game.turn, deadline: game.deadline, winner: game.winner,
-    round: game.round, version: game.version, startedAt: game.startedAt, endedAt: game.endedAt,
-    me, players: game.players.map(publicPlayer), own: ownView, enemyCells,
-    enemySunk: other ? other.ships.filter(s => isSunk(other, s)).map(s => s.type) : [],
-    enemyTerrain: knownTerrain(other ? other.terrain : terrainFor(game.mapId, 1 - me), []),
-    enemyRecon: Object.entries(own.recon).map(([cell, info]) => ({ cell: Number(cell), contact: info.contact,
-      stale: !!other && info.round < other.lastMove })),
-    rescanCells: other ? other.shots.filter(c => canFireAt(other, c)) : [],
-    // Cannon damage, torpedoes and a visible grounding wreck can reveal complete hulls.
-    enemyWrecks: other ? other.ships.filter(s => isSunk(other, s)).map(s => ({
-      type: s.type, length: s.length, x: s.x, y: s.y, vertical: s.vertical,
-    })) : [],
-    history: structuredClone(game.history.slice(-200)),
+    phase:game.phase,mapId:game.mapId,turn:game.turn,deadline:game.deadline,winner:game.winner,round:game.round,version:game.version,startedAt:game.startedAt,endedAt:game.endedAt,
+    me,players:game.players.map(publicPlayer),own:ownView,enemyCells,enemySight,enemyVisible:[...visible],
+    enemyTerrain:knownTerrain(other?other.terrain:terrainFor(game.mapId,1-me),visible),
+    enemySunk:other?other.ships.filter(s=>isSunk(other,s)).map(s=>s.type):[],enemyWrecks,
+    enemySmoke:other?[...new Set(other.smoke.filter(s=>other.turns<s.expiresTurn).flatMap(s=>s.cells))]:[],
+    enemyRecon:[...visible].map(cell=>({cell,contact:!!enemySight[cell]&&!enemySight[cell].empty,stale:false})),rescanCells:[],
+    airControl:game.airControl?{owner:game.airControl.owner,remaining:game.airControl.expiresTurn-game.players[game.airControl.owner].turns}:null,
+    visionEffects:own.scans.filter(s=>own.turns<s.expiresTurn).map(s=>({cardType:s.cardType,remaining:s.expiresTurn-own.turns,cells:[...s.cells]})),
+    history:structuredClone(game.history.slice(-200)),
   };
 }
