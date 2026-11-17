@@ -243,7 +243,15 @@ export function viewFor(game,playerId) {
       const {type, length, width, x, y, vertical} = ship;
       enemyWrecks.push({type, length, width, x, y, vertical});
     } else if (visible.size) {
-      enemyHullParts.push(...visibleHullParts(footprint, visible));
+      for (const part of visibleHullParts(footprint, visible)) {
+        // Link the first visible cell to the corresponding slot in the painted model.
+        const firstCell = part[0];
+        enemySight[firstCell].sprite = {
+          offset: footprint.indexOf(firstCell),
+          vertical: ship.vertical,
+        };
+        enemyHullParts.push(part);
+      }
     }
   }
   // Order by public cell position, independent of the opponent's fleet order.
