@@ -1,4 +1,31 @@
-# 完整海图与统一地貌 · v3.2
+# 完整海图与统一地貌
+
+## 四张地图的连续海图
+
+人机演习与局域网对战共用海图版式。宽屏将一幅画的上部铺在相邻的两块 10 × 10 棋盘上，以细虚线分隔海域。房主与访客看到同一个地理方向，访客的己方棋盘在右。交战时宽屏的手牌区接在画幅下缘，窄屏依次呈现手牌、敌方海域与执行指令。炮击落空短暂溅起水花，命中冒出火光；开启减少动画时保留持续战况。
+
+| 地图 | 对战海图 | 裁切 |
+| --- | --- | --- |
+| 无垠深海、暗流涌动 | `public/assets/open-sea-panorama.webp` | 画幅上部 74% 为海面，余下为岸上手牌区 |
+| 星罗棋布 | `public/assets/archipelago-coastal-shelf.webp` | 海图分支的原画，礁石与禁航轮廓沿用原坐标 |
+| 走向深海 | `public/assets/blue-frontier-shore-and-fish.webp` | 现有浅海渐变、外侧海岸与鱼群原画 |
+
+「无垠深海」与「暗流涌动」的海面像素来自同一文件。区域轮廓由规则数据绘制，只标出礁石与浅滩。暗礁情报通过规则允许的悬停信息查看。
+
+### 深海全景原图
+
+使用内置 ImageGen，以 `public/assets/ocean-chart.webp` 为海面参考，`public/assets/archipelago-coastal-shelf.webp` 为构图参考。原图保存在 `art-source/open-sea-panorama.png`（1536 × 1024），通过 Pillow 以 WebP quality 90 导出（197,214 字节）。
+
+```text
+Use case: stylized-concept.
+Asset type: a single panoramic production background for the strategy game FOGBOUND, opaque 3:2 landscape, ideally 1536x1024.
+Input images: Image 1 is the game's original open ocean, the reference for material, scale of waves, brushwork and blue-green palette. Image 2 is the game's Archipelago, the reference for the overhead viewpoint and the shelf along the bottom. Create an original painting of open ocean that belongs to the very same game. Leave out Image 2's offshore islands.
+Composition: A flat, overhead view with no perspective horizon. The upper 77% of the canvas is uninterrupted deep petroleum-blue sea across the entire width. Restrained rolling swells and ripples, at about the same scale as Image 1, run diagonally and connect naturally through the center. Soft, muted ivory light touches a few wave crests near the upper left and fades toward the dark blue-teal lower right. This must read well behind grid lines and tiny detailed ship silhouettes that will be added separately. Paint an understated dark gray-blue rocky shoreline and weathered stone shelf entirely within the bottom 23%, as a quiet backdrop for game cards; soft pale surf where the rock meets the sea. Keep the beach edge below 77% of the image height across the full width.
+Style: a finely textured, realistic oil-painted naval diorama in the reference game's subdued blue-teal, charcoal and muted warm-gray tones. Fine ripples with subtle unevenness and very few specular highlights.
+Constraints: no reefs, shoals, rocks, sand, submerged forms, vessels, or other land in the upper 77% of the canvas. No lettering, grid, frame, interface, compass, icons, inset panels, border, or watermark anywhere.
+```
+
+## v3.2 整图改版记录
 
 此文保留 v3.2 的绘画与生成记录。v3.3.1 已将暗礁改为始终与深海一致，仅在发现后更新悬停信息，原暗礁海图已从网页素材中撤下；当前规则见 [暗礁情报](hidden-reefs.md)。
 
