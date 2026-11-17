@@ -2,7 +2,8 @@ import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, 
 import { vesselArt, shipOverlay, impactArt, boardFurniture, playStrikeEffects } from './art.mjs?v=5.1.9';
 
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.1.0';
-import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.1.4';
+import { COASTAL_MAPS } from './chart-art.mjs?v=5.1.10';
+import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.1.10';
 import { CARD_TYPES, canUseCard, cardContext, sourceMatches, shipAlive } from './cards.mjs?v=5.1.0';
 import { handPanel, cardGuide } from './cards-ui.mjs?v=5.1.3';
 import { radiusCells, reachableMoves, lineCells } from './geometry.mjs?v=5.1.0';
@@ -253,10 +254,10 @@ function renderGame() {
   if (!state) return;
   app.classList.add('war-room');
   const prep = state.phase==='placement';
-  const coastal = mode==='practice' && state.mapId==='archipelago';
+  const coastal = mode==='practice' && COASTAL_MAPS.includes(state.mapId);
   const coastalBattle = coastal && state.phase==='battle';
   const hand = state.phase==='battle' ? handPanel(state,selectedCard,icon,{previewArt:mode==='practice'}) : '';
-  app.innerHTML = `${header(true)}<main class="game-wrap">${gameHeading()}${connectionLost?'<div class="connection-warning">连接暂时中断，正在重连。回合与布阵进度以服务器为准。</div>':''}${state.phase==='lobby'?renderWaiting():`${state.phase==='result'?resultCard():coastalBattle?'':phaseToolbar()}${coastalBattle?'':mapBrief(state.mapId,state.me)}${state.phase==='battle'?(coastalBattle?'':hand+battleEffects()):''}${state.phase!=='result'||showAftermath?`<div class="game-layout${coastal?' coastal-layout':''}"><div class="board-area"><div class="boards${prep?'':' battling'}">${board(true,coastal)}${board(false,coastal)}</div>${coastal&&hand?`<section class="coastal-hand" aria-label="岸上手牌区">${hand}</section>`:''}${coastal?`<div class="coastal-board-details"><div>${boardDetails(true)}</div><div>${boardDetails(false)}</div></div>`:''}<div class="legend"><span class="legend-item"><i class="legend-square"></i>己方舰船</span><span class="legend-item"><i class="legend-square fog"></i>未知海域</span><span class="legend-item"><i class="legend-square water"></i>落空</span><span class="legend-item"><i class="legend-square fire"></i>命中</span><span class="legend-item"><i class="legend-square wreck"></i>沉没</span></div>${terrainLegend()}${coastalBattle?mapBrief(state.mapId,state.me)+phaseToolbar():''}${prep?dock():''}</div><aside class="game-sidebar">${coastalBattle?battleEffects():''}${state.phase==='result'?'':commandCard()}${fleetCard(false)}${prep?'':fleetCard(true)}${logCard()}</aside></div><div class="keyboard-hint">${prep?'<span><span class="keycap">R</span> 旋转舰船</span><span><span class="keycap">Esc</span> 取消选择</span>':'<span><span class="keycap">Enter</span> 执行卡牌</span><span><span class="keycap">Esc</span> 取消卡牌与瞄准</span>'}</div>`:''}<p class="bottom-note">${mode==='practice'?'人机演习 · 对手按相同牌库与行动力规则出牌':'局域网对战 · 双方棋盘独立，侦察情报仅自己可见'}</p>`}${footer()}</main>`;
+  app.innerHTML = `${header(true)}<main class="game-wrap">${gameHeading()}${connectionLost?'<div class="connection-warning">连接暂时中断，正在重连。回合与布阵进度以服务器为准。</div>':''}${state.phase==='lobby'?renderWaiting():`${state.phase==='result'?resultCard():coastalBattle?'':phaseToolbar()}${coastalBattle?'':mapBrief(state.mapId,state.me)}${state.phase==='battle'?(coastalBattle?'':hand+battleEffects()):''}${state.phase!=='result'||showAftermath?`<div class="game-layout${coastal?` coastal-layout coastal-${state.mapId}`:''}"><div class="board-area"><div class="boards${prep?'':' battling'}">${board(true,coastal)}${board(false,coastal)}</div>${coastal&&hand?`<section class="coastal-hand" aria-label="非交战手牌区">${hand}</section>`:''}${coastal?`<div class="coastal-board-details"><div>${boardDetails(true)}</div><div>${boardDetails(false)}</div></div>`:''}<div class="legend"><span class="legend-item"><i class="legend-square"></i>己方舰船</span><span class="legend-item"><i class="legend-square fog"></i>未知海域</span><span class="legend-item"><i class="legend-square water"></i>落空</span><span class="legend-item"><i class="legend-square fire"></i>命中</span><span class="legend-item"><i class="legend-square wreck"></i>沉没</span></div>${terrainLegend()}${coastalBattle?mapBrief(state.mapId,state.me)+phaseToolbar():''}${prep?dock():''}</div><aside class="game-sidebar">${coastalBattle?battleEffects():''}${state.phase==='result'?'':commandCard()}${fleetCard(false)}${prep?'':fleetCard(true)}${logCard()}</aside></div><div class="keyboard-hint">${prep?'<span><span class="keycap">R</span> 旋转舰船</span><span><span class="keycap">Esc</span> 取消选择</span>':'<span><span class="keycap">Enter</span> 执行卡牌</span><span><span class="keycap">Esc</span> 取消卡牌与瞄准</span>'}</div>`:''}<p class="bottom-note">${mode==='practice'?'人机演习 · 对手按相同牌库与行动力规则出牌':'局域网对战 · 双方棋盘独立，侦察情报仅自己可见'}</p>`}${footer()}</main>`;
   updateTimer();
 }
 function updateTimer() {
@@ -580,7 +581,8 @@ document.addEventListener('pointerup',endPointer);document.addEventListener('poi
 
 async function init(){
   if (new URLSearchParams(location.search).get('card-preview') === '1') {
-    if (new URLSearchParams(location.search).get('map') === 'archipelago') selectedMap = 'archipelago';
+    const map = new URLSearchParams(location.search).get('map');
+    if (COASTAL_MAPS.includes(map)) selectedMap = map;
     startPractice({cardPreview:true});
     return;
   }
