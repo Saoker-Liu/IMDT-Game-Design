@@ -4,7 +4,7 @@ import { vesselArt, shipOverlay, impactArt, boardFurniture } from './art.mjs?v=5
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.1.0';
 import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.1.0';
 import { CARD_TYPES, canUseCard, cardContext, sourceMatches, shipAlive } from './cards.mjs?v=5.1.0';
-import { handPanel, cardGuide } from './cards-ui.mjs?v=5.1.0';
+import { handPanel, cardGuide } from './cards-ui.mjs?v=5.1.3';
 import { radiusCells, reachableMoves, lineCells } from './geometry.mjs?v=5.1.0';
 import { torpedoRows } from './combat.mjs?v=5.1.0';
 import { chooseBotAction } from './bot.mjs?v=5.1.0';
@@ -246,7 +246,7 @@ function renderGame() {
   if (!state) return;
   app.classList.add('war-room');
   const prep = state.phase==='placement';
-  app.innerHTML = `${header(true)}<main class="game-wrap">${gameHeading()}${connectionLost?'<div class="connection-warning">连接暂时中断，正在重连。回合与布阵进度以服务器为准。</div>':''}${state.phase==='lobby'?renderWaiting():`${state.phase==='result'?resultCard():phaseToolbar()}${mapBrief(state.mapId,state.me)}${state.phase==='battle'?handPanel(state,selectedCard,icon)+battleEffects():''}${state.phase!=='result'||showAftermath?`<div class="game-layout"><div><div class="boards${prep?'':' battling'}">${board(true)}${board(false)}</div><div class="legend"><span class="legend-item"><i class="legend-square"></i>己方舰船</span><span class="legend-item"><i class="legend-square fog"></i>未知海域</span><span class="legend-item"><i class="legend-square water"></i>落空</span><span class="legend-item"><i class="legend-square fire"></i>命中</span><span class="legend-item"><i class="legend-square wreck"></i>沉没</span></div>${terrainLegend()}${prep?dock():''}</div><aside class="game-sidebar">${state.phase==='result'?'':commandCard()}${fleetCard(false)}${prep?'':fleetCard(true)}${logCard()}</aside></div><div class="keyboard-hint">${prep?'<span><span class="keycap">R</span> 旋转舰船</span><span><span class="keycap">Esc</span> 取消选择</span>':'<span><span class="keycap">Enter</span> 执行卡牌</span><span><span class="keycap">Esc</span> 取消卡牌与瞄准</span>'}</div>`:''}<p class="bottom-note">${mode==='practice'?'人机演习 · 对手按相同牌库与行动力规则出牌':'局域网对战 · 双方棋盘独立，侦察情报仅自己可见'}</p>`}${footer()}</main>`;
+  app.innerHTML = `${header(true)}<main class="game-wrap">${gameHeading()}${connectionLost?'<div class="connection-warning">连接暂时中断，正在重连。回合与布阵进度以服务器为准。</div>':''}${state.phase==='lobby'?renderWaiting():`${state.phase==='result'?resultCard():phaseToolbar()}${mapBrief(state.mapId,state.me)}${state.phase==='battle'?handPanel(state,selectedCard,icon,{previewArt:mode === 'practice'})+battleEffects():''}${state.phase!=='result'||showAftermath?`<div class="game-layout"><div><div class="boards${prep?'':' battling'}">${board(true)}${board(false)}</div><div class="legend"><span class="legend-item"><i class="legend-square"></i>己方舰船</span><span class="legend-item"><i class="legend-square fog"></i>未知海域</span><span class="legend-item"><i class="legend-square water"></i>落空</span><span class="legend-item"><i class="legend-square fire"></i>命中</span><span class="legend-item"><i class="legend-square wreck"></i>沉没</span></div>${terrainLegend()}${prep?dock():''}</div><aside class="game-sidebar">${state.phase==='result'?'':commandCard()}${fleetCard(false)}${prep?'':fleetCard(true)}${logCard()}</aside></div><div class="keyboard-hint">${prep?'<span><span class="keycap">R</span> 旋转舰船</span><span><span class="keycap">Esc</span> 取消选择</span>':'<span><span class="keycap">Enter</span> 执行卡牌</span><span><span class="keycap">Esc</span> 取消卡牌与瞄准</span>'}</div>`:''}<p class="bottom-note">${mode==='practice'?'人机演习 · 对手按相同牌库与行动力规则出牌':'局域网对战 · 双方棋盘独立，侦察情报仅自己可见'}</p>`}${footer()}</main>`;
   updateTimer();
 }
 function updateTimer() {
@@ -323,12 +323,27 @@ async function send(action) {
   } catch(error) { toast(error.message,true); if(state)renderGame(); return false; }
   finally {busy=false;}
 }
-function startPractice() {
+function startPractice({ cardPreview = false } = {}) {
   session=null; mode='practice'; serverOffset=0; aimed=null; selectedShip=null; selectedCard=null; lastHistory=0;
   practice=makeGame([makePlayer('human',readStorage('deepblue-name','指挥官',true)),makePlayer('bot','迷雾 AI')],selectedMap);
   act(practice,'bot',{type:'ready'});act(practice,'human',{type:'ready'});
+  if (cardPreview) {
+    for (const player of practice.players) {
+      act(practice, player.id, {type:'auto'});
+      act(practice, player.id, {type:'confirm'});
+    }
+    const {hand, deck} = practice.players[0];
+    const sampleTypes = ['main', 'flare', 'maneuver'];
+    for (const type of sampleTypes) {
+      const deckIndex = deck.findIndex(card => card.type === type);
+      if (deckIndex === -1) continue;
+      const handIndex = hand.findIndex(card => !sampleTypes.includes(card.type));
+      [hand[handIndex], deck[deckIndex]] = [deck[deckIndex], hand[handIndex]];
+    }
+  }
   state=null; botDue=Date.now()+1000; lastBotTurn='';
-  acceptState({...viewFor(practice,'human'),roomName:'北纬 31° · 演习海域',opponentConnected:true},true);
+  acceptState({...viewFor(practice,'human'),roomName:cardPreview?'卡面试装 · 固定首轮手牌':'北纬 31° · 演习海域',opponentConnected:true},true);
+  if (cardPreview) return;
   window.scrollTo({top:0,behavior:'instant'}); beep('click');
 }
 function botAction() {
@@ -436,7 +451,7 @@ async function handleAction(action,el){
   switch(action){
     case 'home': if(mode==='lobby')return;return askExit();
     case 'select-map':selectedMap=mapInfo(el.dataset.map).id;store('fogbound-map',selectedMap,true);renderLobby();return;
-    case 'card-guide':return openModal('战术卡牌图鉴',cardGuide());
+    case 'card-guide':return openModal('战术卡牌图鉴',cardGuide({previewArt:mode === 'practice', icon}));
     case 'random-targets':pickedTargets=Array.from({length:100},(_,c)=>c).sort(()=>Math.random()-.5).slice(0,10);renderGame();return;
     case 'terrain-guide':return openModal('海域地形图鉴',terrainGuide());
     case 'select-card': {
@@ -548,6 +563,10 @@ function endPointer(event){
 document.addEventListener('pointerup',endPointer);document.addEventListener('pointercancel',endPointer);
 
 async function init(){
+  if (new URLSearchParams(location.search).get('card-preview') === '1') {
+    startPractice({cardPreview:true});
+    return;
+  }
   app.innerHTML='<div class="loading">FOGBOUND / 正在连接海域</div>';
   try{const health=await request('health');lan=health.ok&&health.mode==='lan';}catch{lan=false;}
   const saved=readStorage('deepblue-session');
