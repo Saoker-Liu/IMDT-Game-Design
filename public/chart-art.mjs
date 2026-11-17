@@ -1,3 +1,4 @@
+import { alignedArchipelagoArt } from './archipelago-art.mjs?v=5.1.10';
 import { MAPS, terrainFor } from './terrain.mjs?v=5.1.0';
 
 const charts = MAPS.flatMap(map => [0, 1].map(side => ({ mapId: map.id, side, terrain: terrainFor(map.id, side) })));
@@ -43,12 +44,15 @@ export function regionContours(terrain, type) {
   return contours;
 }
 
-export function terrainChart(terrain, small = false, chart = chartFor(terrain)) {
+export function terrainChart(terrain, small = false, chart = chartFor(terrain), { coastal = false } = {}) {
   const { mapId, side } = chart;
   // Reefs never get a texture, tint, outline or marker, even after they are discovered.
   const regions = ['rock', 'shoal'].map(type => {
     const d = regionContours(terrain, type).join('');
     return d ? `<path class="terrain-region region-${type}" data-terrain="${type}" d="${d}" vector-effect="non-scaling-stroke"/>` : '';
   }).join('');
-  return `<div class="${small ? 'map-mini' : 'terrain-layer'} chart-scene chart-${mapId}-${side}" data-chart="${mapId}" data-facing="${side}" aria-hidden="true"><span class="sea-paint"></span>${regions ? `<svg class="terrain-boundaries" viewBox="0 0 100 100" preserveAspectRatio="none">${regions}</svg>` : ''}</div>`;
+  const painting = coastal && mapId === 'archipelago'
+    ? alignedArchipelagoArt(side)
+    : '<span class="sea-paint"></span>';
+  return `<div class="${small ? 'map-mini' : 'terrain-layer'} chart-scene chart-${mapId}-${side}" data-chart="${mapId}" data-facing="${side}" aria-hidden="true">${painting}${regions ? `<svg class="terrain-boundaries" viewBox="0 0 100 100" preserveAspectRatio="none">${regions}</svg>` : ''}</div>`;
 }

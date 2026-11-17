@@ -65,8 +65,9 @@ try {
   v=await execute('flare',()=>enemy(64));assert.ok(v.enemyVisible.includes(64));assert.equal(v.enemySight[64].type,'frigate');
   await execute('lamp',()=>enemy(55));
   await execute('maneuver',async()=>{await own(64);await own(84);});assert.equal((await state(host)).own.ships.find(s=>s.id==='FF-3').y,8);
-  await execute('rapid',async()=>{await own(81);});
-  await execute('speed',async()=>{await own(10);});
+  // The test can advance turns to obtain a card, so select its source again.
+  await execute('rapid',async()=>{await own(84);await own(81);});
+  await execute('speed',async()=>{await own(81);await own(10);});
   v=await execute('seaplane');assert.equal(v.enemyVisible.length,100);
   v=await execute('fighter');assert.equal(v.airControl.owner,0);
   await execute('bomber',()=>enemy(1));

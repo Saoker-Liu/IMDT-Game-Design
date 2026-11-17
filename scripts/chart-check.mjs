@@ -37,16 +37,17 @@ try {
     await (selector ? page.locator(selector) : page).screenshot({ path: path.join(output, file), animations: 'disabled', ...(!selector ? { fullPage: true } : {}) });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
   }
-  async function checkGeography(page, mapId) {
+  async function checkGeography(page, mapId, coastal = false) {
     const expected = [terrainFor(mapId, 0), terrainFor(mapId, 1)];
-    const result = await page.evaluate(({ expected, mapId }) => {
+    const result = await page.evaluate(({ expected, mapId, coastal }) => {
       const problems = [];
       for (const [side, selector] of ['.friendly-chart', '.hostile-chart'].entries()) {
         const board = document.querySelector(selector);
         const scene = board.querySelector('.terrain-layer');
         if (scene.dataset.chart !== mapId) problems.push(`${selector}: wrong chart`);
         if (mapId !== 'open-sea' && Number(scene.dataset.facing) !== side) problems.push(`${selector}: wrong shore`);
-        if (scene.querySelectorAll('.sea-paint').length !== 1 || scene.querySelector('.terrain-tile')) problems.push(`${selector}: expected one whole painting`);
+        const painting = coastal ? `.coastal-art-${side}` : '.sea-paint';
+        if (scene.querySelectorAll(painting).length !== 1 || scene.querySelector('.terrain-tile')) problems.push(`${selector}: expected one whole painting`);
         const svg = scene.querySelector('svg');
         const regions = [...scene.querySelectorAll('.terrain-region')];
         for (let c = 0; c < 100; c++) {
@@ -64,7 +65,7 @@ try {
         }
       }
       return problems;
-    }, { expected, mapId });
+    }, { expected, mapId, coastal });
     assert.deepEqual(result, [], 'Painted zone contours agree with all playable cells, for both shores');
   }
   for (const mapId of ['archipelago', 'undertow', 'blue-frontier', 'open-sea']) {
@@ -102,8 +103,69 @@ try {
   const page = await context.newPage();
   await page.goto(base);
   await screenshot(page, 'map-library.png', '.map-selection');
+  await context.close();
+
+  // Exercise the released Archipelago art through the normal practice workflow.
+  const practice = await browser.newContext({viewport: {width: 1440, height: 900}});
+  await practice.route(/fonts\.(googleapis|gstatic)\.com/, route => route.abort());
+  await practice.addInitScript(() => {
+    window.coastalClock = 1000;
+    Date.now = () => window.coastalClock;
+    Math.random = () => .9999999;
+  });
+  const drill = await practice.newPage();
+  drill.on('pageerror', error => errors.push(error.message));
+  await drill.goto(`${base}/?card-preview=1&map=archipelago`);
+  await drill.waitForSelector('.map-selection');
+  assert.equal(await drill.locator('.hand-panel, .dock').count(), 0);
+  await drill.locator('.map-card[data-map="archipelago"]').click();
+  await drill.locator('[data-action="practice"]').first().click();
+  await drill.waitForSelector('.dock');
+  await checkGeography(drill, 'archipelago', true);
+  await drill.locator('[data-action="auto"]').click();
+  await drill.evaluate(() => window.coastalClock = 2100);
+  await drill.locator('[data-action="confirm"]').click();
+  await drill.waitForSelector('.coastal-hand');
+  assert.equal(await drill.locator('.hand-cards .card-illustrated').count(), 6);
+  await drill.locator('.card-library-button').click();
+  assert.equal(await drill.locator('.illustrated-guide .card-illustrated').count(), 20);
+  await drill.keyboard.press('Escape');
+
+  for (const width of [1440, 768, 390, 320]) {
+    await drill.setViewportSize({width, height: width > 680 ? 900 : 844});
+    await checkGeography(drill, 'archipelago', true);
+    const hand = await drill.locator('.coastal-hand').boundingBox();
+    const friendly = await drill.locator('#own-grid').boundingBox();
+    const enemy = await drill.locator('#enemy-grid').boundingBox();
+    const command = await drill.locator('.command-card').boundingBox();
+    if (width > 680) {
+      assert.ok(Math.abs(friendly.y - enemy.y) < 1);
+      assert.ok(Math.abs(friendly.x + friendly.width - enemy.x) < 2);
+      assert.ok(hand.y >= enemy.y + enemy.height - 1);
+    } else {
+      assert.ok(hand.y + hand.height <= enemy.y && enemy.y + enemy.height <= command.y && command.y + command.height <= friendly.y);
+    }
+    if (width !== 320) await screenshot(drill, `archipelago-practice-${width}.png`);
+  }
+
+  await drill.locator('.hand-cards [data-card-type="main"]').click();
+  await drill.locator('#enemy-grid [data-cell="23"]').click();
+  await drill.locator('[data-action="fire"]').click();
+  await drill.waitForSelector('.hostile-chart .strike-flash');
+  await drill.waitForSelector('.hostile-chart .strike-splash');
+  assert.equal(await drill.locator('.friendly-chart .strike-burst').count(), 0);
+  await drill.waitForSelector('.strike-burst', {state: 'detached'});
+  await drill.emulateMedia({reducedMotion: 'reduce'});
+  await drill.locator('.hand-cards [data-card-type="secondary"]').click();
+  await drill.locator('#enemy-grid [data-cell="99"]').click();
+  await drill.locator('[data-action="fire"]').click();
+  await drill.waitForSelector('#enemy-grid [data-cell="99"].miss');
+  assert.equal(await drill.locator('.strike-burst').count(), 0);
+  assert.equal(await drill.locator('.action-points').getAttribute('data-ap'), '0');
+  assert.ok(await drill.locator('[data-action="pass"]').isEnabled());
+  await practice.close();
   assert.deepEqual(errors, []);
-  console.log(`PASS: unified charts, both shores, every region/cell and desktop/tablet/mobile sizes. Screenshots: ${output}`);
+  console.log(`PASS: LAN and practice chart geometry, responsive coastal hand, card guide, strike feedback and reduced motion. Screenshots: ${output}`);
 } finally {
   if (browser) await browser.close();
   await new Promise(resolve => server.close(resolve));
