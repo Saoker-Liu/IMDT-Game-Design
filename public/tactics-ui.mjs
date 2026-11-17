@@ -1,6 +1,6 @@
 import { MAPS, TERRAIN, mapInfo, terrainFor } from './terrain.mjs?v=5.1.0';
 import { canMove, isSunk } from './engine.mjs?v=5.1.0';
-import { terrainChart } from './chart-art.mjs?v=5.1.10';
+import { terrainChart } from './chart-art.mjs?v=5.1.11';
 
 export { terrainChart };
 

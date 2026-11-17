@@ -1,4 +1,5 @@
 import { alignedArchipelagoArt } from './archipelago-art.mjs?v=5.1.10';
+export const COASTAL_MAPS = ['archipelago', 'blue-frontier'];
 import { MAPS, terrainFor } from './terrain.mjs?v=5.1.0';
 
 const charts = MAPS.flatMap(map => [0, 1].map(side => ({ mapId: map.id, side, terrain: terrainFor(map.id, side) })));
@@ -51,8 +52,8 @@ export function terrainChart(terrain, small = false, chart = chartFor(terrain), 
     const d = regionContours(terrain, type).join('');
     return d ? `<path class="terrain-region region-${type}" data-terrain="${type}" d="${d}" vector-effect="non-scaling-stroke"/>` : '';
   }).join('');
-  const painting = coastal && mapId === 'archipelago'
-    ? alignedArchipelagoArt(side)
+  const painting = coastal
+    ? (mapId === 'archipelago' ? alignedArchipelagoArt(side) : `<span class="coastal-art coastal-art-${side}"></span>`)
     : '<span class="sea-paint"></span>';
   return `<div class="${small ? 'map-mini' : 'terrain-layer'} chart-scene chart-${mapId}-${side}" data-chart="${mapId}" data-facing="${side}" aria-hidden="true">${painting}${regions ? `<svg class="terrain-boundaries" viewBox="0 0 100 100" preserveAspectRatio="none">${regions}</svg>` : ''}</div>`;
 }

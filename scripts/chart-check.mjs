@@ -163,6 +163,32 @@ try {
   assert.equal(await drill.locator('.strike-burst').count(), 0);
   assert.equal(await drill.locator('.action-points').getAttribute('data-ap'), '0');
   assert.ok(await drill.locator('[data-action="pass"]').isEnabled());
+  await drill.goto(base);
+  await drill.locator('.map-card[data-map="blue-frontier"]').click();
+  await drill.locator('[data-action="practice"]').first().click();
+  await drill.waitForSelector('.dock');
+  await checkGeography(drill, 'blue-frontier', true);
+  await drill.locator('[data-action="auto"]').click();
+  await drill.evaluate(() => window.coastalClock = 2100);
+  await drill.locator('[data-action="confirm"]').click();
+  await drill.waitForSelector('.coastal-blue-frontier .coastal-hand');
+  for (const [width, height] of [[1440, 782], [390, 844]]) {
+    await drill.setViewportSize({width, height});
+    await checkGeography(drill, 'blue-frontier', true);
+    assert.match(await drill.locator('.coastal-hand').evaluate(el => getComputedStyle(el).backgroundImage), /blue-frontier-shore-and-fish\.webp/);
+    assert.equal(await drill.locator('.hand-cards .card-illustrated').count(), 6);
+    if (width === 1440) {
+      assert.ok(await drill.locator('.hand-cards .card-illustrated').evaluateAll(cards => cards.every(card => {
+        const bounds = card.getBoundingClientRect();
+        return bounds.bottom <= innerHeight && bounds.right <= card.parentElement.getBoundingClientRect().right + 1;
+      })), 'All six cards fit in the desktop opening viewport');
+    }
+    await screenshot(drill, `blue-frontier-practice-${width}.png`);
+  }
+  await drill.locator('.hand-cards [data-card-type="main"]').click();
+  await drill.locator('#enemy-grid [data-cell="45"]').click();
+  await drill.locator('[data-action="fire"]').click();
+  assert.equal(await drill.locator('.action-points').getAttribute('data-ap'), '1');
   await practice.close();
   assert.deepEqual(errors, []);
   console.log(`PASS: LAN and practice chart geometry, responsive coastal hand, card guide, strike feedback and reduced motion. Screenshots: ${output}`);
