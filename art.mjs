@@ -14,6 +14,23 @@ export function impactArt(status) {
   if (status === 'sunk') return `<span class="impact impact-sunk" aria-hidden="true"><i class="oil-slick"></i><i class="wreck-splinter one"></i><i class="wreck-splinter two"></i><i class="wreck-splinter three"></i><i class="wreck-bubble"></i></span>`;
   return '';
 }
+
+/** Play a short effect on the cells named by a newly received strike. */
+export function playStrikeEffects(app, strike, ownId) {
+  const shore = strike.playerId === ownId ? 'hostile-chart' : 'friendly-chart';
+  const cells = app.querySelector(`.${shore} .board-effects`)?.children;
+  if (!cells) return;
+  for (const {cell, result} of strike.results) {
+    const target = cells[cell];
+    if (!target || !['miss', 'hit', 'sunk'].includes(result)) continue;
+    const burst = document.createElement('span');
+    burst.className = `strike-burst ${result === 'miss' ? 'strike-splash' : 'strike-flash'}`;
+    burst.setAttribute('aria-hidden', 'true');
+    burst.innerHTML = '<i></i><i></i><i></i><i></i><i></i>';
+    target.append(burst);
+    setTimeout(() => burst.remove(), 750);
+  }
+}
 export function boardFurniture(own) {
   return `<div class="chart-furniture" aria-hidden="true"><span class="chart-bearing">${own?'N 31° 14′':'E 121° 28′'}</span><span class="chart-classification">${own?'FLEET POSITION / 01':'UNIDENTIFIED WATERS / 02'}</span><svg class="chart-compass" viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="30"/><circle cx="40" cy="40" r="23"/><path d="m40 7 5 28 28 5-28 5-5 28-5-28-28-5 28-5Z"/><path d="m19 19 17 17m8 8 17 17m0-42L44 36M36 44 19 61"/><path d="m40 15 4 24-4 1-4-1Z" fill="currentColor"/><text x="40" y="5" text-anchor="middle" stroke="none" fill="currentColor" font-size="6">N</text></svg></div>`;
 }

@@ -212,6 +212,64 @@ body {
 .water-ring.inner { width: 32%; height: 16%; top: 47%; left: 34%; border-color: #b4dbdba1; }
 .water-dot { position: absolute; width: 4px; height: 4px; top: 46%; left: 46%; background: #d9e6d8; border-radius: 50%; box-shadow: 0 2px 4px #081f31; }
 .water-glint { position: absolute; left: 60%; top: 38%; width: 2px; height: 4px; background: #d7e9e1b3; transform: rotate(24deg); }
+.strike-burst { position: absolute; inset: 0; pointer-events: none; }
+.strike-burst i, .strike-burst::before, .strike-burst::after { position: absolute; pointer-events: none; }
+.strike-burst::before, .strike-burst::after { content: ''; }
+.strike-splash::before {
+  inset: 41% 7% 25%;
+  border: 1.5px solid #c3e6e6;
+  border-radius: 50%;
+  box-shadow: 0 0 5px #70b9c290;
+  animation: strike-ripple 650ms ease-out both;
+}
+.strike-splash::after {
+  left: 21%; right: 21%; top: 6%; bottom: 42%;
+  transform-origin: 50% 100%;
+  background: linear-gradient(#f1f8ec,#9cd4da 58%,#4d91a6);
+  clip-path: polygon(1% 91%, 20% 62%, 14% 20%, 32% 42%, 36% 65%, 45% 34%, 51% 0, 57% 12%, 60% 58%, 73% 43%, 88% 25%, 79% 63%, 100% 89%, 77% 100%, 25% 100%);
+  animation: strike-plume 470ms ease-out both;
+}
+.strike-burst i { left: 48%; top: 48%; width: 6%; height: 6%; border-radius: 55%; animation: strike-particle 440ms ease-out both; }
+.strike-burst i:nth-child(1) { --dx: -21%; --dy: -19%; left: 29%; top: 30%; }
+.strike-burst i:nth-child(2) { --dx: -13%; --dy: -32%; left: 39%; top: 15%; }
+.strike-burst i:nth-child(3) { --dx: 10%; --dy: -38%; left: 57%; top: 12%; }
+.strike-burst i:nth-child(4) { --dx: 28%; --dy: -12%; left: 72%; top: 37%; }
+.strike-burst i:nth-child(5) { --dx: 17%; --dy: 14%; left: 64%; top: 61%; }
+.strike-splash i { background: #ccece7; animation-delay: 50ms; }
+.strike-flash::before {
+  inset: 13%;
+  background: radial-gradient(circle,#fff2bb 0 10%,#ffad54 20%,#e65f2a72 43%,transparent 69%);
+  animation: strike-flare 290ms ease-out both;
+}
+.strike-flash i { border-radius: 1px; background: #f9bd65; box-shadow: 0 0 4px #e4773d; }
+.effect:has(.strike-flash) > .impact-hit { animation: strike-smoke-in 410ms ease-out both; }
+@keyframes strike-ripple {
+  from { transform: rotate(-16deg) scale(.22); opacity: .9; }
+  to { transform: rotate(-16deg) scale(1.08); opacity: 0; }
+}
+@keyframes strike-plume {
+  0% { transform: scale(.35,.12); opacity: .2; }
+  30% { transform: scale(.8,.98); opacity: .98; }
+  100% { transform: scale(1.1,.12); opacity: 0; }
+}
+@keyframes strike-particle {
+  0% { transform: translate(calc(var(--dx) * -2),calc(var(--dy) * -2)) scale(.6); opacity: 0; }
+  16% { opacity: 1; }
+  100% { transform: translate(calc(var(--dx) * 3),calc(var(--dy) * 3)) scale(.2); opacity: 0; }
+}
+@keyframes strike-flare {
+  0% { transform: scale(.46); opacity: 1; }
+  28% { transform: scale(1.1); opacity: .95; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+@keyframes strike-smoke-in {
+  0%, 25% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .strike-burst { display: none; }
+  .effect:has(.strike-flash) > .impact-hit { animation: none; }
+}
 .oil-slick { position: absolute; inset: 14% 2%; background: radial-gradient(ellipse, #071b25a1, #435d5d55 50%, transparent 71%); border-radius: 50%; transform: rotate(-20deg); }
 .wreck-splinter { position: absolute; width: 10%; height: 5%; background: #94a298; border: 1px solid #243d44; box-shadow: 1px 1px 1px #081e28; }
 .wreck-splinter.one { left: 22%; top: 32%; transform: rotate(42deg); }

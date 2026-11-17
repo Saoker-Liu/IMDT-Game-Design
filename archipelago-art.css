@@ -1,0 +1,126 @@
+/* Each board shows one half of the same painting. Terrain contours stay on top. */
+.coastal-layout { --coastal-paint: url('./assets/archipelago-coastal-shelf.png'); }
+.coastal-layout .coastal-art {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 200%;
+  overflow: hidden;
+  background: var(--coastal-paint) center top / 100% 131.579% no-repeat;
+}
+.coastal-layout .coastal-art-1 { transform: translateX(-50%); }
+.coastal-layout .reef-patch {
+  position: absolute;
+  inset: 0;
+  mask-image: radial-gradient(ellipse var(--rx) var(--ry) at var(--x) var(--y), #000 83%, transparent);
+}
+.coastal-layout .reef-patch.water { background: url('./assets/ocean-chart.webp') center / cover; }
+.coastal-layout .reef-patch.water.local-water { background: none; }
+.coastal-layout .reef-patch.local-water::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--coastal-paint) center top / 100% 131.579% no-repeat;
+  transform: translateY(var(--water-shift));
+}
+.coastal-layout .reef-patch.rock {
+  background: var(--coastal-paint) center top / 100% 131.579% no-repeat;
+  transform-origin: var(--pivot) 0;
+  transform: translate(var(--dx),var(--dy)) scaleX(var(--scale));
+}
+.coastal-layout .hostile-chart .terrain-layer { filter: none; }
+.coastal-layout .terrain-layer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(#267b8a27 84%,transparent);
+}
+.coastal-layout .hostile-chart .terrain-layer::after { background: linear-gradient(#a4664a26 84%,transparent); }
+.coastal-layout .terrain-boundaries { z-index: 1; }
+.coastal-hand {
+  min-width: 0;
+  padding: 65px 12px 18px;
+  border-radius: 0 0 5px 5px;
+  background: #30382b var(--coastal-paint) center bottom / 100% 416.667% no-repeat;
+}
+.coastal-hand .hand-panel { margin: 0; background: #142624bf; }
+.coastal-board-details { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.coastal-layout .boards.battling .chart-frame-foot { display: none; }
+.coastal-layout .boards.battling .board-frame {
+  border-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow: none;
+}
+.coastal-layout .boards.battling .board-frame::before,
+.coastal-layout .boards.battling .frame-rivet.bl,
+.coastal-layout .boards.battling .frame-rivet.br { display: none; }
+.coastal-layout .boards.battling .cell:nth-last-child(-n+10) { border-bottom-color: transparent; }
+.coastal-layout .coastal-hand .hand-panel { border: 0; background: none; box-shadow: none; }
+.coastal-hand .hand-heading { padding: 4px 6px; border: 0; background: #102423dc; border-radius: 4px; }
+.coastal-hand .hand-title small, .coastal-hand .deck-status > span { display: none; }
+.coastal-hand .hand-title { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 9px; }
+.coastal-hand .hand-title h3 { margin: 0; }
+.coastal-hand .action-points > b { font-size: 22px; line-height: 1.1; }
+.coastal-layout .game-sidebar > .battle-effects { margin: 0 0 6px; }
+.coastal-hand .hand-foot { padding: 3px 6px 0; color: #e0dfca; text-shadow: 0 1px 2px #061416; }
+@media (min-width: 681px) {
+  .coastal-layout .boards { gap: 0; }
+  .coastal-layout .board-caption { padding-inline: 9px; }
+  .coastal-layout .board-frame { max-width: none; margin: 0; }
+  .coastal-layout .friendly-chart .board-frame { padding-inline: 29px 0; border-right: 0; border-radius: 5px 0 0 5px; }
+  .coastal-layout .hostile-chart .board-frame { padding-inline: 0 29px; border-left: 0; border-radius: 0 5px 5px 0; }
+  .coastal-layout .friendly-chart .board-matrix,
+  .coastal-layout .hostile-chart .board-matrix { box-shadow: none; }
+  .coastal-layout .hostile-chart .axis-y { left: auto; right: -24px; }
+  .coastal-layout .friendly-chart :is(.tr,.br),
+  .coastal-layout .hostile-chart :is(.tl,.bl) { display: none; }
+  .coastal-layout .hostile-chart .terrain-layer::after { border-left: 1px dashed #f0d7a5ad; }
+  .coastal-layout .board-bottom { padding-inline: 9px; }
+  #app:has(.coastal-hand) .topbar { height: 49px; }
+  #app:has(.coastal-hand) .game-header { padding-block: 5px; }
+  #app:has(.coastal-hand) .game-title h1 { font-size: 14px; }
+  .game-wrap:has(.coastal-hand) .game-toolbar { margin-bottom: 4px; padding: 5px 10px; }
+  .game-wrap:has(.coastal-hand) .phase-icon { width: 30px; height: 30px; }
+  .game-wrap:has(.coastal-hand) .phase-message h2 { font-size: 13px; }
+  .game-wrap:has(.coastal-hand) .turn-counter span { display: none; }
+  .game-wrap:has(.coastal-hand) .battle-effects { margin-bottom: 3px; }
+  .coastal-layout:has(.coastal-hand) .board-area {
+    width: 100%;
+    max-width: max(520px, calc(200svh - 645px));
+    justify-self: center;
+  }
+  .coastal-layout:has(.coastal-hand) .board-caption { margin-bottom: 4px; }
+  .coastal-layout:has(.coastal-hand) .board-frame { padding-top: 23px; }
+  .coastal-layout:has(.coastal-hand) .axis-x { top: -20px; }
+  .coastal-hand { margin-inline: 30px; padding: 15px 6px 4px; }
+  .coastal-hand .hand-panel { display: grid; grid-template-columns: 108px minmax(0,1fr); column-gap: 8px; }
+  .coastal-hand .hand-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    align-self: start;
+    gap: 8px;
+    margin: 6px 0 0 -20px;
+    padding: 8px;
+  }
+  .coastal-hand .hand-title { display: grid; gap: 4px; }
+  .coastal-hand .card-library-button { text-align: left; }
+  .coastal-hand .action-points { flex-wrap: wrap; gap: 4px 6px; }
+  .coastal-hand .deck-status { margin: 0; text-align: left; }
+  .coastal-hand .hand-cards { container-type: inline-size; gap: 7px; padding: 6px 4px 4px; }
+  .coastal-hand .hand-foot { grid-column: 2; }
+  .coastal-hand .tactical-card { flex: 0 0 clamp(80px, calc((100cqw - 36px) / 6), 144px); height: 165px; min-height: 0; }
+  .coastal-hand .preview-illustration { flex: 0 0 32px; }
+  .coastal-hand .preview-illustration img, .coastal-hand .preview-illustration svg { height: 29px; }
+  .coastal-hand .card-description { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; line-height: 1.3; }
+  .coastal-hand .card-bottom { padding-block: 3px; }
+}
+@media (max-width: 680px) {
+  .coastal-layout:has(.boards.battling) .game-sidebar > .battle-effects { grid-column: 1 / -1; grid-row: 10; }
+  .coastal-layout:has(.boards.battling) .coastal-hand { grid-column: 1 / -1; grid-row: 4; padding: 42px 6px 10px; }
+  .coastal-layout:has(.boards.battling) .coastal-board-details { grid-column: 1 / -1; grid-template-columns: 1fr; grid-row: 5; }
+  .coastal-layout:has(.boards.battling) .legend { grid-row: 6; }
+  .coastal-layout:has(.boards.battling) .terrain-legend { grid-row: 7; }
+  .coastal-layout:has(.boards.battling) .fleet-card { grid-row: 8; }
+  .coastal-layout:has(.boards.battling) .log-card { grid-row: 9; }
+}
