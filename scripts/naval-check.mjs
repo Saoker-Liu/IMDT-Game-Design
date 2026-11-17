@@ -5,6 +5,7 @@ import path from 'node:path';
 import { chromium } from 'playwright-core';
 import { createGameServer } from '../server.mjs';
 import { CARD_TYPES } from '../public/cards.mjs';
+import { cells } from '../public/geometry.mjs';
 import { FIXED_PLACEMENTS,cardSessionActions } from '../test-support/cards.mjs';
 
 const output=path.resolve(process.env.ART_CHECK_OUTPUT||'test-results/naval');await mkdir(output,{recursive:true});
@@ -78,12 +79,23 @@ try {
     await image.decode();
     return image.naturalWidth > 0;
   }));
-  const drawnCells = await contacts.evaluateAll(nodes => nodes.map(node => {
+  const drawnHulls = await contacts.evaluateAll(nodes => nodes.map(node => {
     const encoded = getComputedStyle(node).maskImage.match(/data:image\/svg\+xml,([^"')]+)/)?.[1];
     const chart = new DOMParser().parseFromString(decodeURIComponent(encoded), 'image/svg+xml');
-    return [...chart.querySelectorAll('rect')].map(rect => Number(rect.getAttribute('y')) * 10 + Number(rect.getAttribute('x')));
+    const overlay = node.querySelector('.ship-overlay');
+    return {
+      cells: [...chart.querySelectorAll('rect')].map(rect => Number(rect.getAttribute('y')) * 10 + Number(rect.getAttribute('x'))),
+      x: parseFloat(overlay.style.left) / 10,
+      y: parseFloat(overlay.style.top) / 10,
+      vertical: !!overlay.querySelector('.vessel.vertical'),
+    };
   }));
-  assert.deepEqual(drawnCells, v.enemyHullParts);
+  const enemyShips = (await state(guest)).own.ships;
+  const expectedHulls = v.enemyHullParts.map(part => {
+    const {x, y, vertical} = enemyShips.find(ship => cells(ship).includes(part[0]));
+    return {cells: part, x, y, vertical};
+  });
+  assert.deepEqual(drawnHulls, expectedHulls, 'Illuminated sprites stay aligned to their original hulls');
   await execute('lamp',()=>enemy(55));
   await execute('maneuver',async()=>{await own(64);await own(84);});assert.equal((await state(host)).own.ships.find(s=>s.id==='FF-3').y,8);
   // The test can advance turns to obtain a card, so select its source again.

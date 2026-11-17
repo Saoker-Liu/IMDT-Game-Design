@@ -244,13 +244,39 @@ test('a partially illuminated carrier exposes only individually visible cells, n
   const g=fixture(),[observer,enemy]=g.players;
   giveHand(observer,['flare']);play(g,'flare',{cell:87});const view=viewFor(g,'a');
   assert.ok(view.enemySight[87]);assert.equal(view.enemySight[99],null);assert.equal(view.enemyCells[99],'unknown');
-  assert.deepEqual(Object.keys(view.enemySight[87]).sort(),['damaged','sunk','type']);assert.deepEqual(view.enemyWrecks,[]);
+  assert.deepEqual(view.enemySight[87],{type:'carrier',damaged:false,sunk:false,sprite:{offset:0,vertical:false}});
+  assert.deepEqual(view.enemyWrecks,[]);
   const carrierParts = sight => sight.enemyHullParts.filter(part => sight.enemySight[part[0]].type === 'carrier');
   assert.deepEqual(carrierParts(view).map(part=>[...part].sort((a,b)=>a-b)),[[87,88,89,97,98]]);
   enemy.smoke.push({cells:[88,98],expiresTurn:enemy.turns+1});
   const obscured=viewFor(g,'a');
   assert.equal(obscured.enemySight[88],null);
   assert.deepEqual(carrierParts(obscured),[[87,97],[89]]);
+  assert.deepEqual(obscured.enemySight[89].sprite,{offset:2,vertical:false});
+});
+
+test('illumination preserves the original sprite slots and orientation of partial hulls',()=>{
+  const examples = [
+    {id:'BB-1', x:0, y:0, vertical:false, seen:[0,1,2], offset:0},
+    {id:'BB-1', x:0, y:0, vertical:false, seen:[1,2,3], offset:1},
+    {id:'BB-1', x:0, y:0, vertical:false, seen:[1,2], offset:1},
+    {id:'BB-1', x:9, y:0, vertical:true, seen:[19], offset:1},
+    {id:'CV-1', x:8, y:7, vertical:true, seen:[79,89,99], offset:1},
+    {id:'CV-1', x:7, y:8, vertical:false, seen:[97,98], offset:3},
+  ];
+  for (const {id, x, y, vertical, seen, offset} of examples) {
+    const g=fixture(), [observer, enemy]=g.players;
+    const ship=enemy.ships.find(candidate=>candidate.id===id);
+    Object.assign(ship,{x,y,vertical});
+    observer.scans.push({cardType:'flare',cells:seen,expiresTurn:observer.turns+1});
+    const view=viewFor(g,'a');
+    assert.deepEqual(view.enemyHullParts,[seen]);
+    assert.deepEqual(view.enemySight[seen[0]].sprite,{offset,vertical});
+    for (const hidden of cells(ship).filter(cell=>!seen.includes(cell))) {
+      assert.equal(view.enemySight[hidden],null);
+      assert.equal(view.enemyCells[hidden],'unknown');
+    }
+  }
 });
 
 test('stationary smoke hides old damage without repairing it, and expired smoke does not restore historical intel',()=>{

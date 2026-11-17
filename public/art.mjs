@@ -23,16 +23,13 @@ export function illuminationArt(cells) {
   return `<div class="sight-light"${mask} aria-hidden="true"></div>`;
 }
 
-/** Position the painted model using only the revealed part's bounds. */
-export function sightedHullArt(part, {type, length, width = 1}, sunk) {
-  const columns = part.map(cell => cell % SIZE);
-  const rows = part.map(cell => Math.floor(cell / SIZE));
-  const left = Math.min(...columns), right = Math.max(...columns);
-  const top = Math.min(...rows), bottom = Math.max(...rows);
-  const hull = {type, length, width, vertical: bottom - top > right - left};
-  const footprint = shape(hull);
-  hull.x = (left + right + 1 - footprint.width) / 2;
-  hull.y = (top + bottom + 1 - footprint.height) / 2;
+/** Keep the hull aligned to its board position as illumination changes. */
+export function sightedHullArt(part, {type, length, width = 1}, {offset, vertical}, sunk) {
+  const firstCell = part[0];
+  const hull = {type, length, width, vertical};
+  const footprintWidth = shape(hull).width;
+  hull.x = firstCell % SIZE - offset % footprintWidth;
+  hull.y = Math.floor(firstCell / SIZE) - Math.floor(offset / footprintWidth);
   return `<div class="sighted-hull" style="${sightMask(part)}" aria-hidden="true">${shipOverlay(hull, {wreck: sunk})}</div>`;
 }
 

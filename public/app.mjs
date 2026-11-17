@@ -1,5 +1,5 @@
-import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=5.2.2';
-import { vesselArt, shipOverlay, illuminationArt, sightedHullArt, impactArt, boardFurniture, playStrikeEffects } from './art.mjs?v=5.2.2';
+import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=5.2.3';
+import { vesselArt, shipOverlay, illuminationArt, sightedHullArt, impactArt, boardFurniture, playStrikeEffects } from './art.mjs?v=5.2.3';
 
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.1.0';
 import { COASTAL_MAPS } from './chart-art.mjs?v=5.1.11';
@@ -163,13 +163,11 @@ function vessel(ship, extra = '') {
   return vesselArt(ship, extra);
 }
 function sightedEnemyArt() {
-  const parts = state.enemyHullParts ?? state.enemySight.flatMap((sight, cell) =>
-    sight && !sight.empty && !sight.sunk ? [[cell]] : [],
-  );
+  const parts = state.enemyHullParts ?? [];
   return parts.map(part => {
     const sight = state.enemySight[part[0]];
     const type = TYPES.find(spec => spec.type === sight?.type);
-    return type ? sightedHullArt(part, type, sight.sunk) : '';
+    return type && sight.sprite ? sightedHullArt(part, type, sight.sprite, sight.sunk) : '';
   }).join('');
 }
 function board(own = false, coastal = false) {
