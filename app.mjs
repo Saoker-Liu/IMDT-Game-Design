@@ -2,8 +2,7 @@ import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, 
 import { vesselArt, shipOverlay, illuminationArt, sightedHullArt, impactArt, boardFurniture, playStrikeEffects } from './art.mjs?v=5.2.3';
 
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.1.0';
-import { COASTAL_MAPS } from './chart-art.mjs?v=5.1.11';
-import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.2.2';
+import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.2.4';
 import { CARD_TYPES, canUseCard, cardContext, sourceMatches, shipAlive } from './cards.mjs?v=5.1.0';
 import { handPanel, cardGuide } from './cards-ui.mjs?v=5.2.0';
 import { radiusCells, reachableMoves, lineCells } from './geometry.mjs?v=5.1.0';
@@ -156,7 +155,7 @@ function renderWaiting() {
 function phaseToolbar() {
   const prep = state.phase === 'placement', mine = state.turn === state.me;
   const title = prep ? (state.own.confirmed ? '舰队已就绪，等待对手' : '部署舰队，掌控你的海域') : state.phase === 'result' ? '本场作战已结束' : mine ? '轮到你了，指挥官' : '对手行动中';
-  const message = prep ? (state.own.confirmed ? '布阵已锁定；对手确认后立即开战。' : '拖拽舰船至左侧海域，点击选中后可旋转。') : state.phase === 'result' ? '命中与沉没记录已保留，可查看本局战况。' : mine ? `剩余 ${state.own.actionPoints} 点行动力，准备好后点击‘确认结束回合’。` : '观察战况与手牌，等待对手确认结束回合。';
+  const message = prep ? (state.own.confirmed ? '布阵已锁定；对手确认后立即开战。' : '拖拽舰船至己方海域，点击选中后可旋转。') : state.phase === 'result' ? '命中与沉没记录已保留，可查看本局战况。' : mine ? `剩余 ${state.own.actionPoints} 点行动力，准备好后点击‘确认结束回合’。` : '观察战况与手牌，等待对手确认结束回合。';
   return `<div class="game-toolbar"><div class="phase-message"><span class="phase-icon">${icon(prep ? 'ship' : state.phase === 'result' ? 'flag' : mine ? 'target' : 'radar')}</span><div><h2>${title}</h2><p>${message}</p></div></div>${prep?`<div class="timer"><span class="timer-label">布阵剩余时间<br>DEPLOYMENT</span><span class="timer-ring" id="timer-ring"></span><span class="timer-number" id="timer-number">--<small>s</small></span></div>`:`<div class="turn-counter"><small>TURN ${String(state.round).padStart(2,'0')}</small><b>不限时决策</b><span>确认结束后换手</span></div>`}</div>`;
 }
 function vessel(ship, extra = '') {
@@ -170,7 +169,7 @@ function sightedEnemyArt() {
     return type && sight.sprite ? sightedHullArt(part, type, sight.sprite, sight.sunk) : '';
   }).join('');
 }
-function board(own = false, coastal = false) {
+function board(own) {
   const prep=state.phase==='placement',active=state.phase==='battle'&&state.turn===state.me,editable=prep&&!state.own.confirmed;
   const selected=selection(),order=selected.d,ownShips=state.own.ships,terrain=own?state.own.terrain:state.enemyTerrain;
   const statusAt=c=>{
@@ -198,10 +197,10 @@ function board(own = false, coastal = false) {
   const chart = {mapId: state.mapId, side: own ? state.me : 1 - state.me};
   const badge = own ? esc(state.own.name) : prep ? '舰位隐蔽' : active ? '按卡牌选择目标' : '等待指令';
   return `
-    <section class="board-panel ${own ? 'friendly-chart' : 'hostile-chart'}" aria-label="${name}">
+    <section class="board-panel ${own ? 'friendly-chart' : 'hostile-chart'}" data-side="${chart.side}" aria-label="${name}">
       <div class="board-caption">
         <h3 class="${own ? '' : 'enemy-title'}">${icon(own ? 'shield' : 'target')}${name}<span class="board-subtitle">${own ? 'FRIENDLY WATERS' : 'HOSTILE WATERS'}</span></h3>
-        <span class="badge ${own || active ? '' : 'neutral'}">${badge}</span>
+        <span class="badge ${own || active ? '' : 'neutral'}"${own ? ` title="${badge}"` : ''}>${badge}</span>
       </div>
       <div class="board-frame ${!own && active ? 'target-active' : ''}">
         <i class="frame-rivet tl"></i><i class="frame-rivet tr"></i><i class="frame-rivet bl"></i><i class="frame-rivet br"></i>
@@ -209,15 +208,15 @@ function board(own = false, coastal = false) {
           <div class="axis-x">${[...'ABCDEFGHIJ'].map(label => `<span>${label}</span>`).join('')}</div>
           <div class="axis-y">${Array.from({length: 10}, (_, n) => `<span>${n + 1}</span>`).join('')}</div>
           ${boardFurniture(own)}
-          ${terrainChart(terrain, false, chart, {coastal})}
+          ${terrainChart(terrain, false, chart, {coastal: true})}
           ${own ? '' : illuminationArt(state.enemyVisible)}
           <div class="board-grid" id="${own ? 'own' : 'enemy'}-grid" role="group" aria-label="${own ? '己方' : '敌方'} 10 乘 10 海域">${grid}</div>
           <div class="ship-layer">${ships}${own ? '' : sightedEnemyArt()}</div>
           <div class="own-effects board-effects">${effects}</div>
         </div>
-        <div class="chart-frame-foot" aria-hidden="true"><span>${mapInfo(state.mapId).tag}</span><span>10 × 10 / SECTOR ${own ? '01' : '02'}</span></div>
+        <div class="chart-frame-foot" aria-hidden="true"><span>${mapInfo(state.mapId).tag}</span><span>10 × 10 / SECTOR 0${chart.side + 1}</span></div>
       </div>
-      ${coastal && state.phase === 'battle' ? '' : boardDetails(own)}
+      ${state.phase === 'battle' ? '' : boardDetails(own)}
     </section>`;
 }
 function boardDetails(own) {
@@ -294,22 +293,18 @@ function renderGame() {
   const prep = state.phase === 'placement';
   const battle = state.phase === 'battle';
   const ended = state.phase === 'result';
-  const coastal = mode === 'practice' && COASTAL_MAPS.includes(state.mapId);
-  const coastalBattle = coastal && battle;
-  const frontierBattle = coastalBattle && state.mapId === 'blue-frontier';
-  const hand = battle ? handPanel(state, selectedCard) : '';
-  const effects = battle ? battleEffects() : '';
+  const frontierBattle = battle && state.mapId === 'blue-frontier';
   const boards = waiting || (ended && !showAftermath) ? '' : `
-    <div class="game-layout${coastal ? ` coastal-layout coastal-${state.mapId}` : ''}${coastalBattle ? ' coastal-battle' : ''}">
+    <div class="game-layout coastal-layout coastal-${state.mapId}${battle ? ' coastal-battle' : ''}">
       <div class="board-area">
-        ${coastalBattle ? `<div class="coastal-hand">${hand}</div>` : ''}
-        <div class="boards${prep ? '' : ' battling'}">${board(true, coastal)}${board(false, coastal)}</div>
-        ${coastalBattle ? `<div class="coastal-board-details"><div>${boardDetails(true)}</div><div>${boardDetails(false)}</div></div>` : ''}
+        ${battle ? `<div class="coastal-hand">${handPanel(state, selectedCard)}</div>` : ''}
+        <div class="boards${prep ? '' : ' battling'}">${board(true)}${board(false)}</div>
+        ${battle ? `<div class="coastal-board-details"><div data-side="${state.me}">${boardDetails(true)}</div><div data-side="${1 - state.me}">${boardDetails(false)}</div></div>` : ''}
         <div class="legend"><span class="legend-item"><i class="legend-square"></i>己方舰船</span><span class="legend-item"><i class="legend-square fog"></i>未知海域</span><span class="legend-item"><i class="legend-square water"></i>落空</span><span class="legend-item"><i class="legend-square fire"></i>命中</span><span class="legend-item"><i class="legend-square wreck"></i>沉没</span></div>
         ${terrainLegend()}${frontierBattle ? mapBrief(state.mapId, state.me) : ''}${prep ? dock() : ''}
       </div>
       <aside class="game-sidebar">
-        ${coastalBattle ? effects : ''}${ended ? '' : commandCard()}${fleetCard(false)}${prep ? '' : fleetCard(true)}${logCard()}
+        ${battle ? battleEffects() : ''}${ended ? '' : commandCard()}${fleetCard(false)}${prep ? '' : fleetCard(true)}${logCard()}
       </aside>
     </div>
     <div class="keyboard-hint">${prep
@@ -318,7 +313,6 @@ function renderGame() {
   const match = waiting ? renderWaiting() : `
     ${ended ? resultCard() : frontierBattle ? '' : phaseToolbar()}
     ${frontierBattle ? '' : mapBrief(state.mapId, state.me)}
-    ${coastalBattle ? '' : hand + effects}
     ${boards}
     <p class="bottom-note">${mode === 'practice'
       ? '人机演习 · 对手按相同牌库与行动力规则出牌'
@@ -355,7 +349,7 @@ function acceptState(next, force = false) {
   if (oldTurn!==next.turn || oldPhase!==next.phase) { resetTargets(); selectedShip=null; selectedCard=null; }
   if (next.phase==='result' && oldPhase!=='result') { showAftermath=false; beep('start'); }
   const event = next.history.at(-1);
-  const freshStrike = mode === 'practice' && oldPhase === 'battle'
+  const freshStrike = oldPhase === 'battle'
     ? next.history.findLast(item => item.type === 'strike' && item.id > lastHistory)
     : null;
   if (event && event.id>lastHistory) {
