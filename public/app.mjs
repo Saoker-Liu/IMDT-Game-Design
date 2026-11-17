@@ -1,8 +1,8 @@
 import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=5.1.0';
-import { vesselArt, shipOverlay, impactArt, boardFurniture } from './art.mjs?v=5.1.0';
+import { vesselArt, shipOverlay, impactArt, boardFurniture, playStrikeEffects } from './art.mjs?v=5.1.9';
 
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.1.0';
-import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.1.0';
+import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.1.4';
 import { CARD_TYPES, canUseCard, cardContext, sourceMatches, shipAlive } from './cards.mjs?v=5.1.0';
 import { handPanel, cardGuide } from './cards-ui.mjs?v=5.1.3';
 import { radiusCells, reachableMoves, lineCells } from './geometry.mjs?v=5.1.0';
@@ -161,10 +161,9 @@ function phaseToolbar() {
 function vessel(ship, extra = '') {
   return vesselArt(ship, extra);
 }
-function board(own = false) {
+function board(own = false, coastal = false) {
   const prep=state.phase==='placement',active=state.phase==='battle'&&state.turn===state.me,editable=prep&&!state.own.confirmed;
   const selected=selection(),order=selected.d,ownShips=state.own.ships,terrain=own?state.own.terrain:state.enemyTerrain;
-  const sunk=ownShips.filter(ship=>isSunk(state.own,ship)).length,deployed=ownShips.filter(ship=>ship.x!==null).length;
   const statusAt=c=>{
     if(!own)return state.enemyCells[c];
     const ship=ownShips.find(ship=>cells(ship).includes(c));
@@ -186,7 +185,15 @@ function board(own = false) {
   }).join('');
   const effects=Array.from({length:100},(_,c)=>`<span class="effect ${statusAt(c)}" style="--fx-delay:${(c*17%13)/10}s">${impactArt(statusAt(c))}</span>`).join('');
   const ships=visibleShips.map(ship=>shipOverlay(ship,{selected:own&&selectedShip===ship.id&&(editable||active),wreck:!own||isSunk(state.own,ship),firing:own&&state.own.lastAction?.sources.includes(ship.id)})).join('');
-  return `<section class="board-panel ${own?'friendly-chart':'hostile-chart'}" aria-label="${own?'己方海域':'敌方海域'}"><div class="board-caption"><h3 class="${own?'':'enemy-title'}">${icon(own?'shield':'target')}${own?'己方海域':'敌方海域'}<span class="board-subtitle">${own?'FRIENDLY WATERS':'HOSTILE WATERS'}</span></h3><span class="badge ${own||active?'':'neutral'}">${own?esc(state.own.name):prep?'舰位隐蔽':active?'按卡牌选择目标':'等待指令'}</span></div><div class="board-frame ${!own&&active?'target-active':''}"><i class="frame-rivet tl"></i><i class="frame-rivet tr"></i><i class="frame-rivet bl"></i><i class="frame-rivet br"></i><div class="board-matrix"><div class="axis-x">${'ABCDEFGHIJ'.split('').map(x=>`<span>${x}</span>`).join('')}</div><div class="axis-y">${Array.from({length:10},(_,n)=>`<span>${n+1}</span>`).join('')}</div>${boardFurniture(own)}${terrainChart(terrain,false,{mapId:state.mapId,side:own?state.me:1-state.me})}<div class="board-grid" id="${own?'own':'enemy'}-grid" role="group" aria-label="${own?'己方':'敌方'} 10 乘 10 海域">${grid}</div><div class="ship-layer">${ships}</div><div class="own-effects board-effects">${effects}</div></div><div class="chart-frame-foot" aria-hidden="true"><span>${mapInfo(state.mapId).tag}</span><span>10 × 10 / SECTOR ${own?'01':'02'}</span></div></div><div class="board-bottom"><span>${own?prep?'部署进度':'存活舰艇':'已知海域'} <b>${own?prep?`${deployed}/${TOTAL_SHIPS}`:`${TOTAL_SHIPS-sunk}/${TOTAL_SHIPS}`:`${state.enemyCells.filter(c=>c!=='unknown').length}/100`}</b></span><span>${own?prep?'航母占据 3×2 格，可旋转':'机动须选舰艇与目的地':'照明到期回到迷雾，暗礁画面始终同深海'}</span></div>${own&&state.phase==='battle'?mobilityControls(state.own,selectedShip,active,['move','smoke'].includes(order?.effect)):''}</section>`;
+  return `<section class="board-panel ${own?'friendly-chart':'hostile-chart'}" aria-label="${own?'己方海域':'敌方海域'}"><div class="board-caption"><h3 class="${own?'':'enemy-title'}">${icon(own?'shield':'target')}${own?'己方海域':'敌方海域'}<span class="board-subtitle">${own?'FRIENDLY WATERS':'HOSTILE WATERS'}</span></h3><span class="badge ${own||active?'':'neutral'}">${own?esc(state.own.name):prep?'舰位隐蔽':active?'按卡牌选择目标':'等待指令'}</span></div><div class="board-frame ${!own&&active?'target-active':''}"><i class="frame-rivet tl"></i><i class="frame-rivet tr"></i><i class="frame-rivet bl"></i><i class="frame-rivet br"></i><div class="board-matrix"><div class="axis-x">${'ABCDEFGHIJ'.split('').map(x=>`<span>${x}</span>`).join('')}</div><div class="axis-y">${Array.from({length:10},(_,n)=>`<span>${n+1}</span>`).join('')}</div>${boardFurniture(own)}${terrainChart(terrain,false,{mapId:state.mapId,side:own?state.me:1-state.me},coastal)}<div class="board-grid" id="${own?'own':'enemy'}-grid" role="group" aria-label="${own?'己方':'敌方'} 10 乘 10 海域">${grid}</div><div class="ship-layer">${ships}</div><div class="own-effects board-effects">${effects}</div></div><div class="chart-frame-foot" aria-hidden="true"><span>${mapInfo(state.mapId).tag}</span><span>10 × 10 / SECTOR ${own?'01':'02'}</span></div></div>${coastal?'':boardDetails(own)}</section>`;
+}
+function boardDetails(own) {
+  const prep = state.phase === 'placement';
+  const active = state.phase === 'battle' && state.turn === state.me;
+  const order = selection().d;
+  const sunk = state.own.ships.filter(ship => isSunk(state.own,ship)).length;
+  const deployed = state.own.ships.filter(ship => ship.x !== null).length;
+  return `<div class="board-bottom"><span>${own?prep?'部署进度':'存活舰艇':'已知海域'} <b>${own?prep?`${deployed}/${TOTAL_SHIPS}`:`${TOTAL_SHIPS-sunk}/${TOTAL_SHIPS}`:`${state.enemyCells.filter(c=>c!=='unknown').length}/100`}</b></span><span>${own?prep?'航母占据 3×2 格，可旋转':'机动须选舰艇与目的地':'照明到期回到迷雾，暗礁画面始终同深海'}</span></div>${own&&state.phase==='battle'?mobilityControls(state.own,selectedShip,active,['move','smoke'].includes(order?.effect)):''}`;
 }
 function dock() {
   const editable = !state.own.confirmed;
@@ -246,7 +253,10 @@ function renderGame() {
   if (!state) return;
   app.classList.add('war-room');
   const prep = state.phase==='placement';
-  app.innerHTML = `${header(true)}<main class="game-wrap">${gameHeading()}${connectionLost?'<div class="connection-warning">连接暂时中断，正在重连。回合与布阵进度以服务器为准。</div>':''}${state.phase==='lobby'?renderWaiting():`${state.phase==='result'?resultCard():phaseToolbar()}${mapBrief(state.mapId,state.me)}${state.phase==='battle'?handPanel(state,selectedCard,icon,{previewArt:mode === 'practice'})+battleEffects():''}${state.phase!=='result'||showAftermath?`<div class="game-layout"><div><div class="boards${prep?'':' battling'}">${board(true)}${board(false)}</div><div class="legend"><span class="legend-item"><i class="legend-square"></i>己方舰船</span><span class="legend-item"><i class="legend-square fog"></i>未知海域</span><span class="legend-item"><i class="legend-square water"></i>落空</span><span class="legend-item"><i class="legend-square fire"></i>命中</span><span class="legend-item"><i class="legend-square wreck"></i>沉没</span></div>${terrainLegend()}${prep?dock():''}</div><aside class="game-sidebar">${state.phase==='result'?'':commandCard()}${fleetCard(false)}${prep?'':fleetCard(true)}${logCard()}</aside></div><div class="keyboard-hint">${prep?'<span><span class="keycap">R</span> 旋转舰船</span><span><span class="keycap">Esc</span> 取消选择</span>':'<span><span class="keycap">Enter</span> 执行卡牌</span><span><span class="keycap">Esc</span> 取消卡牌与瞄准</span>'}</div>`:''}<p class="bottom-note">${mode==='practice'?'人机演习 · 对手按相同牌库与行动力规则出牌':'局域网对战 · 双方棋盘独立，侦察情报仅自己可见'}</p>`}${footer()}</main>`;
+  const coastal = mode==='practice' && state.mapId==='archipelago';
+  const coastalBattle = coastal && state.phase==='battle';
+  const hand = state.phase==='battle' ? handPanel(state,selectedCard,icon,{previewArt:mode==='practice'}) : '';
+  app.innerHTML = `${header(true)}<main class="game-wrap">${gameHeading()}${connectionLost?'<div class="connection-warning">连接暂时中断，正在重连。回合与布阵进度以服务器为准。</div>':''}${state.phase==='lobby'?renderWaiting():`${state.phase==='result'?resultCard():coastalBattle?'':phaseToolbar()}${coastalBattle?'':mapBrief(state.mapId,state.me)}${state.phase==='battle'?(coastalBattle?'':hand+battleEffects()):''}${state.phase!=='result'||showAftermath?`<div class="game-layout${coastal?' coastal-layout':''}"><div class="board-area"><div class="boards${prep?'':' battling'}">${board(true,coastal)}${board(false,coastal)}</div>${coastal&&hand?`<section class="coastal-hand" aria-label="岸上手牌区">${hand}</section>`:''}${coastal?`<div class="coastal-board-details"><div>${boardDetails(true)}</div><div>${boardDetails(false)}</div></div>`:''}<div class="legend"><span class="legend-item"><i class="legend-square"></i>己方舰船</span><span class="legend-item"><i class="legend-square fog"></i>未知海域</span><span class="legend-item"><i class="legend-square water"></i>落空</span><span class="legend-item"><i class="legend-square fire"></i>命中</span><span class="legend-item"><i class="legend-square wreck"></i>沉没</span></div>${terrainLegend()}${coastalBattle?mapBrief(state.mapId,state.me)+phaseToolbar():''}${prep?dock():''}</div><aside class="game-sidebar">${coastalBattle?battleEffects():''}${state.phase==='result'?'':commandCard()}${fleetCard(false)}${prep?'':fleetCard(true)}${logCard()}</aside></div><div class="keyboard-hint">${prep?'<span><span class="keycap">R</span> 旋转舰船</span><span><span class="keycap">Esc</span> 取消选择</span>':'<span><span class="keycap">Enter</span> 执行卡牌</span><span><span class="keycap">Esc</span> 取消卡牌与瞄准</span>'}</div>`:''}<p class="bottom-note">${mode==='practice'?'人机演习 · 对手按相同牌库与行动力规则出牌':'局域网对战 · 双方棋盘独立，侦察情报仅自己可见'}</p>`}${footer()}</main>`;
   updateTimer();
 }
 function updateTimer() {
@@ -273,12 +283,18 @@ function acceptState(next, force = false) {
   if (oldTurn!==next.turn || oldPhase!==next.phase) { resetTargets(); selectedShip=null; selectedCard=null; }
   if (next.phase==='result' && oldPhase!=='result') { showAftermath=false; beep('start'); }
   const event = next.history.at(-1);
+  const freshStrike = mode === 'practice' && oldPhase === 'battle'
+    ? next.history.findLast(item => item.type === 'strike' && item.id > lastHistory)
+    : null;
   if (event && event.id>lastHistory) {
     if (['hit','miss','sunk'].includes(event.type)) beep(event.type);
     if(event.type==='strike')beep(event.results.some(r=>['hit','sunk'].includes(r.result))?'hit':'miss');
     lastHistory=event.id;
   }
-  if (changed && !pointerDrag) renderGame();
+  if (changed && !pointerDrag) {
+    renderGame();
+    if (freshStrike) playStrikeEffects(app, freshStrike, next.own.id);
+  }
 }
 async function request(route, options={}) {
   const response = await fetch(`./api/${route}`, { cache:'no-store', ...options,
@@ -564,6 +580,7 @@ document.addEventListener('pointerup',endPointer);document.addEventListener('poi
 
 async function init(){
   if (new URLSearchParams(location.search).get('card-preview') === '1') {
+    if (new URLSearchParams(location.search).get('map') === 'archipelago') selectedMap = 'archipelago';
     startPractice({cardPreview:true});
     return;
   }
