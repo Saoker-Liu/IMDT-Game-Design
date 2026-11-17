@@ -1,4 +1,6 @@
 /** Original art presentation. No gameplay state is stored in the artwork layer. */
+import { SIZE, shape } from './geometry.mjs?v=5.1.0';
+
 const lengths = { battleship: 4, cruiser: 3, destroyer: 2, frigate: 1, carrier: 3 };
 export function vesselArt(ship, extra = '') {
   const length = lengths[ship.type] || 1;
@@ -8,6 +10,32 @@ export function vesselArt(ship, extra = '') {
 export function shipOverlay(ship, { selected = false, wreck = false, firing = false } = {}) {
   return `<div class="ship-overlay${selected ? ' selected' : ''}${wreck ? ' wreck-overlay' : ''}${ship.grounded&&!wreck?' grounded':''}${firing?' firing':''}" style="left:${ship.x*10}%;top:${ship.y*10}%;width:${(ship.vertical?(ship.width||1):ship.length)*10}%;height:${(ship.vertical?ship.length:(ship.width||1))*10}%">${vesselArt(ship,wreck?'wreck':'')}${ship.grounded&&!wreck?'<span class="ship-status-anchor" aria-hidden="true">⚓</span>':''}${selected?'<span class="ship-selection-corner tl"></span><span class="ship-selection-corner br"></span>':''}</div>`;
 }
+
+function sightMask(cells) {
+  const rectangles = cells.map(cell => `<rect x="${cell % SIZE}" y="${Math.floor(cell / SIZE)}" width="1" height="1"/>`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}">${rectangles}</svg>`;
+  return `mask-image:url('data:image/svg+xml,${encodeURIComponent(svg)}')`;
+}
+
+export function illuminationArt(cells) {
+  if (!cells.length) return '';
+  const mask = cells.length === SIZE ** 2 ? '' : ` style="${sightMask(cells)}"`;
+  return `<div class="sight-light"${mask} aria-hidden="true"></div>`;
+}
+
+/** Position the painted model using only the revealed part's bounds. */
+export function sightedHullArt(part, {type, length, width = 1}, sunk) {
+  const columns = part.map(cell => cell % SIZE);
+  const rows = part.map(cell => Math.floor(cell / SIZE));
+  const left = Math.min(...columns), right = Math.max(...columns);
+  const top = Math.min(...rows), bottom = Math.max(...rows);
+  const hull = {type, length, width, vertical: bottom - top > right - left};
+  const footprint = shape(hull);
+  hull.x = (left + right + 1 - footprint.width) / 2;
+  hull.y = (top + bottom + 1 - footprint.height) / 2;
+  return `<div class="sighted-hull" style="${sightMask(part)}" aria-hidden="true">${shipOverlay(hull, {wreck: sunk})}</div>`;
+}
+
 export function impactArt(status) {
   if (status === 'hit') return `<span class="impact impact-hit" aria-hidden="true"><span class="impact-embers"></span><img class="fire-art" src="./assets/impact-fire.webp?v=2.0.1" alt="" draggable="false" decoding="async"></span>`;
   if (status === 'miss') return `<span class="impact impact-miss" aria-hidden="true"><i class="water-ring outer"></i><i class="water-ring inner"></i><i class="water-dot"></i><i class="water-glint"></i></span>`;
