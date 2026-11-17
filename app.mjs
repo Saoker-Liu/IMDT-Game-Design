@@ -2,7 +2,8 @@ import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, 
 import { vesselArt, shipOverlay, impactArt, boardFurniture, playStrikeEffects } from './art.mjs?v=5.1.10';
 
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.1.0';
-import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.1.10';
+import { COASTAL_MAPS } from './chart-art.mjs?v=5.1.11';
+import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.1.11';
 import { CARD_TYPES, canUseCard, cardContext, sourceMatches, shipAlive } from './cards.mjs?v=5.1.0';
 import { handPanel, cardGuide } from './cards-ui.mjs?v=5.2.0';
 import { radiusCells, reachableMoves, lineCells } from './geometry.mjs?v=5.1.0';
@@ -284,18 +285,19 @@ function renderGame() {
   const prep = state.phase === 'placement';
   const battle = state.phase === 'battle';
   const ended = state.phase === 'result';
-  const coastal = mode === 'practice' && state.mapId === 'archipelago';
+  const coastal = mode === 'practice' && COASTAL_MAPS.includes(state.mapId);
   const coastalBattle = coastal && battle;
+  const frontierBattle = coastalBattle && state.mapId === 'blue-frontier';
   const hand = battle ? handPanel(state, selectedCard) : '';
   const effects = battle ? battleEffects() : '';
   const boards = waiting || (ended && !showAftermath) ? '' : `
-    <div class="game-layout${coastal ? ' coastal-layout' : ''}${coastalBattle ? ' coastal-battle' : ''}">
+    <div class="game-layout${coastal ? ` coastal-layout coastal-${state.mapId}` : ''}${coastalBattle ? ' coastal-battle' : ''}">
       <div class="board-area">
         ${coastalBattle ? `<div class="coastal-hand">${hand}</div>` : ''}
         <div class="boards${prep ? '' : ' battling'}">${board(true, coastal)}${board(false, coastal)}</div>
         ${coastalBattle ? `<div class="coastal-board-details"><div>${boardDetails(true)}</div><div>${boardDetails(false)}</div></div>` : ''}
         <div class="legend"><span class="legend-item"><i class="legend-square"></i>己方舰船</span><span class="legend-item"><i class="legend-square fog"></i>未知海域</span><span class="legend-item"><i class="legend-square water"></i>落空</span><span class="legend-item"><i class="legend-square fire"></i>命中</span><span class="legend-item"><i class="legend-square wreck"></i>沉没</span></div>
-        ${terrainLegend()}${prep ? dock() : ''}
+        ${terrainLegend()}${frontierBattle ? mapBrief(state.mapId, state.me) : ''}${prep ? dock() : ''}
       </div>
       <aside class="game-sidebar">
         ${coastalBattle ? effects : ''}${ended ? '' : commandCard()}${fleetCard(false)}${prep ? '' : fleetCard(true)}${logCard()}
@@ -305,8 +307,8 @@ function renderGame() {
       ? '<span><span class="keycap">R</span> 旋转舰船</span><span><span class="keycap">Esc</span> 取消选择</span>'
       : '<span><span class="keycap">Enter</span> 执行卡牌</span><span><span class="keycap">Esc</span> 取消卡牌与瞄准</span>'}</div>`;
   const match = waiting ? renderWaiting() : `
-    ${ended ? resultCard() : phaseToolbar()}
-    ${mapBrief(state.mapId, state.me)}
+    ${ended ? resultCard() : frontierBattle ? '' : phaseToolbar()}
+    ${frontierBattle ? '' : mapBrief(state.mapId, state.me)}
     ${coastalBattle ? '' : hand + effects}
     ${boards}
     <p class="bottom-note">${mode === 'practice'
