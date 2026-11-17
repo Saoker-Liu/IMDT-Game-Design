@@ -1,0 +1,79 @@
+@font-face {
+  font-family: 'Fogbound Card Serif';
+  src: url('./assets/cards/title-sc.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+.card-face {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: 5% / 3.3%;
+  background: #18272c url('./assets/cards/frame.webp') center / 100% 100% no-repeat;
+  color: #f7ebd2;
+  container-type: inline-size;
+  overflow: hidden;
+  text-align: left;
+}
+
+/* Coordinates follow the painted window and medallion of the frame artwork. */
+img.card-illustration {
+  position: absolute;
+  top: 20.3%;
+  left: 5.6%;
+  width: 88.8%;
+  height: 45.8%;
+  object-fit: cover;
+  background-color: #101a1f;
+}
+
+.card-face .card-cost {
+  position: absolute;
+  top: 9.85%;
+  left: 16.72%;
+  translate: -50% -50%;
+  font: 700 clamp(13px, 15cqw, 33px)/1 'Fogbound Card Serif', Georgia, serif;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: #f4db9e;
+}
+
+.card-name {
+  position: absolute;
+  inset-inline: 30% 5.9%;
+  top: 9.85%;
+  translate: 0 -50%;
+  font: 700 clamp(9px, 9.7cqw, 22px)/1.2 'Fogbound Card Serif', 'Songti SC', SimSun, serif;
+  white-space: nowrap;
+}
+
+.card-copy {
+  position: absolute;
+  inset: 72% 8% 5%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #262820;
+}
+
+.card-family {
+  color: var(--card-ink, #574a2e);
+  font-size: clamp(8px, 6.2cqw, 12px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: .09em;
+}
+
+.card-family-firepower { --card-ink: #773d2b; }
+.card-family-intel { --card-ink: #2c5269; }
+.card-family-maneuver { --card-ink: #385c44; }
+.card-family-support { --card-ink: #6f512a; }
+.card-family-aviation { --card-ink: #554367; }
+
+.card-summary {
+  font-size: clamp(9px, 7.5cqw, 15px);
+  line-height: 1.42;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}

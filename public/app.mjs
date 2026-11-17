@@ -4,7 +4,7 @@ import { vesselArt, shipOverlay, impactArt, boardFurniture, playStrikeEffects } 
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.1.0';
 import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.1.10';
 import { CARD_TYPES, canUseCard, cardContext, sourceMatches, shipAlive } from './cards.mjs?v=5.1.0';
-import { handPanel, cardGuide } from './cards-ui.mjs?v=5.1.10';
+import { handPanel, cardGuide } from './cards-ui.mjs?v=5.2.0';
 import { radiusCells, reachableMoves, lineCells } from './geometry.mjs?v=5.1.0';
 import { torpedoRows } from './combat.mjs?v=5.1.0';
 import { chooseBotAction } from './bot.mjs?v=5.1.0';
@@ -115,7 +115,7 @@ function beep(kind = 'click') {
 function header(inGame = false) {
   return `<header class="${inGame ? 'game-wrap' : 'wrap'}"><div class="topbar">
     <a class="brand" href="#" data-action="home" aria-label="雾海对弈 首页"><span class="brand-mark">${icon('anchor')}</span><span><span class="brand-name">雾海对弈</span><span class="brand-sub" style="display:block">FOGBOUND</span></span></a>
-    <nav class="nav" aria-label="主导航"><button data-action="home" class="${inGame ? '' : 'active'} desktop-nav">作战大厅</button><button data-action="rules">游戏规则</button></nav>
+    <nav class="nav" aria-label="主导航"><button data-action="home" class="${inGame ? '' : 'active'} desktop-nav">作战大厅</button>${inGame ? '' : '<button data-action="card-guide">卡牌图鉴</button>'}<button data-action="rules">游戏规则</button></nav>
     <div class="header-status"><span class="status-pill"><i class="dot"></i>${mode === 'practice' ? 'TRAINING MODE' : lan ? 'LAN CONNECTED' : 'DEMO ONLINE'}</span><button class="icon-button" data-action="sound" title="${sound ? '关闭' : '开启'}音效" aria-label="${sound ? '关闭' : '开启'}音效">${icon(sound ? 'sound' : 'mute')}</button></div>
   </div></header>`;
 }
@@ -286,7 +286,7 @@ function renderGame() {
   const ended = state.phase === 'result';
   const coastal = mode === 'practice' && state.mapId === 'archipelago';
   const coastalBattle = coastal && battle;
-  const hand = battle ? handPanel(state, selectedCard, icon, { illustrated: mode === 'practice' }) : '';
+  const hand = battle ? handPanel(state, selectedCard) : '';
   const effects = battle ? battleEffects() : '';
   const boards = waiting || (ended && !showAftermath) ? '' : `
     <div class="game-layout${coastal ? ' coastal-layout' : ''}${coastalBattle ? ' coastal-battle' : ''}">
@@ -513,7 +513,7 @@ async function handleAction(action,el){
   switch(action){
     case 'home': if(mode==='lobby')return;return askExit();
     case 'select-map':selectedMap=mapInfo(el.dataset.map).id;store('fogbound-map',selectedMap,true);renderLobby();return;
-    case 'card-guide':return openModal('战术卡牌图鉴',cardGuide({illustrated:mode === 'practice', icon}));
+    case 'card-guide':return openModal('战术卡牌图鉴',cardGuide());
     case 'random-targets':pickedTargets=Array.from({length:100},(_,c)=>c).sort(()=>Math.random()-.5).slice(0,10);renderGame();return;
     case 'terrain-guide':return openModal('海域地形图鉴',terrainGuide());
     case 'select-card': {

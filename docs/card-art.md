@@ -1,0 +1,60 @@
+# 雾海对弈 · 卡牌美术
+
+20 张卡各用一张专属插画。统一的深蓝旧钢、黄铜嵌线和象牙色纸面将卡牌连成完整一套。费用固定在左上角的黄铜圆座，插画占据卡面中部，纸面提供类别和简要效果。大厅与对局中的图鉴均可查阅完整规则。
+
+## 设计参考
+
+- KARDS 的海战牌将费用、主体插画和规则分区。舰种、海面与光照本身承担识别任务，卡面材质属于同一个年代。参考其信息层级和小图形状可辨性。[KARDS 海军卡牌](https://www.kards.com/news/naval-warfare-navy-subtype)
+- GWENT 的开发团队指出，卡图在牌桌上占的空间太小时，插画细节很难体现。卡组在正式手牌尺寸验收，重要主体与动作位于取景中心。[GWENT Homecoming](https://www.playgwent.com/en/newsletter/44)
+
+## 素材与导出
+
+通过 Codex 内置 ImageGen 创作，分别生成一张卡框和 20 张独立插画。OpenAI 于 2026 年 11 月 4 日将 Images 2.6 带到 Codex。卡图以项目已有的舰队主视觉为风格参考，航空牌另参照项目的航空母舰素材。[OpenAI Images 2.6 发布说明](https://openai.com/index/introducing-images-2-6/)
+
+- 原始 PNG 保存在 [art-source/cards](../art-source/cards/)。
+- 游戏使用 [public/assets/cards](../public/assets/cards/) 中的 WebP。卡图按原比例缩至最长边 640 px，以质量 87 导出。卡框按原比例缩至 480 × 720，以质量 90 导出。
+- 卡名使用本地 Noto Serif SC 700 字重子集。字体文件及 SIL Open Font License 位于素材目录。[Noto Serif SC](https://fonts.google.com/specimen/Noto+Serif+SC)
+- 人机与局域网的手牌、图鉴和宣传页的三张演示牌使用同一批图和卡框。文字及操作状态由界面排版，卡框、纸面、纹理、金属和二十个场景都是 ImageGen 的图片。
+
+## 生成提示词
+
+卡框提示词，引用项目的 `public/one-page/assets/hero.webp`，开启透明输出。
+
+```text
+Use case: product-mockup. Asset type: a single finished original blank tactical card face frame for the FOGBOUND naval game, exact orthographic engineering view for a UI game asset. Image 1 is the game's own maritime hero, reference only for aged brass, petroleum blue and steel material colors. Output a 2:3 VERTICAL card, precisely upright and aligned with canvas axes, perfectly flat front-on, one rectangular card only filling the entire canvas with at most 1% transparent margin outside its gently clipped corners. This must look like finely manufactured dark naval steel with a thin burnished brass keyline, extremely fine weathering and restrained small flush rivets. Quietly expensive, clean silhouettes, no ornament, no objects placed outside the frame, no perspective. The entire face must follow three simple rectangular zones with straight alignment. TOP 0-18% of height: smooth dark petroleum-metal nameplate, with ONE recessed circular solid dark medallion at x=15% of width, y=9% of height, diameter 19% of width, a narrow bright brass rim; empty smooth dark area to its right for a title to be typeset later. CENTER 18-70% of height: rectangular recessed blank nearly black matte image window, straight flat edges inset about 4% from each side, outlined with a narrow gold bevel; absolutely no content or marks. BOTTOM 70-100% of height: smooth warm light ivory-meets-parchment enamel inlay, subtly worn at corners, totally blank and evenly lit in its central 90%, generous clear space for dark typesetting; thin brass and dark steel perimeter only. Keep the bottom visual weight quiet and do not add decorative panels, extra badges, graphics, anchor, icons, text, marks, numbers, lettering, framing outside the card, background scene or watermark. True transparent area only outside the physical card silhouette.
+```
+
+每张卡图使用以下通用提示词，随后拼接表中对应的 `Scene:`。均引用项目的 `public/one-page/assets/hero.webp`。四张航空牌在场景前追加标注，并引用 `public/assets/fleet-carrier.webp`。插画采用不透明输出。
+
+```text
+Use case: stylized-concept. Asset: original full-bleed painting for a single FOGBOUND naval tactics card. Image 1 is the game's OWN hero art, a reference for palette, believable 1940s-inspired fictional warships, texture and lighting. Paint a new subject and new composition. Fine-grained painterly realism in the style of detailed hand-painted naval miniatures and maritime oil illustration, rich petroleum-blue ocean, weathered pewter steel, warm wood and restrained aged brass; split cool ocean light and warm highlights. Clear, deliberate midtone separation. One recognizably large visual idea, readable as a 130px card thumbnail; important subject and any key secondary feature stay within middle 80% of image. Landscape near 5:4. Painted scene fills all edges. No lettering, numerals, graphics, frame, logos, real flags, blood, or watermark. Do not reproduce another publisher's artwork.
+```
+
+航空牌追加标注。
+
+```text
+Image 2 is the project's own carrier miniature, a reference for aircraft concept and materials. It is not the composition.
+```
+
+| 素材 | 卡牌 | 场景 |
+| --- | --- | --- |
+| `secondary` | 副炮齐射 | Scene: At wave height alongside a compact destroyer slicing across deep green-blue water, a single smaller side-mounted gun fires a compact golden flash across the center. Its slender narrow hull and foamy bow remain prominent. Tight low viewpoint, gun flash on the right and dark open water behind it. No giant turrets or large explosions. |
+| `main` | 主炮轰击 | Scene: From slightly above the bow of a heavy steel cruiser, one pair of formidable main gun barrels fires over a teak foredeck into fog. Prominent amber muzzle flare at center-right, gray smoke arcs over desaturated gunmetal and the deck railing, blue sea still visible underneath. One focused powerful salvo, an iconic readable diagonal silhouette. |
+| `big` | 来个大家伙！ | Scene: Entire enormous dreadnought in a very wide side-on port profile, unmistakable long horizontal silhouette, its bow pointing LEFT and huge tall stacks clearly separated. Sea-level camera from a little way off, with the whole ship visible between the middle 85 percent of the image, no looming foreground deck or near barrels. Thick silhouettes of THREE widely spaced main turrets firing a single broadside to the left in unison, casting a low sheet of muted copper-colored light over choppy sea under a dark slate storm bank. Contrasting narrow deck line and wide rippling gold reflection. Painterly dark blue and antique peach copper, powerful and somewhat austere, one giant ship and no others. Make this stand apart from a close-up of a cruiser firing in blue mist. No lettering or insignia. |
+| `barrage` | 弹幕覆盖！ | Scene: High aerial view of a compact, clearly readable formation of ten white and amber shell splashes distributed across a deep teal patch of open sea. Low gunnery haze and reflected warm light join the splashes into one dramatic sweeping cluster. A small escort silhouette sits well behind the barrage to suggest scale. An action across the whole area rather than a single large blast. |
+| `torpedo` | 当心鱼雷 | Scene: Slightly submerged sea-level view across clear blue-green water with one large, old dark naval torpedo form cutting diagonally into sunlight below the waterline. One brilliant ribbon of bubbles clearly indicates a single fish. A hint of a destroyer's shadow on the surface. Cinematic illustration, no diagram, measurements, controls or cutaway. |
+| `triple` | 当心三连发！ | Scene: Very high overhead view of deep ink-teal water, three clearly separate parallel white bubble wakes rushing eastward one above the other. Tiny subdued shapes under the three wake tips, all well within the picture. Edge of a gray destroyer left of the wakes for scale, crisp luminous strikes in the center with no flames. Exactly three parallel paths. |
+| `tactics` | 灵活的战术 | Scene: Inside a dim naval chart room, two gloved hands spread two blank-backed stiff naval order slips on a map table. Worn brass dividers, a small ship miniature and a diffuse warm lamp articulate metal and wood, with a cool smoky teal shadow. Oblique almost overhead still life, the two paper slips are the strong lights. No legible notes or letters. |
+| `supply` | 后勤补给 | Scene: At dawn, a naval supply ship lies by a warship in quiet teal water. Large foreground canvas cargo sling holding neatly stacked pale timber crates, descending toward a weathered teak deck and coil of rope. A restrained golden port light picks out the crates. The simple central silhouette of the sling reads at tiny display. |
+| `recon` | 侦察 | Scene: High viewpoint over slate-teal shallows, a small gray survey launch casts its wake past a faint submerged rocky seam. Pale reflected light reveals ONLY a suggestion of rock below a continuous glassy sea, with an overboard survey line as a small detail. Cool blue daylight, single boat slightly left of center, no diagram or visible grid. |
+| `flare` | 信号弹 | Scene: One bright golden-white maritime signal flare with a distinct arc of smoke hangs low above nocturnal blue-green fog. It reveals a single faint cruiser hull in the sea below in its cone of moonlike amber light. Strong compact luminous focus, composed with water as half of the panel and flare near the upper center but away from the edge. No giant explosion. |
+| `lamp` | 大灯泡！ | Scene: At night an imposing deck-mounted naval searchlight on a black-steel naval bridge sweeps a broad brilliant ivory beam horizontally into blue-black sea fog. Its circular lens housing is large and tactile at left center, the pale beam reveals multiple small blurred distant silhouettes at right center. One deliberate wedge of light, no flare orb or explosion. |
+| `maneuver` | 战术机动 | Scene: From high overhead, a slender silver-gray destroyer banks into a precise curved course between one muted rocky shoal and a blue-green open channel. A bold clean C-shaped pale wake tracks its turn. Strong silhouette centered on the bend, subdued weathered teak and subtle sun light. No annotations, no compass, no overlays. |
+| `rapid` | 快速机动 | Scene: Two sleek escort hulls make a synchronized quick diagonal turn across slate green water. Two branching hooked white wakes are clear and separated, one ship prominent in the lower center and the partner further back. Brisk sea weather and directional cream light. Distinct double-turn read at tiny size, enough calm sea for separation. |
+| `speed` | 40节航速！ | Scene: Low camera near the water looking obliquely up at a long narrow destroyer rushing straight toward the upper center, clean high white twin wakes streaming from its stern in a powerful funnel of blue-green sea. Cold salt spray off its bow and weathered brass highlights. Straight-line acceleration conveys exceptional speed; forceful perspective, one vessel only. |
+| `seaplane` | 水上侦察机 | Scene: A single 1940s-style silver-green floatplane with two visible pontoons banks in profile over a broad teal sea. Below are tiny soft silhouettes of several ships partly obscured by very thin high fog. The prominent wing and distinctly readable twin floats occupy the center and fill much of the card, muted blue afternoon light, no markings. |
+| `fighter` | 舰载战斗机 | Scene: Two small carrier propeller fighters climb above cloud wisps in echelon. Main foreground fighter large and sharp from above with compact elliptical wings, second distinctly smaller, rising diagonally over a sliver of dark teal sea. Cold aluminum, muted graphite, copper late-afternoon side light. Clear skies and interesting wing shadows; no bombs or fighter combat. |
+| `bomber` | 舰载轰炸机 | Scene: One carrier dive bomber with straight folded-looking wing silhouette banks over a ship far below. At center a large sea-impact column with softly rolling white and orange water marks where the dive leads the eye. High oblique view, slate blue air and desaturated steel sea, primary aircraft and splash readable in separate planes, no people or gore. |
+| `torpedoPlane` | 舰载鱼雷机 | Scene: A broad-winged naval propeller torpedo bomber flies just above petroleum-blue wave tops, distinct from a high dive. A single bright, long wake cuts diagonally away into open water below it, with a subdued dark shape at the leading tip. Low near-surface camera, aircraft large across top center, marine haze below, no other parallel wakes. |
+| `repair` | 损害管制 | Scene: At close range along a damaged steel bulkhead on a teak deck, a dark gloved repair crew member is seen from behind with one focused little cluster of golden welding sparks on a metal seam. A patch plate, tools and damp cool slate steel give material clarity. One repair action in close view, no ongoing fire, no injury, no writing. |
+| `smoke` | 烟雾发生器 | Scene: High oblique overhead view of a small destroyer slipping to the left along the edge of a long billowing pale-gray smoke screen. Its bow and thin curved wake are visible on blue-green water while the stern vanishes into layered fog. Overlapping dark marine shadows, cold ivory sharp light where the cloud meets the water. One bold white wall, no flames. |

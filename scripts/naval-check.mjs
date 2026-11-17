@@ -46,7 +46,15 @@ try {
   for(let i=0;i<18;i++){const v=await state(host);await send(v.turn===0?host:guest,{type:'pass'});}
   const page=await pageFor(host);await page.waitForSelector('.hand-panel');assert.equal(await page.locator('[data-hand-count]').textContent(),'20');
   assert.equal(await page.locator('#enemy-grid .cell:not(:disabled)').count(),0);
-  await page.locator('[data-action="card-guide"]').click();assert.equal(await page.locator('.card-guide-grid article').count(),20);await capture(page,'card-library.png','#modal');await page.locator('[data-action="close-modal"]').first().click();
+  await page.locator('[data-action="card-guide"]').click();
+  const guideImages = await page.locator('.card-guide-grid img.card-illustration').evaluateAll(async images => {
+    await Promise.all(images.map(image => image.decode()));
+    return images.map(image => image.currentSrc);
+  });
+  assert.equal(guideImages.length, 20);
+  assert.equal(new Set(guideImages).size, 20, 'Each card loads its own painting');
+  await capture(page,'card-library.png','#modal');
+  await page.locator('[data-action="close-modal"]').first().click();
   async function choose(type) {const card=await findCard(host,type);await page.waitForSelector(`[data-card="${card.id}"]:not(:disabled)`);await page.locator(`[data-card="${card.id}"]`).click();}
   const played=[];
   async function execute(type,select) {

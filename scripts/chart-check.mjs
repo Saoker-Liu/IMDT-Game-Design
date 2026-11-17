@@ -128,7 +128,7 @@ try {
   await drill.waitForSelector('.coastal-hand');
   assert.equal(await drill.locator('.hand-cards .card-illustrated').count(), 6);
   await drill.locator('.card-library-button').click();
-  assert.equal(await drill.locator('.illustrated-guide .card-illustrated').count(), 20);
+  assert.equal(await drill.locator('.card-guide-grid .card-face').count(), 20);
   await drill.keyboard.press('Escape');
 
   for (const width of [1440, 768, 390, 320]) {

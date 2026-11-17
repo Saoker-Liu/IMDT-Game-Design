@@ -122,19 +122,13 @@
   }
   .coastal-hand .hand-title { min-width: 0; }
   .coastal-hand .hand-title h3 { margin: 0; font-size: 12px; letter-spacing: .5px; }
-  .coastal-hand .hand-title small,
   .coastal-hand .deck-status > span { display: none; }
   .coastal-hand .card-library-button { text-align: left; }
   .coastal-hand .action-points { gap: 4px 6px; }
   .coastal-hand .action-points > b { font-size: 22px; }
   .coastal-hand .deck-status { margin: 0; text-align: left; }
   .coastal-hand .hand-cards { gap: 7px; padding: 5px 4px 4px; }
-  .coastal-hand .tactical-card {
-    flex-basis: clamp(111px, calc((100% - 35px) / 6), 144px);
-    min-height: 164px;
-  }
-  .coastal-hand .card-illustration { flex: 0 0 35px; }
-  .coastal-hand .card-illustration :is(img, svg) { height: 30px; }
+  .coastal-hand .tactical-card { flex-basis: clamp(123px, calc((100% - 35px) / 6), 148px); }
   .coastal-hand .hand-foot {
     grid-column: 2;
     padding: 4px 5px 0;

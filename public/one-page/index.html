@@ -15,7 +15,8 @@
   <link rel="preload" href="./assets/hero.webp" as="image" fetchpriority="high">
   <link rel="preload" href="./assets/serif-cn.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="./assets/display.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="./site.css?v=1.0.0">
+  <link rel="stylesheet" href="../card-face.css?v=5.2.0">
+  <link rel="stylesheet" href="./site.css?v=1.1.0">
   <script type="module" src="./site.mjs?v=1.0.0"></script>
   <title>雾海对弈 FOGBOUND｜读懂迷雾，打出胜机。</title>
 </head>
@@ -85,9 +86,27 @@
             <div class="chart-footer"><span>FOGBOUND / TACTICAL WATERS</span><span id="demo-event">CONTACT DETECTED</span></div>
           </div>
           <div class="demo-hand" aria-label="本次演示的三张战术卡">
-            <button class="demo-card selected" data-stage="0" aria-pressed="true"><span class="card-corner">01 / INTEL</span><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="17"/><circle cx="24" cy="24" r="9"/><path d="m24 24 13-13M24 4v5M4 24h5m15 15v5m15-20h5"/><circle cx="19" cy="29" r="2"/></svg><b>信号弹</b><span class="card-effect">照亮未知</span></button>
-            <button class="demo-card" data-stage="1" aria-pressed="false"><span class="card-corner">02 / MANEUVER</span><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M7 15h30m-8-8 8 8-8 8M41 33H11m8-8-8 8 8 8"/></svg><b>战术机动</b><span class="card-effect">改变局面</span></button>
-            <button class="demo-card" data-stage="2" aria-pressed="false"><span class="card-corner">03 / FIREPOWER</span><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="15"/><circle cx="24" cy="24" r="5"/><path d="M24 2v12m0 20v12M2 24h12m20 0h12"/></svg><b>主炮轰击</b><span class="card-effect">锁定胜机</span></button>
+            <button class="demo-card selected" data-stage="0" aria-pressed="true" aria-label="信号弹，查看侦察演示">
+              <span class="card-face card-family-intel">
+                <img class="card-illustration" src="../assets/cards/flare.webp" alt="" loading="lazy" decoding="async">
+                <span class="card-cost" aria-hidden="true">2</span><strong class="card-name">信号弹</strong>
+                <span class="card-copy"><span class="card-family">侦察</span><span class="card-summary">照亮敌方海域</span></span>
+              </span>
+            </button>
+            <button class="demo-card" data-stage="1" aria-pressed="false" aria-label="战术机动，查看机动演示">
+              <span class="card-face card-family-maneuver">
+                <img class="card-illustration" src="../assets/cards/maneuver.webp" alt="" loading="lazy" decoding="async">
+                <span class="card-cost" aria-hidden="true">1</span><strong class="card-name">战术机动</strong>
+                <span class="card-copy"><span class="card-family">机动</span><span class="card-summary">沿航道移舰</span></span>
+              </span>
+            </button>
+            <button class="demo-card" data-stage="2" aria-pressed="false" aria-label="主炮轰击，查看炮击演示">
+              <span class="card-face card-family-firepower">
+                <img class="card-illustration" src="../assets/cards/main.webp" alt="" loading="lazy" decoding="async">
+                <span class="card-cost" aria-hidden="true">2</span><strong class="card-name">主炮轰击</strong>
+                <span class="card-copy"><span class="card-family">火力</span><span class="card-summary">轰击落点周围</span></span>
+              </span>
+            </button>
           </div>
           <p class="sr-only" id="demo-announcement" aria-live="polite"></p>
         </div>
