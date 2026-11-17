@@ -1,7 +1,7 @@
 /** Authoritative, transport-independent rules. Shared by the LAN server and practice mode. */
 import { terrainFor, terrainAt, MAPS } from './terrain.mjs?v=5.1.0';
 import { ACTIONS_PER_TURN, makeDeck, dealCards, drawCards } from './cards.mjs?v=5.1.0';
-import { cells, shape, isSunk, canPlace, canMove } from './geometry.mjs?v=5.1.0';
+import { cells, shape, isSunk, canPlace, canMove, squaredDistance } from './geometry.mjs?v=5.1.0';
 import { prepareCard, resolveCard, visibleCells } from './combat.mjs?v=5.1.0';
 export { cells, shape, isSunk, canPlace, canMove };
 export const SIZE = 10;
@@ -196,7 +196,27 @@ export function act(game, playerId, action, now = Date.now(), rng = Math.random)
   game.version++;
   return game;
 }
-/** Enemy hulls are sent only as individual cells in live vision, or fully revealed wrecks. */
+/** Keep disconnected glimpses separate, so a contact never joins cells through fog. */
+function visibleHullParts(footprint, visible) {
+  const remaining = new Set(footprint.filter(cell => visible.has(cell)));
+  const parts = [];
+  while (remaining.size) {
+    const first = remaining.values().next().value;
+    const part = [first];
+    remaining.delete(first);
+    for (const cell of part) {
+      for (const neighbor of remaining) {
+        if (squaredDistance(cell, neighbor) !== 1) continue;
+        part.push(neighbor);
+        remaining.delete(neighbor);
+      }
+    }
+    parts.push(part);
+  }
+  return parts;
+}
+
+/** Project only live sight cells and previously confirmed wrecks into the enemy view. */
 export function viewFor(game,playerId) {
   const me=game.players.findIndex(p=>p.id===playerId);requireRule(me!==-1,'你不在这个房间中');
   const own=game.players[me],other=game.players[1-me];
@@ -215,13 +235,24 @@ export function viewFor(game,playerId) {
   const knownTerrain=(terrain,known)=>terrain.map((t,c)=>t==='reef'&&!known.has(c)?'deep':t);
   const ownView=structuredClone(own);ownView.terrain=knownTerrain(own.terrain,new Set(own.knownOwnReefs));ownView.deckCount=own.deck.length;delete ownView.deck;
   const publicPlayer=p=>({id:p.id,name:p.name,ready:p.ready,confirmed:p.confirmed,rematch:p.rematch,actionPoints:p.actionPoints,handCount:p.hand.length,deckCount:p.deck.length});
-  const enemyWrecks=other?other.ships.filter(s=>isSunk(other,s)&&cells(s).every(c=>!other.concealed.includes(c)||visible.has(c)))
-    .map(s=>({type:s.type,length:s.length,width:s.width,x:s.x,y:s.y,vertical:s.vertical})):[];
+  const enemyWrecks = [];
+  const enemyHullParts = [];
+  for (const ship of other?.ships ?? []) {
+    const footprint = cells(ship);
+    if (isSunk(other, ship) && footprint.every(cell => !other.concealed.includes(cell) || visible.has(cell))) {
+      const {type, length, width, x, y, vertical} = ship;
+      enemyWrecks.push({type, length, width, x, y, vertical});
+    } else if (visible.size) {
+      enemyHullParts.push(...visibleHullParts(footprint, visible));
+    }
+  }
+  // Order by public cell position, independent of the opponent's fleet order.
+  enemyHullParts.sort((a, b) => a[0] - b[0]);
   return {
     phase:game.phase,mapId:game.mapId,turn:game.turn,deadline:game.deadline,winner:game.winner,round:game.round,version:game.version,startedAt:game.startedAt,endedAt:game.endedAt,
     me,players:game.players.map(publicPlayer),own:ownView,enemyCells,enemySight,enemyVisible:[...visible],
     enemyTerrain:knownTerrain(other?other.terrain:terrainFor(game.mapId,1-me),visible),
-    enemySunk:other?other.ships.filter(s=>isSunk(other,s)).map(s=>s.type):[],enemyWrecks,
+    enemySunk:other?other.ships.filter(s=>isSunk(other,s)).map(s=>s.type):[],enemyWrecks,enemyHullParts,
     enemySmoke:other?[...new Set(other.smoke.filter(s=>other.turns<s.expiresTurn).flatMap(s=>s.cells))]:[],
     enemyRecon:[...visible].map(cell=>({cell,contact:!!enemySight[cell]&&!enemySight[cell].empty,stale:false})),rescanCells:[],
     airControl:game.airControl?{owner:game.airControl.owner,remaining:game.airControl.expiresTurn-game.players[game.airControl.owner].turns}:null,

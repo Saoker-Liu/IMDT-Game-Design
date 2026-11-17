@@ -4,9 +4,18 @@
 .dock-ships { grid-template-columns: repeat(5,minmax(0,1fr)); }
 .cell.target-preview { background-color: #dcbd7936!important; box-shadow: inset 0 0 0 1px #dcc58c99; }
 .cell.reachable:not(.target-preview) { background-color: #7ddfb42c; box-shadow: inset 0 0 0 1px #a9d9a45e; }
-.cell.contact { background: #98c6a333; }
-.cell.contact::after { content: attr(data-contact); color: #ead4a4; background: transparent; font: 9px var(--mono); width: auto; height: auto; }
-.cell.clear { background: #90c8ae0c; }
+.sight-light,
+.sighted-hull {
+  position: absolute;
+  inset: 0;
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  pointer-events: none;
+}
+.sight-light { z-index: 1; background-color: #eddeb52c; }
+@supports not (mask-image: linear-gradient(black, white)) {
+  .sight-light, .sighted-hull { display: none; }
+}
 .cell.immune::after { content: '◇'; color: #c7bda4; font-size: 18px; }
 .cell.blocked::after { content: '⊣'; color: #8ea8ab; font-size: 16px; }
 .cell.torpedo-track { border-bottom: 1px dashed #b1d8cfb5; }
@@ -22,7 +31,7 @@
 @media(max-width:680px) {
   .dock-ships { grid-template-columns: repeat(2,minmax(0,1fr)); }.dock-piece:has(.carrier) { width: 80px; height: 53px; }
   .hand-heading { column-gap: 9px; }.hand-title { min-width: 115px; }.action-points { max-width: 164px; }
-  .cell.contact::after { font-size: 8px; }.battle-effects { margin: 0 0 15px; }
+  .battle-effects { margin: 0 0 15px; }
 }
 
 .turn-counter { min-width: 132px; display: grid; gap: 4px; padding-left: 18px; border-left: 1px solid #6f827254; text-align: right; }

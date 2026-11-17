@@ -71,6 +71,19 @@ try {
   await execute('torpedo',()=>enemy(44));await execute('triple',()=>enemy(44));
   await execute('tactics');await execute('recon',()=>own(55));
   v=await execute('flare',()=>enemy(64));assert.ok(v.enemyVisible.includes(64));assert.equal(v.enemySight[64].type,'frigate');
+  const contacts = page.locator('.hostile-chart .sighted-hull');
+  assert.equal(await contacts.count(), v.enemyHullParts.length);
+  assert.equal(await page.locator('#enemy-grid [data-contact]').count(), 0);
+  assert.ok(await contacts.locator('img[src*="fleet-frigate"]').first().evaluate(async image => {
+    await image.decode();
+    return image.naturalWidth > 0;
+  }));
+  const drawnCells = await contacts.evaluateAll(nodes => nodes.map(node => {
+    const encoded = getComputedStyle(node).maskImage.match(/data:image\/svg\+xml,([^"')]+)/)?.[1];
+    const chart = new DOMParser().parseFromString(decodeURIComponent(encoded), 'image/svg+xml');
+    return [...chart.querySelectorAll('rect')].map(rect => Number(rect.getAttribute('y')) * 10 + Number(rect.getAttribute('x')));
+  }));
+  assert.deepEqual(drawnCells, v.enemyHullParts);
   await execute('lamp',()=>enemy(55));
   await execute('maneuver',async()=>{await own(64);await own(84);});assert.equal((await state(host)).own.ships.find(s=>s.id==='FF-3').y,8);
   // The test can advance turns to obtain a card, so select its source again.

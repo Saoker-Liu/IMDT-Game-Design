@@ -145,7 +145,9 @@ test('signals give live clipped vision with no partial hull leaks and expire aft
   act(g,'a',{type:'pass'},1100);play(g,'maneuver',{id:'FF-3',cell:65},1);
   view=viewFor(g,'a');assert.equal(view.enemyCells[64],'clear');assert.equal(view.enemyCells[65],'contact');
   cycle(g);assert.equal(viewFor(g,'a').visionEffects[0].remaining,2);cycle(g);assert.equal(viewFor(g,'a').visionEffects[0].remaining,1);cycle(g);
-  assert.equal(viewFor(g,'a').visionEffects.length,0);assert.equal(viewFor(g,'a').enemyCells[65],'unknown');conserve(g);
+  view=viewFor(g,'a');
+  assert.equal(view.visionEffects.length,0);assert.equal(view.enemyCells[65],'unknown');
+  assert.deepEqual(view.enemyHullParts,[]);conserve(g);
 });
 
 test('large illumination lasts four owner turns and full-map seaplane vision lasts one',()=>{
@@ -239,9 +241,16 @@ test('torpedoes harm battleships on all navigable terrain but only deep water si
 });
 
 test('a partially illuminated carrier exposes only individually visible cells, never its hidden rectangle',()=>{
-  const g=fixture();giveHand(g.players[0],['flare']);play(g,'flare',{cell:87});const view=viewFor(g,'a');
+  const g=fixture(),[observer,enemy]=g.players;
+  giveHand(observer,['flare']);play(g,'flare',{cell:87});const view=viewFor(g,'a');
   assert.ok(view.enemySight[87]);assert.equal(view.enemySight[99],null);assert.equal(view.enemyCells[99],'unknown');
   assert.deepEqual(Object.keys(view.enemySight[87]).sort(),['damaged','sunk','type']);assert.deepEqual(view.enemyWrecks,[]);
+  const carrierParts = sight => sight.enemyHullParts.filter(part => sight.enemySight[part[0]].type === 'carrier');
+  assert.deepEqual(carrierParts(view).map(part=>[...part].sort((a,b)=>a-b)),[[87,88,89,97,98]]);
+  enemy.smoke.push({cells:[88,98],expiresTurn:enemy.turns+1});
+  const obscured=viewFor(g,'a');
+  assert.equal(obscured.enemySight[88],null);
+  assert.deepEqual(carrierParts(obscured),[[87,97],[89]]);
 });
 
 test('stationary smoke hides old damage without repairing it, and expired smoke does not restore historical intel',()=>{

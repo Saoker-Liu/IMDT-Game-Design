@@ -1,9 +1,9 @@
-import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=5.1.0';
-import { vesselArt, shipOverlay, impactArt, boardFurniture, playStrikeEffects } from './art.mjs?v=5.1.10';
+import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=5.2.2';
+import { vesselArt, shipOverlay, illuminationArt, sightedHullArt, impactArt, boardFurniture, playStrikeEffects } from './art.mjs?v=5.2.2';
 
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.1.0';
 import { COASTAL_MAPS } from './chart-art.mjs?v=5.1.11';
-import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.1.11';
+import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.2.2';
 import { CARD_TYPES, canUseCard, cardContext, sourceMatches, shipAlive } from './cards.mjs?v=5.1.0';
 import { handPanel, cardGuide } from './cards-ui.mjs?v=5.2.0';
 import { radiusCells, reachableMoves, lineCells } from './geometry.mjs?v=5.1.0';
@@ -162,6 +162,16 @@ function phaseToolbar() {
 function vessel(ship, extra = '') {
   return vesselArt(ship, extra);
 }
+function sightedEnemyArt() {
+  const parts = state.enemyHullParts ?? state.enemySight.flatMap((sight, cell) =>
+    sight && !sight.empty && !sight.sunk ? [[cell]] : [],
+  );
+  return parts.map(part => {
+    const sight = state.enemySight[part[0]];
+    const type = TYPES.find(spec => spec.type === sight?.type);
+    return type ? sightedHullArt(part, type, sight.sunk) : '';
+  }).join('');
+}
 function board(own = false, coastal = false) {
   const prep=state.phase==='placement',active=state.phase==='battle'&&state.turn===state.me,editable=prep&&!state.own.confirmed;
   const selected=selection(),order=selected.d,ownShips=state.own.ships,terrain=own?state.own.terrain:state.enemyTerrain;
@@ -178,11 +188,11 @@ function board(own = false, coastal = false) {
     const canClick=own?editable||(active&&(targetOwn?(order.target==='own-hit'?!!ship&&shipAlive(ship)&&ship.hits.includes(c):order.target==='own-move'?eligible||selected.destinations.has(c):true):!!ship))
       :active&&targetEnemy&&(order.target!=='enemy-row'||selected.rows.has(Math.floor(c/10)));
     const sight=!own&&state.enemySight[c];
-    const label=own?(ship?`${typeName(ship.type)}${ship.grounded?'，已搁浅':ship.hits.length?'，受损':''}`:'空海域'):(sight?sight.empty?'照明：空海域':`照明：${typeName(sight.type)}`:({unknown:'舰位未知',miss:'历史落空',hit:'已命中',sunk:'沉没残骸',immune:'装甲抵御副炮',blocked:'鱼雷或炮击受阻'}[status]||status));
+    const label=own?(ship?`${typeName(ship.type)}${ship.grounded?'，已搁浅':ship.hits.length?'，受损':''}`:'空海域'):(sight?sight.empty?'照明：空海域':`照明：${typeName(sight.type)}${sight.sunk?'，已沉没':sight.damaged?'，已命中':''}`:({unknown:'舰位未知',miss:'历史落空',hit:'已命中',sunk:'沉没残骸',immune:'装甲抵御副炮',blocked:'鱼雷或炮击受阻'}[status]||status));
     const preview=(own?selected.previewOwn:selected.previewEnemy).has(c),destination=own&&order?.target==='own-move'&&selected.destinations.has(c);
     const smoke=own?state.own.smoke.some(effect=>effect.cells.includes(c)):state.enemySmoke.includes(c);
     const track=!own&&state.own.lastAction?.traces.some(trace=>trace.includes(c));
-    return `<button class="cell ${status} terrain-${type}${preview?' target-preview':''}${destination?' reachable':''}${smoke?' smoke-cell':''}${track?' torpedo-track':''}${(!own&&pickedTargets.includes(c))||aimed===c&&(targetOwn===own)?' aim':''}" data-cell="${c}" data-board="${own?'own':'enemy'}" ${ship?`data-ship="${ship.id}"`:''} ${sight&&!sight.empty?`data-contact="${TYPES.find(t=>t.type===sight.type)?.code||'◇'}"`:''} style="--col:${c%10};--row:${Math.floor(c/10)}" title="${TERRAIN[type].name} · ${TERRAIN[type].effect} · ${label}" draggable="false" aria-label="${coord(c)} ${TERRAIN[type].name} ${label}" ${canClick?'':'disabled'}></button>`;
+    return `<button class="cell ${status} terrain-${type}${preview?' target-preview':''}${destination?' reachable':''}${smoke?' smoke-cell':''}${track?' torpedo-track':''}${(!own&&pickedTargets.includes(c))||aimed===c&&(targetOwn===own)?' aim':''}" data-cell="${c}" data-board="${own?'own':'enemy'}" ${ship?`data-ship="${ship.id}"`:''} style="--col:${c%10};--row:${Math.floor(c/10)}" title="${TERRAIN[type].name} · ${TERRAIN[type].effect} · ${label}" draggable="false" aria-label="${coord(c)} ${TERRAIN[type].name} ${label}" ${canClick?'':'disabled'}></button>`;
   }).join('');
   const effects=Array.from({length:100},(_,c)=>`<span class="effect ${statusAt(c)}" style="--fx-delay:${(c*17%13)/10}s">${impactArt(statusAt(c))}</span>`).join('');
   const ships=visibleShips.map(ship=>shipOverlay(ship,{selected:own&&selectedShip===ship.id&&(editable||active),wreck:!own||isSunk(state.own,ship),firing:own&&state.own.lastAction?.sources.includes(ship.id)})).join('');
@@ -202,8 +212,9 @@ function board(own = false, coastal = false) {
           <div class="axis-y">${Array.from({length: 10}, (_, n) => `<span>${n + 1}</span>`).join('')}</div>
           ${boardFurniture(own)}
           ${terrainChart(terrain, false, chart, {coastal})}
+          ${own ? '' : illuminationArt(state.enemyVisible)}
           <div class="board-grid" id="${own ? 'own' : 'enemy'}-grid" role="group" aria-label="${own ? '己方' : '敌方'} 10 乘 10 海域">${grid}</div>
-          <div class="ship-layer">${ships}</div>
+          <div class="ship-layer">${ships}${own ? '' : sightedEnemyArt()}</div>
           <div class="own-effects board-effects">${effects}</div>
         </div>
         <div class="chart-frame-foot" aria-hidden="true"><span>${mapInfo(state.mapId).tag}</span><span>10 × 10 / SECTOR ${own ? '01' : '02'}</span></div>
