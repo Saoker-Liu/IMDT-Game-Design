@@ -1,5 +1,6 @@
 /* Each board shows one half of the same painting. Terrain contours stay on top. */
 .coastal-layout { --coastal-paint: url('./assets/archipelago-coastal-shelf.png'); }
+.coastal-blue-frontier { --coastal-paint: url('./assets/blue-frontier-shore-and-fish.png'); }
 .coastal-layout .coastal-art {
   position: absolute;
   inset: 0 auto 0 0;
@@ -8,6 +9,18 @@
   background: var(--coastal-paint) center top / 100% 131.579% no-repeat;
 }
 .coastal-layout .coastal-art-1 { transform: translateX(-50%); }
+.coastal-blue-frontier .coastal-art { width: 216%; background-size: 100% 135.135%; }
+.coastal-blue-frontier .coastal-art-0 { transform: translateX(-7.407407%); }
+.coastal-blue-frontier .coastal-art-1 { transform: translateX(-53.703704%); }
+.coastal-blue-frontier .friendly-chart .board-matrix::before {
+  content: '';
+  position: absolute;
+  inset: 0 100% 0 auto;
+  width: 16%;
+  pointer-events: none;
+  background: var(--coastal-paint) left top / 1350% 135.135% no-repeat;
+  mask-image: linear-gradient(to right,transparent,#000 24%);
+}
 .coastal-layout .reef-patch {
   position: absolute;
   inset: 0;
@@ -43,6 +56,11 @@
   background: #30382b var(--coastal-paint) center bottom / 100% 416.667% no-repeat;
 }
 .coastal-hand .hand-panel { margin: 0; background: #142624bf; }
+.coastal-blue-frontier .coastal-hand {
+  background-color: #0a2836;
+  background-position: right bottom;
+  background-size: 108% 384.615%;
+}
 .coastal-board-details { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
 .coastal-layout .boards.battling .chart-frame-foot { display: none; }
 .coastal-layout .boards.battling .board-frame {
