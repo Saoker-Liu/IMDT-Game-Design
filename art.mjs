@@ -78,6 +78,7 @@ export function playTacticalEntrance(app, { illumination = false, illuminationCe
     dart.style.rotate=`${angle}deg`;
     dart.innerHTML='<svg viewBox="0 0 100 34" aria-hidden="true"><path fill="#839b9d" stroke="#34494d" stroke-width="2" d="M4 2h18l12 11v8L22 32H4l8-15Z"/><path fill="#bfd0cc" stroke="#34494d" stroke-width="2" d="M18 9h53c31 0 31 16 0 16H18Z"/><path fill="#789ca1" d="M58 9h7v16h-7Z"/><path fill="none" stroke="#eaf0df" stroke-width="2" d="M25 12h47q13 0 17 5"/><path fill="#b1a46a" d="M20 10h3v14h-3Z"/><path stroke="#40595d" stroke-width="2" d="M7 17h16m-8-7v14"/></svg>';
     const points=trace.map((cell,index)=>({left:`${cell%10*10+5}%`,top:`${Math.floor(cell/10)*10+5}%`,offset:trace.length===1?0:index/(trace.length-1)}));
+    if(points.length===1)points.push({...points[0],offset:1});
     const travel=dart.animate(points,{duration,easing:'linear'});
     travel.onfinish=()=>dart.remove(); travel.oncancel=()=>dart.remove();
   }

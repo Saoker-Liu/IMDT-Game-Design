@@ -33,7 +33,7 @@
 }
 .cell.smoke-cell { background-image: radial-gradient(ellipse at 25% 60%,#a3b0ad61,transparent 68%),radial-gradient(ellipse at 68% 35%,#b1bbb66b,transparent 72%),radial-gradient(ellipse at 60% 80%,#7c8e8b55,transparent 73%); }
 .cell.smoke-cell::before { content: ''; position: absolute; inset: 0; background: #a8b2ad1a; filter: blur(3px); pointer-events: none; }
-.torpedo-dart { position:absolute; width:6.2%; height:2.1%; transform:translate(-50%,-50%); z-index:5; pointer-events:none; filter:drop-shadow(0 1px 1px #06252a); }
+.torpedo-dart { position:absolute; width:6.2%; height:2.1%; translate:-50% -50%; z-index:5; pointer-events:none; filter:drop-shadow(0 1px 1px #06252a); }
 .torpedo-dart svg { width:100%; height:100%; }
 .illumination-reveal { position:absolute; inset:0; z-index:1; pointer-events:none; }
 .illumination-tile { position:absolute; width:10%; height:10%; background:radial-gradient(ellipse,#fff1bc60,#e6d49f2c); }

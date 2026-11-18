@@ -1,0 +1,494 @@
+{
+  "basis": "3e42e3c plus accepted complex-scene fixes",
+  "scope": "Game assets under public/assets; promotional One Page assets are separate.",
+  "sourceNote": "Source paths refer to the full repository; sourceInSnapshot describes this checkout only. Do not delete remote source files absent from a local snapshot.",
+  "fixedReferencesChecked": 52,
+  "assets": [
+    {
+      "path": "public/assets/archipelago-coastal-shelf.webp",
+      "role": "星罗棋布海图与岩岸手牌背景",
+      "bytes": 239338,
+      "sha256": "cb088e06ac5f0b43e0c4ff47f242e24c418121bcf63df282ab50b3ebbbfe0c94",
+      "renderedIntrinsicSize": {
+        "width": 1536,
+        "height": 1024
+      },
+      "source": "art-source/archipelago-coastal-shelf.png",
+      "sourceInSnapshot": false,
+      "maintenance": "按海图与特效规范维护，替换后复核原尺寸实机画面。"
+    },
+    {
+      "path": "public/assets/blue-frontier-shore-and-fish.webp",
+      "role": "走向深海岸线、浅海与鱼群手牌背景",
+      "bytes": 183386,
+      "sha256": "55a859ba7d5b185ffee2d43b197e3a5b491200e06baa2a205a1447897c7e7322",
+      "renderedIntrinsicSize": {
+        "width": 1536,
+        "height": 1024
+      },
+      "source": "art-source/blue-frontier-shore-and-fish.png",
+      "sourceInSnapshot": true,
+      "maintenance": "按海图与特效规范维护，替换后复核原尺寸实机画面。"
+    },
+    {
+      "path": "public/assets/cards/barrage.webp",
+      "role": "弹幕覆盖！",
+      "bytes": 68350,
+      "sha256": "985e5ed380c7d01e199671c896cf184a1073c4f76e535d36f17271f0174f39c1",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/barrage.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/big.webp",
+      "role": "来个大家伙！",
+      "bytes": 56464,
+      "sha256": "d5db62b8c5920ce5f3d471478cedd048644c67fac2731fc997344a85a88665d5",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/big.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/bomber.webp",
+      "role": "舰载轰炸机",
+      "bytes": 63802,
+      "sha256": "e279965dfb677301e113bc5e8473fb28f69677daa3ca4782a537da829527c405",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/bomber.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/fighter.webp",
+      "role": "舰载战斗机",
+      "bytes": 57964,
+      "sha256": "c271b239224f32b69f947e330ab46d9c5906723c6440331e63d193a39ca6a3ae",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/fighter.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/flare.webp",
+      "role": "信号弹",
+      "bytes": 35862,
+      "sha256": "ae5e782fca99265407ddaa5d48e7ed0f8d41cab8f3de9fc0726623dd994766c1",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/flare.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/frame.webp",
+      "role": "共用卡框",
+      "bytes": 57250,
+      "sha256": "a6885c17463e99d35ec14edb9a1eb53e04b9433299badbf9174e62bc7a5a1a90",
+      "renderedIntrinsicSize": {
+        "width": 480,
+        "height": 720
+      },
+      "source": "art-source/cards/frame.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/lamp.webp",
+      "role": "大灯泡！",
+      "bytes": 55952,
+      "sha256": "1b7e7ce9fc2bbb8ce5f93b3b1b3eabb93b8105af9994fd9b2c481a01d1b290bb",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/lamp.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/main.webp",
+      "role": "主炮轰击",
+      "bytes": 71022,
+      "sha256": "7753eaafda03604c38648e97d403196a5b5652f978356126a4ddd3c90442ae89",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/main.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/maneuver.webp",
+      "role": "战术机动",
+      "bytes": 75276,
+      "sha256": "c8dafa12b48a9d9272a8c3237815f6c20ae6b2610121ffb90db86d9065e27255",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/maneuver.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/OFL.txt",
+      "role": "字体许可",
+      "bytes": 4350,
+      "sha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6",
+      "source": "public/assets/cards/OFL.txt",
+      "sourceInSnapshot": true,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/rapid.webp",
+      "role": "快速机动",
+      "bytes": 73972,
+      "sha256": "10e00b738c176b8a365ba1f46afc5dd86702ed48e457c9ff2898c19ea18b2d7a",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/rapid.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/recon.webp",
+      "role": "侦察",
+      "bytes": 53588,
+      "sha256": "0cab4fb7b39617de798081e89a9368a7da62741ac11cf57e254a01d2fc5781a2",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/recon.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/repair.webp",
+      "role": "损害管制",
+      "bytes": 96952,
+      "sha256": "2be16ad6cb1b18447c71ee66d440869c57922a92794b09229ae25f5c03365c76",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/repair.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/seaplane.webp",
+      "role": "水上侦察机",
+      "bytes": 48226,
+      "sha256": "7a7165f898889606c20e62eb58f29e6736b052d953f108ca68f96367c9bb1dfe",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/seaplane.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/secondary.webp",
+      "role": "副炮齐射",
+      "bytes": 76624,
+      "sha256": "313e126abf99b8163a62df1c424cf8a7468bad45a580691860636a8c3027d2d6",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/secondary.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/smoke.webp",
+      "role": "烟雾发生器",
+      "bytes": 49114,
+      "sha256": "e48d02bb7683fe2c2353774dff14f16c298ade69c298119ab029a37545c0ec64",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/smoke.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/speed.webp",
+      "role": "40节航速！",
+      "bytes": 100164,
+      "sha256": "70c802010c55af95555b872f334f85ff16fafe849a7186e2b428c5702f9d2260",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/speed.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/supply.webp",
+      "role": "后勤补给",
+      "bytes": 92712,
+      "sha256": "2e495184efa05a67f2eb1fe71cba8ff8f9fd6459f3a8b5d7f49d98d6e00499bc",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/supply.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/tactics.webp",
+      "role": "灵活的战术",
+      "bytes": 75354,
+      "sha256": "f57aee5a6a7bac8385736bf354c23ab7caf06a0c6b24839b6a77ae4956dc9219",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/tactics.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/title-sc.woff2",
+      "role": "本地卡名字体",
+      "bytes": 14428,
+      "sha256": "8101864a44ef1ea10b69fee038d5d09fa7e796eaac0a6b1349b8975f15bfb929",
+      "source": "public/assets/cards/title-sc.woff2",
+      "sourceInSnapshot": true,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/torpedo.webp",
+      "role": "当心鱼雷",
+      "bytes": 63462,
+      "sha256": "3ce487197e38b732376faf153ef2d078826790b07c83ea91479921b74c61cce4",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/torpedo.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/torpedoPlane.webp",
+      "role": "舰载鱼雷机",
+      "bytes": 62394,
+      "sha256": "052c7ea0ad307f5a43239ab06a67942362a482841b00b69d7c666395c66570c5",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/torpedoPlane.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/cards/triple.webp",
+      "role": "当心三连发！",
+      "bytes": 65400,
+      "sha256": "e452326d13c670ca6f40aab3ff8b820f658a42fd8b49c09e244c89e17b8f4ebe",
+      "renderedIntrinsicSize": {
+        "width": 640,
+        "height": 512
+      },
+      "source": "art-source/cards/triple.png",
+      "sourceInSnapshot": false,
+      "maintenance": "卡牌插画、框形与内部排版沿用队友版本；外部位置尺寸由美术整合维护。"
+    },
+    {
+      "path": "public/assets/chart-archipelago-0-v3.webp",
+      "role": "旧版兼容海图",
+      "bytes": 90216,
+      "sha256": "9ea0d7eb7a4147e4c790ed24b06310c0d2e5ddc3c6365699fefe1d5d5aece87f",
+      "renderedIntrinsicSize": {
+        "width": 1024,
+        "height": 1024
+      },
+      "source": "art-source/chart-archipelago-0-v3.png",
+      "sourceInSnapshot": false,
+      "maintenance": "保留兼容记录；当前连续海图以全景素材为准。"
+    },
+    {
+      "path": "public/assets/chart-archipelago-1-v3.webp",
+      "role": "旧版兼容海图",
+      "bytes": 100976,
+      "sha256": "5d1cb7bc72c2e577258ab7fe8b4bb997707b4a0289a7891a0200c714775711d3",
+      "renderedIntrinsicSize": {
+        "width": 1024,
+        "height": 1024
+      },
+      "source": "art-source/chart-archipelago-1-v3.png",
+      "sourceInSnapshot": false,
+      "maintenance": "保留兼容记录；当前连续海图以全景素材为准。"
+    },
+    {
+      "path": "public/assets/coast-east-v2.webp",
+      "role": "旧版兼容海图",
+      "bytes": 77460,
+      "sha256": "f405a1229fb08ffb2395a76bed083434d99b4eee53d6020531b5925bb3ed505d",
+      "renderedIntrinsicSize": {
+        "width": 1024,
+        "height": 1024
+      },
+      "source": "art-source/coast-east-v2.png",
+      "sourceInSnapshot": false,
+      "maintenance": "保留兼容记录；当前连续海图以全景素材为准。"
+    },
+    {
+      "path": "public/assets/coast-west-v2.webp",
+      "role": "旧版兼容海图",
+      "bytes": 56314,
+      "sha256": "1886fa6505985fa94e2b0ac8c8612b77d86ae63e9283027acdba97047184a684",
+      "renderedIntrinsicSize": {
+        "width": 1024,
+        "height": 1024
+      },
+      "source": "art-source/coast-west-v2.png",
+      "sourceInSnapshot": false,
+      "maintenance": "保留兼容记录；当前连续海图以全景素材为准。"
+    },
+    {
+      "path": "public/assets/fleet-battleship.webp",
+      "role": "战列舰",
+      "bytes": 22932,
+      "sha256": "5220d6f522dad7e1f6439d7f695aa2edfe7163c49f85b68e30ff085534f003aa",
+      "renderedIntrinsicSize": {
+        "width": 512,
+        "height": 92
+      },
+      "source": "art-source/fleet-atlas.png",
+      "sourceInSnapshot": false,
+      "maintenance": "透明、俯视、保持舰体完整与原比例。"
+    },
+    {
+      "path": "public/assets/fleet-carrier.webp",
+      "role": "航空母舰",
+      "bytes": 81226,
+      "sha256": "a938dd78d519287c03ccf25d0336f9919a6035c5d176190165bab817c88f7482",
+      "renderedIntrinsicSize": {
+        "width": 1024,
+        "height": 352
+      },
+      "source": "art-source/carrier-original.png",
+      "sourceInSnapshot": false,
+      "maintenance": "透明、俯视、保持舰体完整与原比例。"
+    },
+    {
+      "path": "public/assets/fleet-cruiser.webp",
+      "role": "巡洋舰",
+      "bytes": 24414,
+      "sha256": "7dab9f2b9784b5eb9a78b7425ef1fed46151e3e5d59c197c578baa804d93c41b",
+      "renderedIntrinsicSize": {
+        "width": 512,
+        "height": 102
+      },
+      "source": "art-source/fleet-atlas.png",
+      "sourceInSnapshot": false,
+      "maintenance": "透明、俯视、保持舰体完整与原比例。"
+    },
+    {
+      "path": "public/assets/fleet-destroyer.webp",
+      "role": "驱逐舰",
+      "bytes": 16132,
+      "sha256": "d7773060fd550736664ebd4c1a5cb6fba266715eaa79193d22c39b1a4c36283c",
+      "renderedIntrinsicSize": {
+        "width": 384,
+        "height": 86
+      },
+      "source": "art-source/fleet-atlas.png",
+      "sourceInSnapshot": false,
+      "maintenance": "透明、俯视、保持舰体完整与原比例。"
+    },
+    {
+      "path": "public/assets/fleet-frigate.webp",
+      "role": "护卫舰",
+      "bytes": 12934,
+      "sha256": "b66b4409db6b653fde7e177b20fcb432c7469feb745dc7fae0f2a281c2d2c0fc",
+      "renderedIntrinsicSize": {
+        "width": 256,
+        "height": 99
+      },
+      "source": "art-source/fleet-atlas.png",
+      "sourceInSnapshot": false,
+      "maintenance": "透明、俯视、保持舰体完整与原比例。"
+    },
+    {
+      "path": "public/assets/impact-fire.webp",
+      "role": "持续燃烧与烟柱",
+      "bytes": 22884,
+      "sha256": "037ab74c9b598d52b211d6fc1cdf4d13312e1a9d5e087c69605b8373bcc0c8b3",
+      "renderedIntrinsicSize": {
+        "width": 192,
+        "height": 255
+      },
+      "source": "art-source/impact-original.png",
+      "sourceInSnapshot": false,
+      "maintenance": "按海图与特效规范维护，替换后复核原尺寸实机画面。"
+    },
+    {
+      "path": "public/assets/ocean-chart.webp",
+      "role": "基础海水与局部补水",
+      "bytes": 58168,
+      "sha256": "7209b055b00c380076c923bbcf0a7f6ad29c5dc387326629730f8bcd2ce18226",
+      "renderedIntrinsicSize": {
+        "width": 1024,
+        "height": 1024
+      },
+      "source": "art-source/ocean-original.png",
+      "sourceInSnapshot": false,
+      "maintenance": "按海图与特效规范维护，替换后复核原尺寸实机画面。"
+    },
+    {
+      "path": "public/assets/open-sea-panorama.webp",
+      "role": "无垠深海／暗流涌动连续海图",
+      "bytes": 197214,
+      "sha256": "f83c8e97c358fa49051849ab9299835b2a2290b17524e18e4db2805b9b77f3ef",
+      "renderedIntrinsicSize": {
+        "width": 1536,
+        "height": 1024
+      },
+      "source": "art-source/open-sea-panorama.png",
+      "sourceInSnapshot": false,
+      "maintenance": "按海图与特效规范维护，替换后复核原尺寸实机画面。"
+    },
+    {
+      "path": "public/assets/torpedo-foam.svg",
+      "role": "原创矢量鱼雷水花",
+      "bytes": 901,
+      "sha256": "122d8348cbf457f7fc3c0cbd0591514769e32873fcb52cc9179d159fdd472fb9",
+      "renderedIntrinsicSize": {
+        "width": 300,
+        "height": 80
+      },
+      "source": "public/assets/torpedo-foam.svg",
+      "sourceInSnapshot": true,
+      "maintenance": "按海图与特效规范维护，替换后复核原尺寸实机画面。"
+    }
+  ]
+}
