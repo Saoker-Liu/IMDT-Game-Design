@@ -205,7 +205,7 @@ body {
 .effect.hit { background: radial-gradient(ellipse at 50% 72%, #e5703626, transparent 70%); }
 .effect.sunk, .effect.miss { background: none; }
 .impact { display: block; position: absolute; inset: 0; pointer-events: none; }
-.fire-art { position: absolute; width: 110%; height: 145%; max-width: none; left: -5%; bottom: 23%; object-fit: contain; object-position: center bottom; transform-origin: center bottom; filter: drop-shadow(0 1px 2px #10232c66); animation: art-fire-drift 2s ease-in-out infinite alternate; animation-delay: var(--fx-delay); }
+.fire-art { position: absolute; width: 86%; height: 112%; max-width: none; left: 7%; bottom: 12%; object-fit: contain; object-position: center bottom; transform-origin: center bottom; filter: drop-shadow(0 1px 2px #10232c66); animation: art-fire-drift 2s ease-in-out infinite alternate; animation-delay: var(--fx-delay); }
 .impact-embers { position: absolute; width: 4px; height: 4px; left: 51%; top: 56%; border-radius: 50%; box-shadow: 6px -9px 1px #ffd885, -9px -15px 0 -1px #d99a59, 1px -22px 0 -1px #ffd88b; opacity: .8; }
 .water-ring { position: absolute; border: 1px solid #d1e4d6a6; border-radius: 50%; width: 58%; height: 27%; top: 43%; left: 21%; transform: rotate(-18deg); }
 .water-ring.outer { box-shadow: 0 1px 2px #173c48; border-bottom-color: #cce4db35; }

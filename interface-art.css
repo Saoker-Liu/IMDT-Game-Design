@@ -1,0 +1,68 @@
+/* Shared surfaces and feedback, matching the chart and battle report. */
+:root {
+  --ui-ink:#142b31;
+  --ui-brass:#a69b72;
+  --ui-ivory:#e6dfc9;
+  --ui-muted:#adbbb3;
+}
+dialog {
+  color:var(--ui-ivory);
+  background:linear-gradient(135deg,#1a3238,#10242c);
+  border:1px solid #8e8965;
+  border-radius:6px;
+  box-shadow:inset 0 1px #e9ddae22,0 30px 90px #0008;
+}
+dialog::backdrop { background:#06131bd6; }
+dialog .modal-top,dialog:has(.card-guide-grid) .modal-top {
+  background:#183037;
+  border-bottom:1px solid #b1a47138;
+  padding:7px 0 11px;
+  gap:12px;
+  margin-bottom:16px;
+}
+dialog .modal-top h2 { color:#e9ddba; }
+.modal-close { color:#c6cebd; flex-shrink:0; border:1px solid #b1a47130; }
+.modal-close:hover { background:#a99c6d1c; color:#fff0c7; }
+dialog .modal-description { color:var(--ui-muted); }
+dialog input,dialog select { background:#0e252c; border-color:#65796e; color:#e4dfcb; }
+dialog input::placeholder { color:#8eaaa5; }
+dialog input:focus-visible,dialog select:focus-visible { outline:2px solid #daca93; outline-offset:2px; }
+dialog .form-label { color:#c9cfb9; }
+dialog .form-actions { border-top:1px solid #b1a47130; padding-top:16px; }
+dialog:has(.rules-list) { width:min(740px,calc(100% - 24px)); max-width:740px; }
+.rule-fleet { grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; background:#10272d; border-color:#78836588; padding:14px 10px; color:#b6c1b5; }
+.rule-fleet > div { min-width:0; }
+.rule-fleet b { color:#e4d8af; font-size:12px; }
+.rule-ship { display:block; width:100%; height:32px; margin:0 auto 9px; object-fit:contain; filter:drop-shadow(0 2px 2px #0005); }
+.rule-row { padding-bottom:15px; border-bottom:1px solid #8d9c7d26; }
+.rule-row:last-child { border:0; padding-bottom:0; }
+.rule-row h3 { color:#e4d9b8; }
+.rule-row p { color:#b4c1b7; font-size:12px; line-height:1.9; }
+.rule-number { color:#decf9e; background:#a69b7210; border-color:#a69b7266; }
+.setup-steps,.checkbox-note { color:#b1c0b7; }
+.code-block { border-color:#7c896b70; background:#0c2027; color:#e3dbb9; overflow-wrap:anywhere; }
+.battle-effects > .battle-status { display:inline-flex; align-items:center; gap:5px; max-width:100%; color:#c4cdc0; border-color:#85987b66; background:#1a3236; }
+.battle-status svg { width:12px; height:12px; flex-shrink:0; }
+.battle-effects .status-neutral { color:#b4c2b9; background:#193037; border-color:#607b7466; }
+.battle-effects .status-friendly { color:#c1e4ce; background:#1c3934; border-color:#83b59c88; }
+.battle-effects .status-hostile { color:#eed7ad; background:#39362c; border-color:#b29c7188; }
+.battle-effects .status-sight { color:#e8dbad; background:#34382c; border-color:#b2a66b80; }
+.battle-effects .status-smoke { color:#d0d8d2; background:#2b3b3d; border-color:#8a9c9a88; }
+.selected-order { color:#dce0c9; background:#203737; border-color:#8e986d88; }
+.selected-order small { color:#b0c1b6; }
+.connection-warning { color:#ecd8a7; background:#34342adf; border-color:#a69b7288; }
+#toast { top:calc(64px + env(safe-area-inset-top)); bottom:auto; width:max-content; max-width:min(480px,calc(100vw - 28px)); color:#e2e7d1; background:#1a3439f5; border-color:#a79f72; border-radius:5px; box-shadow:0 6px 28px #0006; overflow-wrap:anywhere; }
+#toast::before { content:'•'; margin-right:8px; color:#dbc88f; }
+#toast.error { background:#3c2f29f5; border-color:#bc9471; color:#f1d8bb; }
+#toast.error::before { content:'!'; font-weight:700; }
+@media(max-width:600px) {
+  dialog:has(.rules-list) { padding:16px; }
+  .rule-fleet { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 10px; }
+  .rule-fleet > div:last-child { grid-column:1/-1; }
+  .rule-fleet > div:last-child .rule-ship { width:110px; }
+  .rule-row { gap:10px; }
+  .form-actions { flex-wrap:wrap; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #toast,.map-card,.btn { transition:none; }
+}

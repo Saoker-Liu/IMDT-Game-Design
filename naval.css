@@ -12,15 +12,33 @@
   mask-repeat: no-repeat;
   pointer-events: none;
 }
-.sight-light { z-index: 1; background-color: #eddeb52c; }
+.sight-light { z-index: 1; background: radial-gradient(ellipse at center,#fff1bc50,#e6d49f24 70%),#eddeb512; }
 @supports not (mask-image: linear-gradient(black, white)) {
   .sight-light, .sighted-hull { display: none; }
 }
 .cell.immune::after { content: '◇'; color: #c7bda4; font-size: 18px; }
 .cell.blocked::after { content: '⊣'; color: #8ea8ab; font-size: 16px; }
-.cell.torpedo-track { border-bottom: 1px dashed #b1d8cfb5; }
-.cell.smoke-cell { background-image: radial-gradient(ellipse,#a3b0ad7a,#6a79794a 55%,transparent 80%); }
-.cell.smoke-cell::before { content: ''; position: absolute; inset: 6%; border-radius: 42%; background: #a8b2ad30; filter: blur(3px); pointer-events: none; }
+.torpedo-wake {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 36%;
+  height: 28%;
+  opacity: 0;
+  background: url('./assets/torpedo-foam.svg') center / 100% 100% no-repeat;
+  mask-image: linear-gradient(to right,transparent,#000 45%,#000 85%,transparent),radial-gradient(ellipse,#000 20%,transparent 72%);
+  mask-composite: intersect;
+  filter: drop-shadow(0 1px 1px #07313d);
+  pointer-events: none;
+}
+.cell.smoke-cell { background-image: radial-gradient(ellipse at 25% 60%,#a3b0ad61,transparent 68%),radial-gradient(ellipse at 68% 35%,#b1bbb66b,transparent 72%),radial-gradient(ellipse at 60% 80%,#7c8e8b55,transparent 73%); }
+.cell.smoke-cell::before { content: ''; position: absolute; inset: 0; background: #a8b2ad1a; filter: blur(3px); pointer-events: none; }
+.torpedo-dart { position:absolute; width:6.2%; height:2.1%; transform:translate(-50%,-50%); z-index:5; pointer-events:none; filter:drop-shadow(0 1px 1px #06252a); }
+.torpedo-dart svg { width:100%; height:100%; }
+.illumination-reveal { position:absolute; inset:0; z-index:1; pointer-events:none; }
+.illumination-tile { position:absolute; width:10%; height:10%; background:radial-gradient(ellipse,#fff1bc60,#e6d49f2c); }
+.illumination-burst { position:absolute; width:10%; height:10%; border-radius:50%; background:radial-gradient(circle,#fffbe5 0 15%,#ffe4a8ee 20%,#efb84e99 35%,transparent 68%); box-shadow:0 0 12px #f3da8c55; }
+.illumination-burst::before { content:''; position:absolute; inset:8%; background:#fff2bfbb; clip-path:polygon(50% 0,57% 36%,82% 12%,65% 43%,100% 50%,65% 57%,82% 88%,57% 64%,50% 100%,43% 64%,12% 82%,35% 57%,0 50%,35% 43%,12% 18%,43% 36%); }
 .ship-overlay.firing::after { content: ''; position: absolute; right: 2%; top: 45%; width: 15px; height: 10px; background: #ffe4a077; border-radius: 50%; box-shadow: 0 0 10px #ffa75d66; animation: muzzle .65s ease-out 1; opacity: 0; }
 @keyframes muzzle { 0% { opacity: 1; transform: scale(.4); } 70% { opacity: .6; transform: scale(1.8); } 100% { opacity: 0; } }
 .battle-effects { display: flex; flex-wrap: wrap; gap: 7px; margin: -9px 0 18px; }

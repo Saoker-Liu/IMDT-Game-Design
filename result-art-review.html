@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>雾海对弈 · 结算画面对照</title>
+<link rel="stylesheet" href="./style.css?v=3.0.0"><link rel="stylesheet" href="./visual.css?v=5.2.9">
+<link id="report-style" rel="stylesheet" href="./result-art.css?v=5.2.15">
+<style>
+  body { margin:0;color:#e6dfc9; } main { max-width:1000px;margin:auto;padding:24px; }
+  h1 { font-size:22px; } .controls { display:flex;flex-wrap:wrap;gap:14px;margin:16px 0; }
+  select { font:inherit;background:#21383e;color:#e6dfc9;padding:6px;border:1px solid #81795e;border-radius:4px; }
+  .note { text-align:center;color:#a1b5ac;font-size:12px; } #status { text-align:center;min-height:24px;color:#d7c28c; }
+  .baseline .result-chart-name,.baseline .chart-furniture { display:none; }
+  @media(max-width:600px) { main { padding:14px; } }
+</style>
+<main>
+  <h1>结算画面对照</h1>
+  <div class="controls">
+    <label>版本 <select id="version"><option value="refined">精修版本</option><option value="baseline">修改前</option></select></label>
+    <label>战况 <select id="outcome"><option value="win">胜利</option><option value="defeat">战败</option><option value="left">对手离场</option></select></label>
+  </div>
+  <div id="report"></div><p id="status" role="status"></p>
+  <p class="note">此页使用样例统计，与真实对局共用结算绘制。<a href="/">返回作战大厅 →</a></p>
+</main>
+<script type="module">
+  import {resultCard} from './result-ui.mjs?v=5.2.15';
+  const report=document.querySelector('#report'),outcome=document.querySelector('#outcome');
+  function render(){
+    const left=outcome.value==='left';
+    report.innerHTML=resultCard({me:0,winner:outcome.value==='defeat'?1:0,mapId:'archipelago',startedAt:1000,endedAt:733000,history:[{reason:left?'left':'destroyed'}],own:{stats:{attacks:42,hits:24},rematch:false},opponentConnected:!left});
+    document.querySelector('#status').textContent='';
+  }
+  outcome.addEventListener('change',render);
+  document.querySelector('#version').addEventListener('change',e=>{
+    const baseline=e.target.value==='baseline';document.body.classList.toggle('baseline',baseline);document.querySelector('#report-style').disabled=baseline;
+  });
+  report.addEventListener('click',e=>{
+    const action=e.target.closest('[data-action]')?.dataset.action;
+    if(action==='exit')location.href='/';
+    if(action==='rematch')document.querySelector('#status').textContent='样板演示：再战入口保持原有行为。';
+    if(action==='aftermath')document.querySelector('#status').textContent='真实结算中可在此展开本局海图与舰队战况。';
+  });
+  render();
+</script>
+</html>

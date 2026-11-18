@@ -1,0 +1,39 @@
+/* Battle report: the same sea, brass and ivory used by the playing chart. */
+.result-card {
+  --report-accent:#d7c28c;
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  max-width:740px;
+  padding:32px 38px;
+  border:1px solid #8e8965;
+  border-radius:6px;
+  color:#e6dfc9;
+  background:linear-gradient(120deg,#173337eb,#10232be8),url('./assets/ocean-chart.webp?v=2.0.1') center/cover;
+  box-shadow:inset 0 1px #eee1b333,0 16px 40px #0003;
+}
+.result-card::before { content:''; position:absolute; inset:8px; border:1px solid #cdbd8a20; pointer-events:none; }
+.result-card > :not(.chart-furniture) { position:relative; z-index:1; }
+.result-card .chart-furniture { opacity:.12; z-index:0; }
+.result-card .chart-compass { width:190px; right:-20px; bottom:-25px; }
+.result-card .chart-bearing,.result-card .chart-classification { display:none; }
+.result-chart-name { margin-bottom:18px; color:#c4c7af; font-size:10px; letter-spacing:2px; }
+.result-card .result-icon { color:var(--report-accent); border-color:#b0a375; background:#bba87513; }
+.result-card .eyebrow { color:var(--report-accent); }
+.result-card .eyebrow::before { background:var(--report-accent); }
+.result-card h2 { color:#efe3be; font-size:clamp(23px,3vw,31px); }
+.result-card > p { color:#b5c3b9; }
+.result-card .result-stats { border-color:#b6ad733d; }
+.result-card .result-stats b { color:#e7ddba; }
+.result-card .result-stats span { color:#a6b6ac; }
+.result-card.defeat { --report-accent:#b7c2bd; border-color:#687c7e; background:linear-gradient(120deg,#25333be8,#102029f0),url('./assets/ocean-chart.webp?v=2.0.1') center/cover; }
+.result-card.defeat .result-icon { color:var(--report-accent); border-color:#809494; background:#8ca7a414; }
+.result-card.defeat h2 { color:#d9dfd7; }
+.result-card .result-actions { flex-wrap:wrap; }
+@media(max-width:600px) {
+  .result-card { padding:25px 18px; }
+  .result-card .result-stats { gap:8px; }
+  .result-card .result-stats b { font-size:22px; }
+  .result-card .result-actions { gap:8px; }
+  .result-card .result-actions .btn { padding:10px 14px; }
+}

@@ -51,9 +51,14 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(#267b8a27 84%,transparent);
+  background: linear-gradient(to right,#267b8a27 78%,transparent);
+  mask-image: linear-gradient(#000 84%,transparent);
 }
-.coastal-layout .hostile-chart .terrain-layer::after { background: linear-gradient(#a4664a26 84%,transparent); }
+.coastal-layout .hostile-chart .terrain-layer::after { background: linear-gradient(to left,#a4664a26 78%,transparent); }
+/* Keep the physical center clear when the visiting player owns the right half. */
+.coastal-layout [data-side='0'] .terrain-layer::after { background: linear-gradient(to right,#267b8a27 78%,transparent); }
+.coastal-layout [data-side='1'].friendly-chart .terrain-layer::after { background: linear-gradient(to left,#267b8a27 78%,transparent); }
+.coastal-layout [data-side='0'].hostile-chart .terrain-layer::after { background: linear-gradient(to right,#a4664a26 78%,transparent); }
 .coastal-layout .terrain-boundaries { z-index: 1; }
 .coastal-layout .board-caption h3 { flex-shrink: 0; white-space: nowrap; }
 .coastal-layout .board-caption .badge { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
