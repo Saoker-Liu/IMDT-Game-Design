@@ -1,4 +1,4 @@
-import { alignedArchipelagoArt } from './archipelago-art.mjs?v=5.1.10';
+import { alignedArchipelagoArt } from './archipelago-art.mjs?v=5.2.7';
 import { MAPS, terrainFor } from './terrain.mjs?v=5.1.0';
 
 const charts = MAPS.flatMap(map => [0, 1].map(side => ({ mapId: map.id, side, terrain: terrainFor(map.id, side) })));

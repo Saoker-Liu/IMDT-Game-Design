@@ -1,8 +1,9 @@
+import {resultCard as renderResultCard} from './result-ui.mjs?v=5.2.15';
 import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=5.2.3';
-import { vesselArt, shipOverlay, illuminationArt, sightedHullArt, impactArt, boardFurniture, playStrikeEffects } from './art.mjs?v=5.2.3';
+import { vesselArt, shipOverlay, illuminationArt, sightedHullArt, impactArt, boardFurniture, playStrikeEffects, playTacticalEntrance } from './art.mjs?v=5.2.13';
 
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.1.0';
-import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.2.4';
+import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.2.14';
 import { CARD_TYPES, canUseCard, cardContext, sourceMatches, shipAlive } from './cards.mjs?v=5.1.0';
 import { handPanel, cardGuide } from './cards-ui.mjs?v=5.2.0';
 import { radiusCells, reachableMoves, lineCells } from './geometry.mjs?v=5.1.0';
@@ -88,7 +89,7 @@ function selection() {
 }
 const targetHint=d=>!d?'先从手牌选择指令':({none:'无需选择目标，确认后立即执行','enemy-cell':'选择敌方落点，发光范围为作用区域','enemy-many':`选择 10 个不同敌方格子（已选 ${pickedTargets.length}/10）`,'enemy-row':'选择有己方驱逐舰/护卫舰的对应行','enemy-line':aimed===null?'选择鱼雷起点':lineEnd===null?'再选择鱼雷终点':'起终点已选，确认发射','own-cell':'选择己方侦察中心','own-hit':'选择己方存活舰艇的中弹部位','own-move':selectedShip?'选择目的地：目标格为舰体左上角':'先点选己舰，再点选目的地'})[d.target];
 function battleEffects() {
-  return `<div class="battle-effects" aria-label="持续战术效果"><span>${state.airControl?`${state.airControl.owner===state.me?'己方':'敌方'}制空权 · 剩 ${state.airControl.remaining} 个己方回合`:'制空权：无人控制'}</span>${state.visionEffects.map(e=>`<span>${CARD_TYPES[e.cardType].name} · 剩 ${e.remaining} 回合</span>`).join('')}${state.own.smoke.length?'<span>己方烟幕生效中</span>':''}</div>`;
+  return `<div class="battle-effects" aria-label="持续战术效果"><span class="battle-status status-${state.airControl?state.airControl.owner===state.me?'friendly':'hostile':'neutral'}">${icon('shield')}${state.airControl?`${state.airControl.owner===state.me?'己方':'敌方'}制空权 · 剩 ${state.airControl.remaining} 个己方回合`:'制空权：无人控制'}</span>${state.visionEffects.map(e=>`<span class="battle-status status-sight">${icon('eye')}${CARD_TYPES[e.cardType].name} · 剩 ${e.remaining} 回合</span>`).join('')}${state.own.smoke.length?`<span class="battle-status status-smoke">${icon('shield')}己方烟幕生效中</span>`:''}</div>`;
 }
 
 function toast(message, error = false) {
@@ -189,7 +190,7 @@ function board(own) {
     const preview=(own?selected.previewOwn:selected.previewEnemy).has(c),destination=own&&order?.target==='own-move'&&selected.destinations.has(c);
     const smoke=own?state.own.smoke.some(effect=>effect.cells.includes(c)):state.enemySmoke.includes(c);
     const track=!own&&state.own.lastAction?.traces.some(trace=>trace.includes(c));
-    return `<button class="cell ${status} terrain-${type}${preview?' target-preview':''}${destination?' reachable':''}${smoke?' smoke-cell':''}${track?' torpedo-track':''}${(!own&&pickedTargets.includes(c))||aimed===c&&(targetOwn===own)?' aim':''}" data-cell="${c}" data-board="${own?'own':'enemy'}" ${ship?`data-ship="${ship.id}"`:''} style="--col:${c%10};--row:${Math.floor(c/10)}" title="${TERRAIN[type].name} · ${TERRAIN[type].effect} · ${label}" draggable="false" aria-label="${coord(c)} ${TERRAIN[type].name} ${label}" ${canClick?'':'disabled'}></button>`;
+    return `<button class="cell ${status} terrain-${type}${preview?' target-preview':''}${destination?' reachable':''}${smoke?' smoke-cell':''}${track?' torpedo-track':''}${(!own&&pickedTargets.includes(c))||aimed===c&&(targetOwn===own)?' aim':''}" data-cell="${c}" data-board="${own?'own':'enemy'}" ${ship?`data-ship="${ship.id}"`:''} style="--col:${c%10};--row:${Math.floor(c/10)}" title="${TERRAIN[type].name} · ${TERRAIN[type].effect} · ${label}" draggable="false" aria-label="${coord(c)} ${TERRAIN[type].name} ${label}" ${canClick?'':'disabled'}>${track?'<span class="torpedo-wake" aria-hidden="true"></span>':''}</button>`;
   }).join('');
   const effects=Array.from({length:100},(_,c)=>`<span class="effect ${statusAt(c)}" style="--fx-delay:${(c*17%13)/10}s">${impactArt(statusAt(c))}</span>`).join('');
   const ships=visibleShips.map(ship=>shipOverlay(ship,{selected:own&&selectedShip===ship.id&&(editable||active),wreck:!own||isSunk(state.own,ship),firing:own&&state.own.lastAction?.sources.includes(ship.id)})).join('');
@@ -276,15 +277,7 @@ function historyLine(event) {
 function logCard() {
   return `<section class="sidebar-card log-card"><h3 class="sidebar-heading">作战记录<small>COMBAT LOG</small></h3><div class="combat-log">${state.history.length?[...state.history].reverse().slice(0,30).map(historyLine).join(''):'<div class="log-empty">等待第一声炮响</div>'}</div></section>`;
 }
-function resultCard() {
-  const win = state.winner === state.me;
-  const shots = state.own.stats?.attacks||0;
-  const hits = state.own.stats?.hits||0;
-  const elapsed = state.startedAt ? Math.max(0,Math.round((state.endedAt-state.startedAt)/1000)) : 0;
-  const time = `${Math.floor(elapsed/60)}:${String(elapsed%60).padStart(2,'0')}`;
-  const left = state.history.at(-1)?.reason === 'left';
-  return `<section class="result-card${win?'':' defeat'}"><div class="result-icon">${icon(win?'trophy':'flag')}</div><div class="eyebrow" style="justify-content:center;margin-bottom:9px">${win?'MISSION ACCOMPLISHED':'MISSION COMPLETE'}</div><h2>${win?'海域，已在掌控。':'胜负已定，再战雾海。'}</h2><p>${left ? '一位指挥官已离开，仍在场的舰队获胜。' : win ? '敌方舰队全数沉没。指挥官，干得漂亮。' : '你的舰队已全数沉没。下一次，用战术改写结局。'}</p><div class="result-stats"><div><b>${shots}</b><span>发射炮弹</span></div><div><b>${shots?Math.round(hits/shots*100):0}%</b><span>命中率</span></div><div><b>${time}</b><span>交战时长</span></div></div><div class="result-actions"><button class="btn subtle" data-action="exit">返回大厅</button><button class="btn primary" data-action="rematch" ${state.own.rematch||state.opponentConnected===false?'disabled':''}>${icon('refresh')}${state.own.rematch?'等待对手再战':'再来一局'}</button></div></section><div class="reveal-toggle"><button class="text-button" data-action="aftermath">${icon('eye')}${showAftermath?'收起':'查看'}本局战况${icon('chevron')}</button></div>`;
-}
+function resultCard() { return renderResultCard(state, showAftermath); }
 function renderGame() {
   if (!state) return;
   app.classList.add('war-room');
@@ -332,6 +325,8 @@ function updateTimer() {
   if (ring) { ring.style.setProperty('--progress',Math.min(1,remaining/PREP_MS)); ring.style.background=remaining<=5000?'conic-gradient(var(--red) calc(var(--progress)*360deg),#253647 0)':''; }
 }
 function acceptState(next, force = false) {
+  const previous = state;
+  const illuminationTarget = aimed;
   if (state && next.version < state.version) return;
   if (next.serverNow) serverOffset = next.serverNow-Date.now();
   const changed = force || !state || state.version!==next.version || connectionLost;
@@ -359,6 +354,21 @@ function acceptState(next, force = false) {
   if (changed && !pointerDrag) {
     renderGame();
     if (freshStrike) playStrikeEffects(app, freshStrike, next.own.id);
+    if (previous?.phase==='battle' && next.phase==='battle') {
+      const receipt=next.own.lastAction;
+      const fresh=receipt && receipt.id!==previous.own.lastAction?.id;
+      const oldSmoke=new Set(previous.own.smoke.flatMap(effect=>effect.cells));
+      const oldEnemySmoke=new Set(previous.enemySmoke);
+      playTacticalEntrance(app,{
+        illumination:fresh && CARD_TYPES[receipt.cardType]?.effect==='vision',
+        illuminationCells:fresh?next.own.scans.at(-1)?.cells||[]:[],
+        illuminationCenter:illuminationTarget,
+        previousLit:previous.enemyVisible,
+        traces:fresh?receipt.traces:[],
+        smokeOwn:[...new Set(next.own.smoke.flatMap(effect=>effect.cells))].filter(c=>!oldSmoke.has(c)),
+        smokeEnemy:next.enemySmoke.filter(c=>!oldEnemySmoke.has(c)),
+      });
+    }
   }
 }
 async function request(route, options={}) {
@@ -442,7 +452,7 @@ function showRules() {
     ['范围、移动与鱼雷','攻击和照明范围按格心直线距离计算。移动按上下左右的合法路径计格，不能穿过礁石、其他舰体和残骸，浅滩会中止移动并搁浅，暗礁可令中途触礁沉没。鱼雷从己方对应行面向敌方的一侧入场，遇舰艇、残骸或礁石停止，每个暗礁格独立判定 25% 受阻。'],
     ['视野、制空与维修','侦察探查己方暗礁，照明和飞机提供临时实时视野；到期回到迷雾。持续回合按使用者自己的回合计数并包含当前回合。烟幕遮断视野且清除旧情报，修复只针对仍存活舰艇，不能打捞残骸。敌方制空期间非战斗机飞机禁用；战斗机仍可起飞并夺取制空权，重新计时 3 回合。'],
   ];
-  openModal('作战手册',`<p class="modal-description">用手牌下达指令，在海雾中寻找对手。</p><div class="rule-fleet">${TYPES.map(t=>`<div><b>${t.width?`${t.length}×${t.width}`:t.length} 格 × ${t.count}</b>${t.name}</div>`).join('')}</div><div class="rules-list">${rules.map(([title,text],i)=>`<div class="rule-row"><span class="rule-number">0${i+1}</span><div><h3>${title}</h3><p>${text}</p></div></div>`).join('')}</div>${terrainLegend()}<button class="text-button" data-action="card-guide">查看 20 张卡牌图鉴 ↗</button><button class="btn primary full" data-action="close-modal">收到，指挥官${icon('check')}</button>`);
+  openModal('作战手册',`<p class="modal-description">用手牌下达指令，在海雾中寻找对手。</p><div class="rule-fleet">${TYPES.map(t=>`<div><img class="rule-ship" src="./assets/fleet-${t.type}.webp?v=${t.type==='carrier'?'5.1.0':'2.0.1'}" alt="" draggable="false"><b>${t.width?`${t.length}×${t.width}`:t.length} 格 × ${t.count}</b>${t.name}</div>`).join('')}</div><div class="rules-list">${rules.map(([title,text],i)=>`<div class="rule-row"><span class="rule-number">0${i+1}</span><div><h3>${title}</h3><p>${text}</p></div></div>`).join('')}</div>${terrainLegend()}<button class="text-button" data-action="card-guide">查看 20 张卡牌图鉴 ↗</button><button class="btn primary full" data-action="close-modal">收到，指挥官${icon('check')}</button>`);
 }
 function showLanHelp() {
   openModal('与伙伴在局域网开战',`<p class="modal-description">GitHub Pages 提供人机试玩。双人房间由随项目附带的本地服务运行，只需一位玩家启动。</p><ol class="setup-steps"><li>安装 Node.js 22 或更新版本，然后下载项目。</li><li>在项目目录打开终端，运行：</li></ol><div class="code-block">git clone ${REPO}.git\ncd IMDT-Game-Design\nnpm start</div><ol class="setup-steps" start="3"><li>终端会显示 <code>http://你的局域网IP:3000</code>。两位玩家连接同一 Wi-Fi，并打开这个<strong>相同地址</strong>。</li><li>创建 / 加入公开房间，双方准备，即可开战。</li></ol><p class="checkbox-note">服务运行期间房间保持可用；重启后清空。如无法连接，请检查两台设备可互访，且主机允许 TCP 3000 端口的入站连接。</p><div class="form-actions"><a class="btn subtle" href="${REPO}#局域网双人对战" target="_blank" rel="noopener">查看完整说明 ↗</a><button class="btn primary" data-action="practice-modal">先试人机演习</button></div>`);

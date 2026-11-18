@@ -69,7 +69,19 @@ try {
   await execute('main',async()=>{await enemy(90);assert.equal(await page.locator('#enemy-grid .target-preview').count(),3);});
   await execute('big',()=>enemy(92));
   await execute('barrage',async()=>{for(let c=90;c<100;c++)await enemy(c);assert.equal(await page.locator('#enemy-grid .target-preview').count(),10);});
-  await execute('torpedo',()=>enemy(44));await execute('triple',()=>enemy(44));
+  const torpedoView = await execute('torpedo',()=>enemy(44));
+  const traceCells = [...new Set(torpedoView.own.lastAction.traces.flat())].sort((a,b)=>a-b);
+  await page.waitForFunction(expected=>{
+    const actual=[...document.querySelectorAll('#enemy-grid .torpedo-wake')].map(node=>Number(node.parentElement.dataset.cell)).sort((a,b)=>a-b);
+    return JSON.stringify(actual)===JSON.stringify(expected);
+  },traceCells);
+  assert.equal(await page.locator('#own-grid .torpedo-wake').count(),0);
+  assert.ok(await page.locator('#enemy-grid .torpedo-wake').evaluateAll(nodes=>nodes.every(node=>{
+    const wake=node.getBoundingClientRect(),cell=node.parentElement.getBoundingClientRect();
+    return Math.abs((wake.top+wake.height/2)-(cell.top+cell.height/2))<2 && getComputedStyle(node).pointerEvents==='none';
+  })),'Torpedo wakes sit at cell centers without intercepting input');
+  await capture(page,'torpedo-wake.png','.hostile-chart .board-matrix');
+  await execute('triple',()=>enemy(44));
   await execute('tactics');await execute('recon',()=>own(55));
   v=await execute('flare',()=>enemy(64));assert.ok(v.enemyVisible.includes(64));assert.equal(v.enemySight[64].type,'frigate');
   const contacts = page.locator('.hostile-chart .sighted-hull');

@@ -45,6 +45,14 @@
 .map-card:hover { border-color: #d1c796; transform: translateY(-3px); }
 .map-card.selected { border-color: #e2cc91; box-shadow: 0 0 0 2px #e2cc9124, 0 8px 24px #0003; }
 .map-card .map-mini { position: absolute; width: 136%; aspect-ratio: 1; left: -18%; top: 50%; transform: translateY(-50%) rotate(-10deg); filter: brightness(.82) saturate(.85); }
+.chart-thumbnail { display:block; position:relative; width:100%; height:100%; overflow:hidden; }
+.chart-thumbnail-half { display:block; position:relative; min-width:0; height:100%; overflow:hidden; }
+.chart-thumbnail .map-mini { position:absolute; inset:0; width:100%; height:100%; aspect-ratio:auto; transform:none; filter:none; }
+.map-card .chart-panorama { position:absolute; inset:0 0 auto; height:auto; aspect-ratio:2/1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.chart-panorama .chart-thumbnail-half + .chart-thumbnail-half { border-left:1px dashed #d7d0a449; }
+.map-card:has(.chart-panorama) .map-card-shade { background:linear-gradient(#071b2c38,transparent 40%,#091d2acc 62%,#091d2af7 90%); }
+.chart-thumbnail .terrain-region { stroke-width:.65; }
+.map-seal,.terrain-swatch { overflow:hidden; }
 .map-card-shade { position: absolute; inset: 0; background: linear-gradient(180deg, #071b2c77, transparent 33%, #071b2c77 56%, #091d2af7); }
 .map-card-number { position: absolute; left: 14px; top: 13px; font: 7px var(--mono); letter-spacing: .8px; color: #d4d9c2; }
 .map-card-body { position: absolute; left: 17px; right: 14px; bottom: 18px; }

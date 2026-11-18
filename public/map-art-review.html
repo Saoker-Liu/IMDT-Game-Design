@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>雾海对弈 · 地图精修对照</title>
+<link rel="stylesheet" href="./terrain.css?v=5.1.0">
+<link rel="stylesheet" href="./archipelago-art.css?v=5.2.8">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0b1921; color: #e8e1ca; font: 14px/1.6 system-ui,sans-serif; }
+  main { max-width: 1400px; margin: auto; padding: 16px; }
+  h1 { font-size: 22px; margin: 0 0 10px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0; }
+  select,button { color: inherit; border: 1px solid #7f876e; border-radius: 4px; padding: 5px; background: #21383e; font: inherit; }
+  .inspection { overflow-x: auto; }
+  .painting { min-width: 680px; border: 1px solid #81795e; }
+  .charts { display: grid; grid-template-columns: 1fr 1fr; }
+  .board-matrix { position: relative; aspect-ratio: 1; }
+  .geometry { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; background-image: linear-gradient(to right,#e7e2bf38 1px,transparent 1px),linear-gradient(to bottom,#e7e2bf38 1px,transparent 1px); background-size: 10% 10%; }
+  .geometry text { font: 1.7px system-ui,sans-serif; fill: #f1e7ca; paint-order: stroke; stroke: #14232b; stroke-width: .35px; }
+  .coastal-hand { height: 190px; margin: 0; padding: 12px; display: flex; align-items: end; justify-content: center; }
+  .coastal-hand span { padding: 4px 12px; background: #0b222be0; border-radius: 4px; }
+  .painting[data-grid="off"] .geometry { display: none; }
+  .painting[data-regions="off"] .terrain-boundaries { visibility: hidden; }
+  .group-list { display: flex; gap: 7px; flex-wrap: wrap; margin: 14px 0; }
+  .group-list button[aria-pressed="true"] { border-color: #ffe4a4; background: #4a5142; }
+  #selection { color: #b7d3cc; min-height: 24px; }
+  p { color: #b0c8c8; }
+</style>
+<main>
+  <h1>地图精修对照</h1>
+  <div class="controls">
+    <label>地图 <select id="map"></select></label>
+    <label>视角 <select id="view"><option value="0">己方在左</option><option value="1">己方在右</option></select></label>
+    <label><input type="checkbox" id="grid" checked> 格线与坐标</label>
+    <label><input type="checkbox" id="regions" checked> 地形边界</label>
+  </div>
+  <div class="inspection"><div class="painting coastal-layout" data-grid="on" data-regions="on"></div></div>
+  <div class="group-list" aria-label="逐组核对地形"></div>
+  <div id="selection" role="status"></div>
+  <p>画面与正式对局共用素材和位置修正。窄屏可左右滑动查看完整地图。暗礁海域按现有规则显示深海画面。</p>
+</main>
+<script type="module">
+  import { MAPS, terrainFor } from './terrain.mjs?v=5.1.0';
+  import { terrainChart } from './chart-art.mjs?v=5.2.7';
+
+  const painting = document.querySelector('.painting');
+  const mapPicker = document.querySelector('#map');
+  const groupList = document.querySelector('.group-list');
+  const selection = document.querySelector('#selection');
+  const viewPicker = document.querySelector('#view');
+  mapPicker.innerHTML = MAPS.map(map => `<option value="${map.id}">${map.name}</option>`).join('');
+  mapPicker.value = 'archipelago';
+  function coordinates(cell) { return String.fromCharCode(65 + cell % 10) + (Math.floor(cell / 10) + 1); }
+  function connectedGroups(terrain, type) {
+    const remaining = new Set(terrain.flatMap((value,cell) => value === type ? [cell] : []));
+    const groups = [];
+    while (remaining.size) {
+      const start = remaining.values().next().value;
+      const group = [start];
+      remaining.delete(start);
+      for (const cell of group) {
+        const neighbors = [cell-10,cell+10];
+        if (cell % 10) neighbors.push(cell-1);
+        if (cell % 10 < 9) neighbors.push(cell+1);
+        for (const neighbor of neighbors) {
+          if (remaining.delete(neighbor)) group.push(neighbor);
+        }
+      }
+      groups.push(group.sort((a,b) => a-b));
+    }
+    return groups;
+  }
+  function render() {
+    const map = mapPicker.value;
+    painting.className = `painting coastal-layout coastal-${map}`;
+    painting.innerHTML = `<div class="charts">${[0,1].map(side => {
+      const labels = Array.from({length:100},(_,cell) => `<text x="${cell%10*10+.8}" y="${Math.floor(cell/10)*10+2.2}">${coordinates(cell)}</text>`).join('');
+      return `<div class="board-matrix ${side === Number(viewPicker.value)?'friendly-chart':'hostile-chart'}" data-side="${side}">${terrainChart(terrainFor(map,side),false,{mapId:map,side},{coastal:true})}<svg class="geometry" viewBox="0 0 100 100">${labels}</svg></div>`;
+    }).join('')}</div><div class="coastal-hand"><span>非交战手牌背景</span></div>`;
+    groupList.replaceChildren();
+    selection.textContent = '';
+    for (const side of [0,1]) {
+      const terrain = terrainFor(map,side);
+      const type = map === 'archipelago' ? 'rock' : 'shoal';
+      const groups = connectedGroups(terrain,type);
+      groups.forEach((group,index) => {
+        const button = document.createElement('button');
+        button.textContent = `${side?'右':'左'}侧${type==='rock'?'礁群':'浅滩'} ${index+1}`;
+        button.setAttribute('aria-pressed','false');
+        button.addEventListener('click',() => {
+          for (const item of groupList.children) item.setAttribute('aria-pressed','false');
+          button.setAttribute('aria-pressed','true');
+          selection.textContent = `${button.textContent} · ${group.map(coordinates).join('、')}`;
+          for (const region of painting.querySelectorAll('.terrain-region')) region.style.fill = '';
+          // The exact cells are highlighted independently of the natural rock outlines.
+          for (const marker of painting.querySelectorAll('.cell-highlight')) marker.remove();
+          const svg = painting.querySelectorAll('.geometry')[side];
+          for (const cell of group) {
+            const rectangle = document.createElementNS('http://www.w3.org/2000/svg','rect');
+            rectangle.setAttribute('class','cell-highlight');
+            rectangle.setAttribute('x',cell%10*10);
+            rectangle.setAttribute('y',Math.floor(cell/10)*10);
+            rectangle.setAttribute('width',10);
+            rectangle.setAttribute('height',10);
+            rectangle.setAttribute('fill','#f8d57940');
+            rectangle.setAttribute('stroke','#ffe4ac');
+            rectangle.setAttribute('stroke-width','.3');
+            svg.prepend(rectangle);
+          }
+        });
+        groupList.append(button);
+      });
+    }
+    if (!groupList.children.length) selection.textContent = '交战区为开阔海面。';
+  }
+  mapPicker.addEventListener('change',render);
+  viewPicker.addEventListener('change',render);
+  document.querySelector('#grid').addEventListener('change',event => { painting.dataset.grid = event.target.checked ? 'on' : 'off'; });
+  document.querySelector('#regions').addEventListener('change',event => { painting.dataset.regions = event.target.checked ? 'on' : 'off'; });
+  render();
+</script>
+</html>

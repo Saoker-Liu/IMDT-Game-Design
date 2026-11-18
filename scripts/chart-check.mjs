@@ -120,7 +120,8 @@ try {
     await page.setViewportSize({ width: 1440, height: 1120 });
     if (mapId === 'undertow') {
       await page.locator('[data-action="terrain-guide"]').first().click();
-      assert.equal(await page.locator('.terrain-guide-art .sea-paint').count(), 4);
+      assert.equal(await page.locator('.terrain-guide-art .coastal-art-0').count(), 4);
+      assert.equal(await page.locator('.terrain-guide-art .region-reef').count(),0,'Guide does not expose hidden reef positions');
       await screenshot(page, 'terrain-guide.png', '#modal');
     }
     if (mapId === 'open-sea') {
@@ -150,6 +151,8 @@ try {
   const page = await context.newPage();
   await page.goto(base);
   await screenshot(page, 'map-library.png', '.map-selection');
+  await page.setViewportSize({width:390,height:844});
+  await screenshot(page, 'map-library-mobile.png', '.map-selection');
   await context.close();
 
   // Exercise the same paintings and hand layout through the practice workflow.
