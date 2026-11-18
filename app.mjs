@@ -293,7 +293,6 @@ function renderGame() {
   const prep = state.phase === 'placement';
   const battle = state.phase === 'battle';
   const ended = state.phase === 'result';
-  const frontierBattle = battle && state.mapId === 'blue-frontier';
   const boards = waiting || (ended && !showAftermath) ? '' : `
     <div class="game-layout coastal-layout coastal-${state.mapId}${battle ? ' coastal-battle' : ''}">
       <div class="board-area">
@@ -301,7 +300,7 @@ function renderGame() {
         <div class="boards${prep ? '' : ' battling'}">${board(true)}${board(false)}</div>
         ${battle ? `<div class="coastal-board-details"><div data-side="${state.me}">${boardDetails(true)}</div><div data-side="${1 - state.me}">${boardDetails(false)}</div></div>` : ''}
         <div class="legend"><span class="legend-item"><i class="legend-square"></i>己方舰船</span><span class="legend-item"><i class="legend-square fog"></i>未知海域</span><span class="legend-item"><i class="legend-square water"></i>落空</span><span class="legend-item"><i class="legend-square fire"></i>命中</span><span class="legend-item"><i class="legend-square wreck"></i>沉没</span></div>
-        ${terrainLegend()}${frontierBattle ? mapBrief(state.mapId, state.me) : ''}${prep ? dock() : ''}
+        ${terrainLegend()}${battle ? mapBrief(state.mapId, state.me) : ''}${prep ? dock() : ''}
       </div>
       <aside class="game-sidebar">
         ${battle ? battleEffects() : ''}${ended ? '' : commandCard()}${fleetCard(false)}${prep ? '' : fleetCard(true)}${logCard()}
@@ -311,8 +310,8 @@ function renderGame() {
       ? '<span><span class="keycap">R</span> 旋转舰船</span><span><span class="keycap">Esc</span> 取消选择</span>'
       : '<span><span class="keycap">Enter</span> 执行卡牌</span><span><span class="keycap">Esc</span> 取消卡牌与瞄准</span>'}</div>`;
   const match = waiting ? renderWaiting() : `
-    ${ended ? resultCard() : frontierBattle ? '' : phaseToolbar()}
-    ${frontierBattle ? '' : mapBrief(state.mapId, state.me)}
+    ${ended ? resultCard() : battle ? '' : phaseToolbar()}
+    ${battle ? '' : mapBrief(state.mapId, state.me)}
     ${boards}
     <p class="bottom-note">${mode === 'practice'
       ? '人机演习 · 对手按相同牌库与行动力规则出牌'
