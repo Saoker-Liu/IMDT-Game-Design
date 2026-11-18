@@ -1,6 +1,6 @@
 import {resultCard as renderResultCard} from './result-ui.mjs?v=5.2.15';
 import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=5.2.3';
-import { vesselArt, shipOverlay, illuminationArt, sightedHullArt, impactArt, boardFurniture, playStrikeEffects, playTacticalEntrance } from './art.mjs?v=5.2.13';
+import { vesselArt, shipOverlay, illuminationArt, sightedHullArt, impactArt, boardFurniture, playStrikeEffects, playTacticalEntrance } from './art.mjs?v=5.2.17';
 
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.1.0';
 import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.2.14';
@@ -361,9 +361,9 @@ function acceptState(next, force = false) {
       const oldEnemySmoke=new Set(previous.enemySmoke);
       playTacticalEntrance(app,{
         illumination:fresh && CARD_TYPES[receipt.cardType]?.effect==='vision',
-        illuminationCells:fresh?next.own.scans.at(-1)?.cells||[]:[],
+        illuminationCells:fresh?(next.own.scans.at(-1)?.cells||[]).filter(cell=>next.enemyVisible.includes(cell)):[],
         illuminationCenter:illuminationTarget,
-        previousLit:previous.enemyVisible,
+        previousLit:previous.enemyVisible.filter(cell=>next.enemyVisible.includes(cell)),
         traces:fresh?receipt.traces:[],
         smokeOwn:[...new Set(next.own.smoke.flatMap(effect=>effect.cells))].filter(c=>!oldSmoke.has(c)),
         smokeEnemy:next.enemySmoke.filter(c=>!oldEnemySmoke.has(c)),

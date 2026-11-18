@@ -5,7 +5,7 @@
 <title>雾海对弈 · 交战效果对照</title>
 <link rel="stylesheet" href="./style.css?v=3.0.0">
 <link rel="stylesheet" href="./visual.css?v=5.2.9">
-<link rel="stylesheet" href="./naval.css?v=5.2.13">
+<link rel="stylesheet" href="./naval.css?v=5.2.17">
 <style>
   body { margin: 0; color: #e6dcc0; }
   main { max-width: 1050px; margin: auto; padding: 22px; }
@@ -31,7 +31,7 @@
   <h1>交战效果对照</h1>
   <div class="controls">
     <label>版本 <select id="version"><option value="refined">精修版本</option><option value="baseline">修改前</option></select></label>
-    <label>场景 <select id="scene"><option value="fire">炮击与沉没</option><option value="illumination">照明弹</option><option value="smoke">烟幕</option><option value="torpedo">鱼雷</option></select></label>
+    <label>场景 <select id="scene"><option value="fire">炮击与沉没</option><option value="illumination">照明弹</option><option value="smoke">烟幕</option><option value="torpedo">鱼雷</option><option value="triple">三行鱼雷</option><option value="diagonal">斜向鱼雷</option><option value="overlap">照明叠烟幕</option></select></label>
     <button id="replay">发射／重播</button>
     <label><input id="still" type="checkbox"> 显示完成状态</label>
   </div>
@@ -46,17 +46,22 @@
   </div>
 </main>
 <script type="module">
-  import { impactArt, shipOverlay, playStrikeEffects, illuminationArt, sightedHullArt, playTacticalEntrance } from './art.mjs?v=5.2.13';
+  import { impactArt, shipOverlay, playStrikeEffects, illuminationArt, sightedHullArt, playTacticalEntrance } from './art.mjs?v=5.2.17';
   const board=document.querySelector('.board-matrix'), scene=document.querySelector('#scene'), version=document.querySelector('#version'), still=document.querySelector('#still'), status=document.querySelector('#playback');
   const misses=[16,17,26,27], hits=[43,44,53,54], sunk=[72,73];
   const states=new Map([...misses.map(c=>[c,'miss']),...hits.map(c=>[c,'hit']),...sunk.map(c=>[c,'sunk'])]);
   const lit=[24,25,26,34,35,36,44,45,46], cloud=[43,44,45,53,54,55,63,64,65], trace=[50,51,52,53,54,55,56,57];
+  const paths={torpedo:[trace],triple:[[30,31,32,33,34,35,36,37,38],[40,41,42,43,44,45,46],[50,51,52,53,54,55,56,57]],diagonal:[[11,22,33,44,55,66,77,88]]};
+  const blockingSmoke=[35,36,45,46,55],unblockedLight=lit.filter(cell=>!blockingSmoke.includes(cell));
   let generation=0, timers=[];
   const descriptions={
     fire:'持续烟火缩小并下移，减少对上方邻格的遮挡。重播查看短闪光接持续燃烧。',
     illumination:'修改前：照明区域直接亮起。精修：中心爆闪，先亮中心格，再向周围八格扩散；舰体始终按现有可见格裁切。',
     smoke:'修改前：每格一个圆形烟团直接出现。精修：多层不规则灰雾渐渐铺开，格线和己方舰体保持可辨认。',
     torpedo:'修改前：底边虚线直接出现。精修：小型金属鱼雷沿路径推进，留下窄水花；水花从后向前依次淡去。',
+    triple:'三行鱼雷分别推进并在各自终点消失，检查相邻水花是否互相干扰。此处使用固定路径示意，实战以实际阻挡回执为准。',
+    diagonal:'斜向鱼雷的弹体中心应始终贴合航迹格心，尾翼、水花方向随航线旋转。',
+    overlap:'烟幕先覆盖部分格子，照明爆闪后只展开可见部分；被烟幕挡住的格子保持原样，舰体仍按可见格裁切。',
   };
   function cancel(){generation++;for(const id of timers)clearTimeout(id);timers=[];for(const a of board.getAnimations({subtree:true}))a.cancel();}
   function grid(smoke=[],path=[]){return `<div class="tactical-grid">${Array.from({length:100},(_,c)=>`<span class="cell ${smoke.includes(c)?'smoke-cell':''} ${path.includes(c)?'torpedo-track':''}" data-cell="${c}">${path.includes(c)?'<span class="torpedo-wake" aria-hidden="true"></span>':''}</span>`).join('')}</div>`;}
@@ -70,8 +75,12 @@
       if(complete){lighting=illuminationArt(lit);ships=sightedHullArt([24,25,26],{type:'battleship',length:4},{offset:0,vertical:false},false);}
     } else if(name==='smoke'){
       ships=shipOverlay({type:'destroyer',x:4,y:5,length:2});effects=grid(complete?cloud:[]);
+    } else if(name==='overlap') {
+      effects=grid(blockingSmoke);
+      if(complete){lighting=illuminationArt(unblockedLight);ships=sightedHullArt([25],{type:'battleship',length:4},{offset:0,vertical:true},false);}
     } else {
       ships=shipOverlay({type:'destroyer',x:7,y:5,length:2});effects=grid([],complete?trace:[]);
+      if(paths[name])effects=grid([],complete?paths[name].flat():[]);
     }
     board.innerHTML=`${lighting}<div class="lines"></div>${effects}<div class="ships">${ships}</div>`;
     for(const f of board.querySelectorAll('.fire-art'))f.style.animation=still.checked?'none':'';
@@ -86,9 +95,9 @@
       render(true);
       const refined=version.value==='refined';
       if(scene.value==='fire')playStrikeEffects(document,{playerId:1,results:[...states].map(([cell,result])=>({cell,result}))},1);
-      else if(refined)playTacticalEntrance(document,{illumination:scene.value==='illumination',illuminationCells:lit,illuminationCenter:35,smokeEnemy:scene.value==='smoke'?cloud:[],traces:scene.value==='torpedo'?[trace]:[]});
-      status.textContent=scene.value==='torpedo'&&refined?'鱼雷航行中…':refined?'效果展开中…':'原版：效果直接出现';
-      timers.push(setTimeout(()=>{if(run===generation)status.textContent='播放完成 · 可重播或切换版本对照';},scene.value==='torpedo'&&refined?2500:1700));
+      else if(refined)playTacticalEntrance(document,{illumination:['illumination','overlap'].includes(scene.value),illuminationCells:scene.value==='overlap'?unblockedLight:lit,illuminationCenter:35,smokeEnemy:scene.value==='smoke'?cloud:[],traces:paths[scene.value]||[]});
+      status.textContent=paths[scene.value]&&refined?'鱼雷航行中…':refined?'效果展开中…':'原版：效果直接出现';
+      timers.push(setTimeout(()=>{if(run===generation)status.textContent='播放完成 · 可重播或切换版本对照';},paths[scene.value]&&refined?2700:1700));
     },450));
   }
   scene.addEventListener('change',reset);version.addEventListener('change',reset);still.addEventListener('change',reset);document.querySelector('#replay').addEventListener('click',replay);

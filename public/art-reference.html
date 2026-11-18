@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>雾海对弈 · 美术规范与素材索引</title>
+<link rel="stylesheet" href="./style.css?v=3.0.0"><link rel="stylesheet" href="./visual.css?v=5.2.9">
+<link rel="stylesheet" href="./terrain.css?v=5.2.14"><link rel="stylesheet" href="./archipelago-art.css?v=5.2.8">
+<link rel="stylesheet" href="./card-face.css?v=5.2.0"><link rel="stylesheet" href="./cards.css?v=5.2.0">
+<style>
+  body { margin:0;color:#e6dfc9;background:#0b1921;font:14px/1.8 'Noto Sans SC','Microsoft YaHei',sans-serif; }
+  main { max-width:1160px;margin:auto;padding:38px 24px 64px; }
+  .kicker { color:#c5b581;font:11px 'Space Grotesk',monospace;letter-spacing:3px; }
+  h1 { font-size:34px;margin:9px 0 10px; } h2 { font-size:21px;margin:0 0 16px;color:#e3d6ad; }
+  h3 { font-size:15px;margin:0 0 9px;color:#e0dac4; } p { color:#b4c4bb; }
+  section { margin-top:32px;padding-top:26px;border-top:1px solid #b6ad733d; }
+  nav { display:flex;gap:10px;flex-wrap:wrap;margin-top:20px; }
+  nav a { padding:6px 12px;background:#193039;border:1px solid #827f5d;border-radius:4px;font-size:12px; }
+  .swatches { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px; }
+  .swatch { border:1px solid #83927555;border-radius:4px;overflow:hidden;background:#152b31; }
+  .swatch i { display:block;height:54px;background:var(--color); }
+  .swatch span { display:block;padding:8px 12px;color:#c6d0bc;font-size:12px; }
+  code { color:#e0d4ac;overflow-wrap:anywhere; } .swatch code { display:block; }
+  .columns { display:grid;grid-template-columns:1fr 1fr;gap:24px; }
+  .panel { background:#132a30;border:1px solid #7e8b6a55;border-radius:4px;padding:18px; }
+  .card-examples { display:flex;gap:14px;justify-content:center;align-items:start;flex-wrap:wrap; }
+  .card-examples article { width:148px; } .card-examples .card-description { display:none; }
+  .fleet { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:20px; }
+  .fleet figure { margin:0;background:#14313a;padding:14px 8px;text-align:center;border:1px solid #83927555; }
+  .fleet img { width:100%;height:40px;object-fit:contain;margin-bottom:8px; } .fleet small { color:#a5b9ae;display:block; }
+  .maps { display:grid;grid-template-columns:1fr 1fr;gap:18px; }
+  .map-caption { display:flex;justify-content:space-between;padding:9px 12px;background:#193039;font-size:12px; }
+  .map-caption span { color:#acbdaf; }.map-painting { display:grid;grid-template-columns:1fr 1fr; }
+  .map-half { position:relative;aspect-ratio:1; }.map-half + .map-half { border-left:1px dashed #c9c29b88; }
+  table { width:100%;border-collapse:collapse;font-size:12px; } th,td { padding:10px 12px;text-align:left;border-bottom:1px solid #8d9c7d26;vertical-align:top; }
+  th { color:#d5c99e; } td { color:#b5c6bb; } .table-wrap { overflow-x:auto; }
+  .asset-tools { display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px; }
+  .asset-tools input { flex:1;min-width:150px;max-width:390px; } #asset-count { color:#b8c7b8;font-size:12px; }
+  .asset-table { min-width:590px; }.asset-table td:first-child { max-width:380px; }
+  .note { margin-top:14px;font-size:12px;color:#99afa4; } .title-sample { font-family:'Fogbound Card Serif',SimSun,serif;font-size:22px;color:#efdfb2; }
+  @media(max-width:760px) { main { padding:22px 16px 45px; } h1 { font-size:27px; } .columns,.maps { grid-template-columns:1fr; }.swatches { grid-template-columns:repeat(2,minmax(0,1fr)); }.fleet { grid-template-columns:repeat(2,minmax(0,1fr)); }.fleet figure:last-child { grid-column:1/-1; }.fleet figure:last-child img { max-width:160px; } }
+</style>
+<main>
+  <header><div class="kicker">FOGBOUND / ART REFERENCE</div><h1>雾海对弈 · 美术规范</h1><p>精细俯视微缩舰队，置于连续的深石油蓝海图。象牙色文字、旧黄铜边框和低饱和钢铁共同构成界面。</p>
+    <nav><a href="/">进入游戏</a><a href="./map-art-review.html">地图核对</a><a href="./combat-art-review.html?rev=17">交战效果重播</a><a href="./result-art-review.html">结算对照</a><a href="#assets">素材索引</a></nav>
+  </header>
+  <section><h2>01　配色与材质</h2><div class="swatches" id="swatches"></div><p class="note">海水与金属仍保留插画中的自然明暗。卡牌五类使用文字墨色区分；状态同时提供图标和文字。</p></section>
+  <section><h2>02　文字与卡牌</h2><div class="columns"><div class="panel"><h3>以实机尺寸保持可读</h3><p>界面正文使用 Noto Sans SC，缺失时回退微软雅黑；数字与坐标使用 Space Grotesk / Consolas。</p><p class="title-sample">卡名 · 本地宋体字形</p><p>卡名和费用使用队友提供的本地字体子集。卡面保持 2∶3，不能横向拉伸；桌面手牌宽约 104–148px，手机保留横向查看。</p><p class="note">队友负责卡图、框形、费用圆座与内部排版；本轮负责外部位置、尺寸、间距和提示空间。</p></div><div class="card-examples" id="cards"></div></div></section>
+  <section><h2>03　舰队与连续海图</h2><div class="fleet" id="fleet"></div><div class="maps" id="maps"></div><p class="note">格线与禁航范围取自规则。调整岩体位置时保留浪花边缘；主岩体落在对应格群。房主与访客保持相同地理方向。暗礁与深海使用同一画面。</p></section>
+  <section><h2>04　特效尺度与节奏</h2><div class="table-wrap"><table><thead><tr><th>效果</th><th>当前尺度</th><th>节奏与辨识</th></tr></thead><tbody>
+    <tr><td>命中燃烧</td><td>图片盒宽 0.86 格，高 1.12 格</td><td>先短闪光，再持续烟火；检查连续命中时的邻格遮挡。</td></tr>
+    <tr><td>鱼雷与水花</td><td>弹体长约 0.62 格，水花宽约 0.28 格</td><td>沿回执推进，旧水花先淡、新水花后淡。斜向旋转保持弹体中心对齐。</td></tr>
+    <tr><td>照明弹</td><td>严格限制在实际可见格</td><td>中心先爆闪，约 220ms 后中心亮起，向外每圈再延后 220ms。烟幕覆盖格不临时亮起。</td></tr>
+    <tr><td>烟幕</td><td>沿原有遮挡范围，保留格线和己舰可读性</td><td>灰雾约 1.1 秒淡入，避免逐格圆形光斑。</td></tr>
+    <tr><td>减少动画</td><td>保留正确的最终状态</td><td>跳过航行、爆闪与展开；持续标记仍可辨认。</td></tr>
+  </tbody></table></div></section>
+  <section id="assets"><h2>05　素材索引</h2><div class="asset-tools"><input id="search" aria-label="搜索素材" placeholder="搜索名称、用途或源文件"><span id="asset-count">正在读取…</span><a href="./art-assets.json" download>下载素材清单 ↓</a></div><div class="table-wrap"><table class="asset-table"><thead><tr><th>游戏文件</th><th>用途</th><th>尺寸 / 大小</th></tr></thead><tbody id="asset-list"></tbody></table></div><p class="note">PNG 源文件位置与校验值见下载清单；源文件以完整仓库为准。旧版兼容地图保留记录，不作为新图制作模板。</p></section>
+</main>
+<script type="module">
+  import {MAPS,terrainFor} from './terrain.mjs?v=5.1.0';
+  import {TYPES} from './engine.mjs?v=5.2.3';
+  import {terrainChart} from './chart-art.mjs?v=5.2.7';
+  import {cardGuide} from './cards-ui.mjs?v=5.2.0';
+  const colors=[['深海面板','#142b31'],['旧黄铜边框','#a69b72'],['象牙文字','#e6dfc9'],['辅助文字','#adbbb3'],['主要操作','#91e4c6'],['火力墨色','#773d2b'],['侦察墨色','#2c5269'],['机动墨色','#385c44'],['支援墨色','#6f512a'],['航空墨色','#554367']];
+  document.querySelector('#swatches').innerHTML=colors.map(([name,color])=>`<div class="swatch" style="--color:${color}"><i></i><span>${name}<code>${color}</code></span></div>`).join('');
+  const guide=document.createElement('div');guide.innerHTML=cardGuide();
+  for(const name of ['主炮轰击','信号弹','战术机动'])document.querySelector('#cards').append(guide.querySelector(`[aria-label="${name}"]`));
+  document.querySelector('#fleet').innerHTML=TYPES.map(t=>`<figure><img src="./assets/fleet-${t.type}.webp" alt=""><figcaption>${t.name}<small>${t.width?`${t.length}×${t.width}`:t.length} 格 · ${t.count} 艘</small></figcaption></figure>`).join('');
+  document.querySelector('#maps').innerHTML=MAPS.map(m=>`<div class="coastal-layout coastal-${m.id}"><div class="map-caption"><b>${m.name}</b><span>${m.tag}</span></div><div class="map-painting">${[0,1].map(side=>`<div class="map-half ${side?'hostile-chart':'friendly-chart'}" data-side="${side}">${terrainChart(terrainFor(m.id,side),false,{mapId:m.id,side},{coastal:true})}</div>`).join('')}</div></div>`).join('');
+  const data=await fetch('./art-assets.json').then(r=>{if(!r.ok)throw Error('素材索引未生成');return r.json();});
+  function renderAssets(){const query=document.querySelector('#search').value.trim().toLowerCase();const rows=data.assets.filter(a=>`${a.path} ${a.role} ${a.source}`.toLowerCase().includes(query));document.querySelector('#asset-list').innerHTML=rows.map(a=>`<tr><td><code>${a.path}</code></td><td>${a.role}</td><td>${a.renderedIntrinsicSize?`${a.path.endsWith('.svg')?'矢量 / 浏览器显示':'像素'} ${a.renderedIntrinsicSize.width}×${a.renderedIntrinsicSize.height}<br>`:''}${(a.bytes/1024).toFixed(1)} KiB</td></tr>`).join('');document.querySelector('#asset-count').textContent=`${rows.length} / ${data.assets.length} 项`;}document.querySelector('#search').addEventListener('input',renderAssets);renderAssets();
+</script>
+</html>
