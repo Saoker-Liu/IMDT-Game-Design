@@ -1,7 +1,7 @@
 /** Practice AI uses only its hand, own board and filtered enemy vision. */
-import { CARD_TYPES, canUseCard, cardContext, shipAlive, sourceMatches } from './cards.mjs?v=5.1.0';
+import { CARD_TYPES, canUseCard, cardContext, shipAlive, sourceMatches } from './cards.mjs?v=5.2.18';
 import { cells, radiusCells, reachableMoves } from './geometry.mjs?v=5.1.0';
-import { torpedoRows } from './combat.mjs?v=5.1.0';
+import { torpedoRows } from './combat.mjs?v=5.2.18';
 export function chooseBotAction(view,rng=Math.random) {
   const options=[],pick=items=>items[Math.min(items.length-1,Math.floor(rng()*items.length))];
   const knownContact=c=>view.enemySight[c]&&!view.enemySight[c].empty&&!view.enemySight[c].damaged&&!view.enemySight[c].sunk;
@@ -25,8 +25,8 @@ export function chooseBotAction(view,rng=Math.random) {
       const candidates=view.own.ships.filter(s=>shipAlive(s)&&(d.effect!=='smoke'||sourceMatches(s,'escort'))).flatMap(ship=>[...reachableMoves(view.own,ship.id,d.range)]
         .filter(([cell,path])=>path.length&&view.own.terrain[cell]!=='reef'&&view.own.terrain[cell]!=='shoal').map(([cell])=>({id:ship.id,cell})));
       if(!candidates.length)continue;Object.assign(action,pick(candidates));score=d.effect==='smoke'?12:5;
-    } else if(d.target==='enemy-many') {
-      action.cells=Array.from({length:100},(_,c)=>c).sort((a,b)=>value(b,true)-value(a,true)).slice(0,10);score=45+action.cells.reduce((n,c)=>n+Math.max(0,value(c,true)),0);
+    } else if(d.target==='none') {
+      score=45;
     } else if(d.target==='enemy-row') {
       const rows=torpedoRows(view.own);if(!rows.length)continue;
       action.row=rows.map(row=>({row,score:Array.from({length:10},(_,x)=>value(row*10+x)).reduce((a,b)=>a+b,0)})).sort((a,b)=>b.score-a.score)[0].row;score=35;

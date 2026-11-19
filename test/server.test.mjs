@@ -53,6 +53,26 @@ test('HTTP card requests enforce costs, zero-AP supply, replay protection and co
   const same=await state(host);assert.deepEqual(same.own,view.own);
 });
 
+test('HTTP barrage uses server randomness and resolves only once across concurrent requests and refresh', async t => {
+  const {host, guest, state, send, raw, battle, findCard} = await setup(t);
+  await battle();
+  const barrage = await findCard(host, 'barrage');
+  const action = {type: 'play-card', cardId: barrage.id, cells: Array.from({length: 10}, (_,cell) => 90 + cell)};
+  const responses = await Promise.all([raw('action', action, host), raw('action', action, host)]);
+  assert.deepEqual(responses.map(response => response.status).sort(), [200, 409]);
+  const accepted = responses.find(response => response.status === 200).data;
+  const expected = Array.from({length: 10}, (_,cell) => cell);
+  assert.deepEqual(accepted.own.lastAction.results.map(result => result.cell), expected);
+  assert.equal(accepted.own.actionPoints, 0);
+  assert.equal(accepted.turn, 0);
+  assert.equal(accepted.own.hand.length + accepted.own.deckCount, 20);
+  const restored = await state(host);
+  assert.deepEqual(restored.own, accepted.own);
+  assert.deepEqual((await state(guest)).own.shots, expected);
+  await send(host, {type: 'pass'});
+  assert.equal((await state(guest)).turn, 1);
+});
+
 test('two clients enforce carrier bombers, repairs, active air control and temporary full-map sight',async t=>{
   const {host,guest,state,send,raw,battle}=await setup(t);await battle();
   for(let i=0;i<18;i++){const v=await state(host);await send(v.turn===0?host:guest,{type:'pass'});}

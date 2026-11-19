@@ -1,6 +1,6 @@
 import {
   CARD_TYPES, DECK_SIZE, ACTIONS_PER_TURN, unavailableReason, cardContext,
-} from './cards.mjs?v=5.1.0';
+} from './cards.mjs?v=5.2.18';
 
 const FAMILY_BY_EFFECT = {
   secondary: 'firepower', main: 'firepower', torpedo: 'firepower',
@@ -17,7 +17,7 @@ const CARD_SUMMARIES = {
   secondary: '炮击敌方一格，战列舰免疫。',
   main: '炮击落点一格范围。',
   big: '炮击落点两格范围。',
-  barrage: '向敌方十个指定格倾泻副炮。',
+  barrage: '随机炮击敌方十个不同格。',
   torpedo: '向选定的一行发射一枚鱼雷。',
   triple: '向选定行及上下两行发射鱼雷。',
   tactics: '从牌库抽取两张牌。',

@@ -1,4 +1,4 @@
-import { CARD_TYPES, shipAlive, sourceMatches, unavailableReason, drawCards } from './cards.mjs?v=5.1.0';
+import { CARD_TYPES, shipAlive, sourceMatches, unavailableReason, drawCards } from './cards.mjs?v=5.2.18';
 import { cells, isSunk, validCell, radiusCells, hullRadius, reachableMoves, lineCells } from './geometry.mjs?v=5.1.0';
 import { REEF_RISK } from './terrain.mjs?v=5.1.0';
 
@@ -20,7 +20,7 @@ function frontEscort(player,row,index) {
       return (index?edge(a)-edge(b):edge(b)-edge(a))||a.id.localeCompare(b.id);
     })[0];
 }
-export function prepareCard(game,index,action) {
+export function prepareCard(game,index,action,rng=Math.random) {
   const player=game.players[index],card=player.hand.find(c=>c.id===action.cardId);
   rule(card,'这张卡牌不在你的手牌中');
   const d=CARD_TYPES[card.type];
@@ -28,9 +28,13 @@ export function prepareCard(game,index,action) {
   rule(!reason,reason);
   const plan={card,d,cell:action.cell,sources:[],targets:[],rays:[]};
   if(['enemy-cell','own-cell','own-hit','enemy-line','own-move'].includes(d.target))rule(validCell(action.cell),'请选择有效的目标单元格');
-  if(d.target==='enemy-many') {
-    rule(Array.isArray(action.cells)&&action.cells.length===10&&new Set(action.cells).size===10&&action.cells.every(validCell),'弹幕需要选择 10 个不同的有效单元格');
-    plan.targets=[...action.cells];
+  if(d.count) {
+    // Sample without replacement only when executing the card.
+    const candidates=Array.from({length:100},(_,cell)=>cell);
+    for(let i=0;i<d.count;i++) {
+      const choice=Math.min(candidates.length-1,Math.max(0,Math.floor(rng()*candidates.length)));
+      plan.targets.push(candidates.splice(choice,1)[0]);
+    }
   } else if(d.target==='enemy-row') {
     rule(Number.isInteger(action.row)&&torpedoRows(player).includes(action.row),'该行没有存活的己方驱逐舰或护卫舰');
     const source=frontEscort(player,action.row,index);plan.sources=[source.id];
@@ -54,7 +58,7 @@ export function prepareCard(game,index,action) {
   }
   if(d.target==='enemy-cell')plan.targets=radiusCells(action.cell,d.radius||0);
   if(['secondary','main','bomb'].includes(d.effect)) {
-    const centers=d.target==='enemy-many'?plan.targets:[action.cell];
+    const centers=d.count?plan.targets:[action.cell];
     plan.sources=centers.map(c=>nearestSource(player,d.requires,c,index).id);
   } else if(d.requires&&d.requires!=='damaged'&&!plan.sources.length&&!['move','smoke'].includes(d.effect)) {
     plan.sources=[nearestSource(player,d.requires,validCell(action.cell)?action.cell:45,index).id];

@@ -68,7 +68,17 @@ try {
   v=await execute('secondary',()=>enemy(0));assert.equal(v.enemyCells[0],'immune');assert.deepEqual(v.own.lastAction.sources,['CG-2']);
   await execute('main',async()=>{await enemy(90);assert.equal(await page.locator('#enemy-grid .target-preview').count(),3);});
   await execute('big',()=>enemy(92));
-  await execute('barrage',async()=>{for(let c=90;c<100;c++)await enemy(c);assert.equal(await page.locator('#enemy-grid .target-preview').count(),10);});
+  v=await execute('barrage',async()=>{
+    assert.equal(await page.locator('#enemy-grid .cell:not(:disabled)').count(),0);
+    assert.equal(await page.locator('#enemy-grid .target-preview').count(),0);
+    assert.equal(await page.locator('[data-action="random-targets"]').count(),0);
+    assert.match(await page.locator('.selected-order').textContent(),/随机炮击敌方 10 个不同单元格/);
+    await page.locator('[data-card-type="barrage"]').click();
+    await page.locator('[data-card-type="barrage"]').click();
+    assert.ok(await page.locator('[data-action="fire"]').isEnabled());
+  });
+  assert.deepEqual(v.own.lastAction.results.map(result=>result.cell),Array.from({length:10},(_,cell)=>cell));
+  assert.equal(v.own.actionPoints,0);
   const torpedoView = await execute('torpedo',()=>enemy(44));
   const traceCells = [...new Set(torpedoView.own.lastAction.traces.flat())].sort((a,b)=>a-b);
   await page.waitForFunction(expected=>{
@@ -122,7 +132,7 @@ try {
   v=await execute('repair',()=>own(0));assert.ok(!v.own.ships[0].hits.includes(0));
   v=await execute('smoke',async()=>{await own(62);await own(63);});assert.ok(v.own.smoke.length>0);assert.ok(v.own.ships.find(s=>s.id==='FF-2').x===3);
   assert.equal(new Set(played).size,20);await capture(page,'naval-desktop.png');
-  console.log('PASS: all twenty cards through real UI, prerequisites, source selection, target previews, ten-cell barrage, lanes, lines, repairs, smoke and AP above three');
+  console.log('PASS: all twenty cards through real UI, prerequisites, source selection, target previews, random ten-cell barrage, lanes, lines, repairs, smoke and AP above three');
 
   const reef=await room('undertow'),reefPage=await pageFor(reef.host);await reefPage.waitForSelector('.hand-panel');
   assert.ok((await reefPage.locator('#own-grid [data-cell="65"]').getAttribute('title')).startsWith('深海'));
@@ -143,6 +153,12 @@ try {
   await practice.locator('[data-action="practice"]').first().click();await practice.locator('[data-action="auto"]').click();await practice.evaluate(()=>window.__navalNow=2001);await practice.locator('[data-action="confirm"]').click();await practice.waitForSelector('.hand-panel');
   assert.equal(await practice.locator('[data-hand-count]').textContent(),'6');await practice.locator('[data-card-type="tactics"]:not(:disabled)').click();await practice.locator('[data-action="fire"]').click();await practice.waitForSelector('[data-card-type="supply"]:not(:disabled)');
   await practice.locator('[data-card-type="supply"]').click();await practice.locator('[data-action="fire"]').click();await practice.waitForFunction(()=>document.querySelector('.action-points')?.dataset.ap==='5');
+  await practice.locator('[data-card-type="barrage"]').click();
+  assert.equal(await practice.locator('#enemy-grid .cell:not(:disabled)').count(),0);
+  assert.ok(await practice.locator('[data-action="fire"]').isEnabled());
+  await practice.locator('[data-action="fire"]').click();
+  await practice.waitForFunction(()=>document.querySelector('.action-points')?.dataset.ap==='2');
+  assert.equal(await practice.locator('#enemy-grid .cell:not(.unknown)').count(),10);
   await practice.locator('[data-action="pass"]').click();await practice.waitForTimeout(350);await practice.evaluate(()=>window.__navalNow=4000);await practice.waitForFunction(()=>document.querySelector('.combat-log')?.textContent.includes('对手使用'));
   await capture(practice,'naval-practice.png');assert.deepEqual(errors,[]);console.log('PASS: static practice uses the twenty-card deck, zero-cost draw and supply, new AI, and no JavaScript exceptions');
   console.log(`Naval checks passed. Screenshots: ${output}`);

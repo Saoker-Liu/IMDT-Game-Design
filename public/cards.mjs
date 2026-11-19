@@ -7,7 +7,7 @@ export const CARD_TYPES = {
   secondary: { name:'副炮齐射', cost:1, effect:'secondary', target:'enemy-cell', requires:'surface', radius:0, icon:'target', tag:'SECONDARY', description:'由最近的非航母舰艇炮击一格。副炮无法损伤战列舰。' },
   main: { name:'主炮轰击', cost:2, effect:'main', target:'enemy-cell', requires:'heavy', radius:1, icon:'target', tag:'MAIN BATTERY', description:'最近的巡洋舰或战列舰开火，对落点距离 1 以内造成伤害。' },
   big: { name:'来个大家伙！', cost:3, effect:'main', target:'enemy-cell', requires:'battleship', radius:2, icon:'target', tag:'HEAVY SALVO', description:'最近的战列舰开火，对落点距离 2 以内的所有舰型造成伤害。' },
-  barrage: { name:'弹幕覆盖！', cost:3, effect:'secondary', target:'enemy-many', requires:'surface', count:10, icon:'target', tag:'BARRAGE', description:'选择敌方 10 个不同单元格，分别由最近的非航母舰艇进行副炮炮击。' },
+  barrage: { name:'弹幕覆盖！', cost:3, effect:'secondary', target:'none', requires:'surface', count:10, icon:'target', tag:'BARRAGE', description:'随机选取敌方全图 10 个不同单元格，分别由最近的非航母舰艇进行副炮炮击。副炮无法损伤战列舰。' },
   torpedo: { name:'当心鱼雷', cost:2, effect:'torpedo', target:'enemy-row', requires:'escort', icon:'target', tag:'TORPEDO', description:'选择己方驱逐舰/护卫舰所在行，由最前方舰艇发射一枚鱼雷，遇目标或阻挡停止。' },
   triple: { name:'当心三连发！', cost:3, effect:'torpedo', target:'enemy-row', requires:'escort', spread:1, icon:'target', tag:'TRIPLE TORPEDO', description:'由选中行最靠前的驱逐舰/护卫舰向上、本、下三行各发射一枚鱼雷。越界行略过。' },
   tactics: { name:'灵活的战术', cost:0, effect:'draw', target:'none', icon:'book', tag:'TACTICS', description:'从牌库顶部抽取 2 张战术卡。本卡结算后才回到牌库底部。' },

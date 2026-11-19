@@ -56,7 +56,6 @@ test('zero AP without any zero-cost cards still waits for explicit confirmation,
 test('all card target validation occurs before spending AP or recycling; client effects cannot override the catalog',()=>{
   const g=fixture(),a=g.players[0];giveHand(a,['secondary','barrage','torpedoPlane','repair']);
   for(const cell of [-1,100,'1',null])unchanged(g,()=>play(g,'secondary',{cell}),/目标/);
-  unchanged(g,()=>play(g,'barrage',{cells:Array(10).fill(90)}),/10/);
   unchanged(g,()=>play(g,'torpedoPlane',{cell:80,end:80}),/终点/);
   unchanged(g,()=>play(g,'repair',{cell:0}),/受损|修复/);
   play(g,'secondary',{cell:0,effect:'main',cost:0,weapon:'torpedo',id:'CV-1'});assert.equal(a.actionPoints,2);assert.deepEqual(g.players[1].ships[0].hits,[]);
@@ -95,11 +94,46 @@ test('main guns and heavy guns use Euclidean cell-center radius and can damage b
   assert.ok(!radiusCells(55,1).includes(44));assert.ok(radiusCells(55,2).includes(44));
 });
 
-test('barrage requires ten unique chosen cells and resolves ten individual secondary strikes',()=>{
-  const g=fixture();giveHand(g.players[0],['barrage']);const targets=[0,1,2,3,20,21,22,60,62,64];
-  play(g,'barrage',{cells:targets});const results=g.players[0].lastAction.results;
-  assert.equal(results.length,10);assert.equal(results.filter(r=>r.result==='immune').length,4);assert.deepEqual(g.players[1].ships[0].hits,[]);
-  assert.equal(g.players[0].lastAction.sources.length,new Set(g.players[0].lastAction.sources).size);conserve(g);
+test('barrage samples ten distinct cells from the whole board and ignores client-selected targets',()=>{
+  for (const random of [0, .5, .9999999, 1]) {
+    const game = fixture();
+    const player = game.players[0];
+    giveHand(player, ['barrage']);
+    const supplied = structuredClone(game);
+    play(game, 'barrage', {}, 0, () => random);
+    play(supplied, 'barrage', {cell: 55, cells: Array(10).fill(55), count: 100, effect: 'main'}, 0, () => random);
+    assert.deepEqual(supplied, game, 'Client coordinates and card overrides cannot choose the random targets');
+    const results = player.lastAction.results;
+    assert.equal(results.length, 10);
+    assert.equal(new Set(results.map(result => result.cell)).size, 10);
+    assert.ok(results.every(result => Number.isInteger(result.cell) && result.cell >= 0 && result.cell < 100));
+    const sources = [...new Set(results.map(result => nearestSource(player, 'surface', result.cell, 0).id))];
+    assert.deepEqual(player.lastAction.sources, sources);
+    assert.equal(player.actionPoints, 0);
+    assert.equal(player.deck.at(-1).type, 'barrage');
+    assert.equal(game.turn, 0);
+    assert.deepEqual(game.players[1].ships[0].hits, [], 'Random secondary fire still respects battleship armor');
+    conserve(game);
+    if (random === 0) {
+      assert.deepEqual(results.map(result => result.cell), Array.from({length: 10}, (_,cell) => cell));
+      assert.equal(results.filter(result => result.result === 'immune').length, 4);
+    }
+    if (random >= .9999999) assert.deepEqual(results.map(result => result.cell), Array.from({length: 10}, (_,cell) => 99 - cell));
+  }
+});
+
+test('barrage can hit previously attacked cells and rocks, and the AI submits no chosen targets',()=>{
+  const game = fixture();
+  giveHand(game.players[0], ['barrage']);
+  const target = game.players[1];
+  target.shots = Array.from({length: 10}, (_,cell) => cell);
+  target.terrain[4] = 'rock';
+  const action = chooseBotAction(viewFor(game, 'a'), () => 0);
+  assert.deepEqual(action, {type: 'play-card', cardId: 'barrage-1'});
+  act(game, 'a', action, 1100, () => 0);
+  assert.deepEqual(game.players[0].lastAction.results.map(result => result.cell), target.shots);
+  assert.equal(game.players[0].lastAction.results.find(result => result.cell === 4).result, 'blocked');
+  conserve(game);
 });
 
 test('row torpedoes require an escort in that row and select its forward-most hull on each shore',()=>{
