@@ -1,14 +1,14 @@
 import {resultCard as renderResultCard} from './result-ui.mjs?v=5.2.15';
-import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=5.2.3';
+import { TYPES, TOTAL_SHIPS, TOTAL_CELLS, shape, PREP_MS, makePlayer, makeGame, cells, isSunk, canPlace, canMove, act, tick, viewFor } from './engine.mjs?v=5.2.18';
 import { vesselArt, shipOverlay, illuminationArt, sightedHullArt, impactArt, boardFurniture, playStrikeEffects, playTacticalEntrance } from './art.mjs?v=5.2.17';
 
 import { MAPS, TERRAIN, mapInfo, terrainAt } from './terrain.mjs?v=5.1.0';
 import { terrainChart, mapPicker, mapBrief, terrainLegend, terrainGuide, mobilityControls } from './tactics-ui.mjs?v=5.2.14';
-import { CARD_TYPES, canUseCard, cardContext, sourceMatches, shipAlive } from './cards.mjs?v=5.1.0';
-import { handPanel, cardGuide } from './cards-ui.mjs?v=5.2.0';
+import { CARD_TYPES, canUseCard, cardContext, sourceMatches, shipAlive } from './cards.mjs?v=5.2.18';
+import { handPanel, cardGuide } from './cards-ui.mjs?v=5.2.18';
 import { radiusCells, reachableMoves, lineCells } from './geometry.mjs?v=5.1.0';
-import { torpedoRows } from './combat.mjs?v=5.1.0';
-import { chooseBotAction } from './bot.mjs?v=5.1.0';
+import { torpedoRows } from './combat.mjs?v=5.2.18';
+import { chooseBotAction } from './bot.mjs?v=5.2.18';
 
 const app = document.querySelector('#app');
 const modal = document.querySelector('#modal');
@@ -58,16 +58,15 @@ let toastTimer, botDue = 0, lastBotTurn = '', lastHistory = 0, showAftermath = f
 let sound = readStorage('deepblue-sound', 'off', true) === 'on';
 let audioCtx = null;
 let selectedMap = mapInfo(readStorage('fogbound-map', 'open-sea', true)).id;
-let selectedCard = null, pickedTargets = [], lineEnd = null;
+let selectedCard = null, lineEnd = null;
 const selectedDefinition = () => CARD_TYPES[state?.own.hand.find(c => c.id === selectedCard)?.type];
 
-function resetTargets() { aimed=null;pickedTargets=[];lineEnd=null; }
+function resetTargets() { aimed=null;lineEnd=null; }
 function selection() {
   const d=selectedDefinition(),previewOwn=new Set(),previewEnemy=new Set(),destinations=new Set(),rows=new Set();
   let ready=false;const payload={type:'play-card',cardId:selectedCard};
   if(!d)return {d,ready,payload,previewOwn,previewEnemy,destinations,rows};
   if(d.target==='none')ready=true;
-  else if(d.target==='enemy-many') {for(const c of pickedTargets)previewEnemy.add(c);payload.cells=[...pickedTargets];ready=pickedTargets.length===10;}
   else if(d.target==='enemy-row') {
     torpedoRows(state.own).forEach(row=>rows.add(row));
     if(aimed!==null){const row=Math.floor(aimed/10);payload.row=row;ready=rows.has(row);for(let r=row-(d.spread||0);r<=row+(d.spread||0);r++)if(r>=0&&r<10)for(let x=0;x<10;x++)previewEnemy.add(r*10+x);}
@@ -87,7 +86,7 @@ function selection() {
   }
   return {d,ready,payload,previewOwn,previewEnemy,destinations,rows};
 }
-const targetHint=d=>!d?'先从手牌选择指令':({none:'无需选择目标，确认后立即执行','enemy-cell':'选择敌方落点，发光范围为作用区域','enemy-many':`选择 10 个不同敌方格子（已选 ${pickedTargets.length}/10）`,'enemy-row':'选择有己方驱逐舰/护卫舰的对应行','enemy-line':aimed===null?'选择鱼雷起点':lineEnd===null?'再选择鱼雷终点':'起终点已选，确认发射','own-cell':'选择己方侦察中心','own-hit':'选择己方存活舰艇的中弹部位','own-move':selectedShip?'选择目的地：目标格为舰体左上角':'先点选己舰，再点选目的地'})[d.target];
+const targetHint=d=>!d?'先从手牌选择指令':({none:d.count?`确认后随机炮击敌方 ${d.count} 个不同单元格`:'无需选择目标，确认后立即执行','enemy-cell':'选择敌方落点，发光范围为作用区域','enemy-row':'选择有己方驱逐舰/护卫舰的对应行','enemy-line':aimed===null?'选择鱼雷起点':lineEnd===null?'再选择鱼雷终点':'起终点已选，确认发射','own-cell':'选择己方侦察中心','own-hit':'选择己方存活舰艇的中弹部位','own-move':selectedShip?'选择目的地：目标格为舰体左上角':'先点选己舰，再点选目的地'})[d.target];
 function battleEffects() {
   return `<div class="battle-effects" aria-label="持续战术效果"><span class="battle-status status-${state.airControl?state.airControl.owner===state.me?'friendly':'hostile':'neutral'}">${icon('shield')}${state.airControl?`${state.airControl.owner===state.me?'己方':'敌方'}制空权 · 剩 ${state.airControl.remaining} 个己方回合`:'制空权：无人控制'}</span>${state.visionEffects.map(e=>`<span class="battle-status status-sight">${icon('eye')}${CARD_TYPES[e.cardType].name} · 剩 ${e.remaining} 回合</span>`).join('')}${state.own.smoke.length?`<span class="battle-status status-smoke">${icon('shield')}己方烟幕生效中</span>`:''}</div>`;
 }
@@ -190,7 +189,7 @@ function board(own) {
     const preview=(own?selected.previewOwn:selected.previewEnemy).has(c),destination=own&&order?.target==='own-move'&&selected.destinations.has(c);
     const smoke=own?state.own.smoke.some(effect=>effect.cells.includes(c)):state.enemySmoke.includes(c);
     const track=!own&&state.own.lastAction?.traces.some(trace=>trace.includes(c));
-    return `<button class="cell ${status} terrain-${type}${preview?' target-preview':''}${destination?' reachable':''}${smoke?' smoke-cell':''}${track?' torpedo-track':''}${(!own&&pickedTargets.includes(c))||aimed===c&&(targetOwn===own)?' aim':''}" data-cell="${c}" data-board="${own?'own':'enemy'}" ${ship?`data-ship="${ship.id}"`:''} style="--col:${c%10};--row:${Math.floor(c/10)}" title="${TERRAIN[type].name} · ${TERRAIN[type].effect} · ${label}" draggable="false" aria-label="${coord(c)} ${TERRAIN[type].name} ${label}" ${canClick?'':'disabled'}>${track?'<span class="torpedo-wake" aria-hidden="true"></span>':''}</button>`;
+    return `<button class="cell ${status} terrain-${type}${preview?' target-preview':''}${destination?' reachable':''}${smoke?' smoke-cell':''}${track?' torpedo-track':''}${aimed===c&&(targetOwn===own)?' aim':''}" data-cell="${c}" data-board="${own?'own':'enemy'}" ${ship?`data-ship="${ship.id}"`:''} style="--col:${c%10};--row:${Math.floor(c/10)}" title="${TERRAIN[type].name} · ${TERRAIN[type].effect} · ${label}" draggable="false" aria-label="${coord(c)} ${TERRAIN[type].name} ${label}" ${canClick?'':'disabled'}>${track?'<span class="torpedo-wake" aria-hidden="true"></span>':''}</button>`;
   }).join('');
   const effects=Array.from({length:100},(_,c)=>`<span class="effect ${statusAt(c)}" style="--fx-delay:${(c*17%13)/10}s">${impactArt(statusAt(c))}</span>`).join('');
   const ships=visibleShips.map(ship=>shipOverlay(ship,{selected:own&&selectedShip===ship.id&&(editable||active),wreck:!own||isSunk(state.own,ship),firing:own&&state.own.lastAction?.sources.includes(ship.id)})).join('');
@@ -248,7 +247,7 @@ function commandCard() {
   const prep=state.phase==='placement',mine=state.turn===state.me,deployed=state.own.ships.filter(s=>s.x!==null).length;
   if(prep)return `<section class="sidebar-card command-card"><h3 class="sidebar-heading">部署指令<small>COMMAND</small></h3><div class="deploy-count"><b>${String(deployed).padStart(2,'0')}</b><span>/ ${TOTAL_SHIPS}</span></div><div class="progress"><span style="width:${deployed/TOTAL_SHIPS*100}%"></span></div><p class="deploy-label">舰艇已部署 · 共 ${TOTAL_CELLS} 个占据单元</p><button class="btn primary full" data-action="confirm" ${deployed!==TOTAL_SHIPS||state.own.confirmed?'disabled':''}>${icon('check')}${state.own.confirmed?'已准备完毕':'确认布阵，准备出航'}</button><p class="sidebar-note">90 秒结束后自动补齐尚未部署的舰艇。</p></section>`;
   const {d,ready}=selection(),receipt=state.own.lastAction,sources=receipt?.sources.map(id=>state.own.ships.find(s=>s.id===id)).filter(Boolean)||[];
-  return `<section class="sidebar-card command-card"><h3 class="sidebar-heading">作战指令<small>COMMAND</small></h3><div class="turn-status ${mine?'':'wait'}"><i class="dot ${mine?'':'amber'}"></i>${mine?`你的回合 · 剩余 ${state.own.actionPoints} 行动力`:`对手回合 · 剩余 ${state.players[state.turn].actionPoints} 行动力`}</div><div class="selected-order">${d?`${d.name} · ${d.cost} 点行动力`:'先从手牌选择一张指令'}<small>${targetHint(d)}</small></div><div class="attack-coordinate">${d?.target==='enemy-many'?`已选 ${pickedTargets.length}/10 格`:d?.target==='enemy-line'?'鱼雷起点 → 终点':d?.target==='none'?'无需指定目标':'目标坐标'}<b>${d?.target==='enemy-line'?`${aimed===null?'—':coord(aimed)} → ${lineEnd===null?'—':coord(lineEnd)}`:d?.target==='enemy-row'&&aimed!==null?`第 ${Math.floor(aimed/10)+1} 行`:aimed===null?'— —':coord(aimed)}</b></div>${d?.target==='enemy-many'?'<button class="text-button" data-action="random-targets">随机选取 10 格</button>':''}<button class="btn primary full" data-action="fire" ${!mine||!ready||busy?'disabled':''}>${icon(d?.icon||'target')}${d?`执行${d.name}`:'选择手牌后执行'}</button><button class="text-button" data-action="pass" ${mine?'':'disabled'}>确认结束回合${icon('arrow')}</button><p class="sidebar-note">本回合不限时，行动力耗尽也不会自动换手。<br>准备好后点击“确认结束回合”。${sources.length?`<br>上次火力源：${sources.map(ship=>`${typeName(ship.type)} ${ship.id}`).join('、')}`:''}</p></section>`;
+  return `<section class="sidebar-card command-card"><h3 class="sidebar-heading">作战指令<small>COMMAND</small></h3><div class="turn-status ${mine?'':'wait'}"><i class="dot ${mine?'':'amber'}"></i>${mine?`你的回合 · 剩余 ${state.own.actionPoints} 行动力`:`对手回合 · 剩余 ${state.players[state.turn].actionPoints} 行动力`}</div><div class="selected-order">${d?`${d.name} · ${d.cost} 点行动力`:'先从手牌选择一张指令'}<small>${targetHint(d)}</small></div><div class="attack-coordinate">${d?.count?`随机炮击 ${d.count} 格`:d?.target==='enemy-line'?'鱼雷起点 → 终点':d?.target==='none'?'无需指定目标':'目标坐标'}<b>${d?.target==='enemy-line'?`${aimed===null?'—':coord(aimed)} → ${lineEnd===null?'—':coord(lineEnd)}`:d?.target==='enemy-row'&&aimed!==null?`第 ${Math.floor(aimed/10)+1} 行`:aimed===null?'— —':coord(aimed)}</b></div><button class="btn primary full" data-action="fire" ${!mine||!ready||busy?'disabled':''}>${icon(d?.icon||'target')}${d?`执行${d.name}`:'选择手牌后执行'}</button><button class="text-button" data-action="pass" ${mine?'':'disabled'}>确认结束回合${icon('arrow')}</button><p class="sidebar-note">本回合不限时，行动力耗尽也不会自动换手。<br>准备好后点击“确认结束回合”。${sources.length?`<br>上次火力源：${sources.map(ship=>`${typeName(ship.type)} ${ship.id}`).join('、')}`:''}</p></section>`;
 }
 function historyLine(event) {
   const mine = event.playerId === state.own.id;
@@ -528,7 +527,6 @@ async function handleAction(action,el){
     case 'home': if(mode==='lobby')return;return askExit();
     case 'select-map':selectedMap=mapInfo(el.dataset.map).id;store('fogbound-map',selectedMap,true);renderLobby();return;
     case 'card-guide':return openModal('战术卡牌图鉴',cardGuide());
-    case 'random-targets':pickedTargets=Array.from({length:100},(_,c)=>c).sort(()=>Math.random()-.5).slice(0,10);renderGame();return;
     case 'terrain-guide':return openModal('海域地形图鉴',terrainGuide());
     case 'select-card': {
       const card=state?.own.hand.find(c=>c.id===el.dataset.card);
@@ -585,9 +583,6 @@ document.addEventListener('click',event=>{
       else aimed=c;
     } else if(d.target==='own-hit'||d.target==='own-cell')aimed=c;
     else if(cell.dataset.ship)selectedShip=cell.dataset.ship;
-  } else if(d.target==='enemy-many') {
-    if(pickedTargets.includes(c))pickedTargets=pickedTargets.filter(n=>n!==c);
-    else if(pickedTargets.length<10)pickedTargets.push(c);else return toast('已选满 10 格，点击已选格可取消');
   } else if(d.target==='enemy-line') {
     if(aimed===null||lineEnd!==null){aimed=c;lineEnd=null;}
     else if(c!==aimed)lineEnd=c;

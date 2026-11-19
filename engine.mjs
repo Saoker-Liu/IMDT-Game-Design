@@ -1,8 +1,8 @@
 /** Authoritative, transport-independent rules. Shared by the LAN server and practice mode. */
 import { terrainFor, terrainAt, MAPS } from './terrain.mjs?v=5.1.0';
-import { ACTIONS_PER_TURN, makeDeck, dealCards, drawCards } from './cards.mjs?v=5.1.0';
+import { ACTIONS_PER_TURN, makeDeck, dealCards, drawCards } from './cards.mjs?v=5.2.18';
 import { cells, shape, isSunk, canPlace, canMove, squaredDistance } from './geometry.mjs?v=5.1.0';
-import { prepareCard, resolveCard, visibleCells } from './combat.mjs?v=5.1.0';
+import { prepareCard, resolveCard, visibleCells } from './combat.mjs?v=5.2.18';
 export { cells, shape, isSunk, canPlace, canMove };
 export const SIZE = 10;
 export const PREP_MS = 90_000;
@@ -164,7 +164,7 @@ export function act(game, playerId, action, now = Date.now(), rng = Math.random)
     }
     case 'play-card': {
       requireRule(game.phase==='battle'&&index===game.turn,'请等待你的回合');
-      const plan=prepareCard(game,index,action);
+      const plan=prepareCard(game,index,action,rng);
       p.hand.splice(p.hand.findIndex(c=>c.id===plan.card.id),1);
       p.actionPoints-=plan.d.cost;
       resolveCard(game,index,plan,now,rng);
